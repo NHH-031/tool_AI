@@ -111,12 +111,16 @@ class LocalAssetProvider(AssetProvider):
         valid, content, _ = self._validate_svg_content(target_path)
         return content if valid else None
 
-    async def lookup(self, query: AssetLookupQuery) -> AssetLookupResult:
+    def lookup_sync(
+        self,
+        label: str,
+        action: Optional[str] = None,
+        pose: Optional[str] = None,
+    ) -> AssetLookupResult:
         """
-        Tra cứu asset theo nhãn, tag, category, action và chọn pose phù hợp.
-        Tuyệt đối không crash khi không tìm thấy, trả về error_code='ASSET_NOT_FOUND'.
+        Tra cứu asset đồng bộ (sync) theo nhãn, tag, category, action và chọn pose phù hợp.
         """
-        label_lower = query.label.strip().lower()
+        label_lower = label.strip().lower()
         if not label_lower:
             return AssetLookupResult(
                 found=False,
@@ -141,21 +145,20 @@ class LocalAssetProvider(AssetProvider):
                     break
 
         if not matched_asset:
-            logger.info(f"[LocalAssetProvider] Không tìm thấy asset cho query '{query.label}'")
+            logger.info(f"[LocalAssetProvider] Không tìm thấy asset cho query '{label}'")
             return AssetLookupResult(
                 found=False,
                 error_code="ASSET_NOT_FOUND",
-                message=f"Không tìm thấy visual asset phù hợp với nhãn '{query.label}'.",
+                message=f"Không tìm thấy visual asset phù hợp với nhãn '{label}'.",
             )
 
         # 3. Lựa chọn Pose hoặc Action tương ứng
         selected_pose_name = "default"
         pose_obj: Optional[AssetPose] = None
 
-        requested_pose = query.pose or query.action
+        requested_pose = pose or action
         if requested_pose:
             req_lower = requested_pose.lower()
-            # Kiểm tra xem có pose trùng tên không
             for p_name, p_val in matched_asset.poses.items():
                 if p_name.lower() == req_lower:
                     selected_pose_name = p_name
@@ -191,6 +194,13 @@ class LocalAssetProvider(AssetProvider):
             svg_content=svg_content,
             message="Tìm thấy asset thành công.",
         )
+
+    async def lookup(self, query: AssetLookupQuery) -> AssetLookupResult:
+        """
+        Tra cứu asset theo nhãn, tag, category, action và chọn pose phù hợp.
+        Tuyệt đối không crash khi không tìm thấy, trả về error_code='ASSET_NOT_FOUND'.
+        """
+        return self.lookup_sync(query.label, action=query.action, pose=query.pose)
 
 
 class GeneratedAssetProvider(AssetProvider):

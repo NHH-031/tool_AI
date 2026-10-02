@@ -26,6 +26,7 @@ from .scene_graph import (
 from .script import ProductionScript, SceneScript, ScriptOutput, ScriptSegment, SubtitleCue
 from .visual_plan import SceneVisualPlan, VisualPlanOutput
 from .asset import AssetLookupQuery, AssetLookupResult, AssetPose, VisualAsset
+from .timeline import DrawingTimeline, DrawingTimelineEvent, TimelineEvent
 from .tts import NarrationTiming, SentenceTiming, TTSAudioResult, VoiceConfig, WordTiming
 
 __all__ = [
@@ -48,6 +49,7 @@ __all__ = [
     "DrawingAction",
     "NarrationSegment",
     "AudioTrack",
+    "TimelineEvent",
     "Asset",
     "VideoTemplate",
     "Scene",
@@ -70,4 +72,7 @@ __all__ = [
     "SentenceTiming",
     "NarrationTiming",
     "TTSAudioResult",
+    # Phase 08 additions
+    "DrawingTimelineEvent",
+    "DrawingTimeline",
 ]

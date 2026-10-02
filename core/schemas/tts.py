@@ -20,8 +20,12 @@ class WordTiming(BaseModel):
     word: str = Field(description="Từ được phát âm")
     start_time: float = Field(ge=0.0, description="Thời điểm bắt đầu (giây)")
     end_time: float = Field(ge=0.0, description="Thời điểm kết thúc (giây)")
-    duration: float = Field(ge=0.0, description="Thời lượng phát âm từ (giây)")
+    duration: float = Field(default=0.0, ge=0.0, description="Thời lượng phát âm từ (giây)")
     confidence: Optional[float] = Field(default=1.0, ge=0.0, le=1.0, description="Độ tin cậy của alignment")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.duration <= 0.0 and self.end_time >= self.start_time:
+            self.duration = round(self.end_time - self.start_time, 4)
 
 
 class SentenceTiming(BaseModel):
@@ -29,8 +33,12 @@ class SentenceTiming(BaseModel):
     sentence: str = Field(description="Nội dung câu")
     start_time: float = Field(ge=0.0, description="Thời điểm bắt đầu câu (giây)")
     end_time: float = Field(ge=0.0, description="Thời điểm kết thúc câu (giây)")
-    duration: float = Field(ge=0.0, description="Thời lượng phát âm câu (giây)")
+    duration: float = Field(default=0.0, ge=0.0, description="Thời lượng phát âm câu (giây)")
     words: List[WordTiming] = Field(default_factory=list, description="Danh sách mốc thời gian từng từ trong câu")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.duration <= 0.0 and self.end_time >= self.start_time:
+            self.duration = round(self.end_time - self.start_time, 4)
 
 
 class NarrationTiming(BaseModel):
