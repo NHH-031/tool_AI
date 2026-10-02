@@ -56,6 +56,7 @@ def _pyav_concat(inputs: list[Path], output: Path) -> bool:
         import av
     except ImportError:
         return False
+    from fractions import Fraction
     import numpy as np  # noqa: F401
     first = av.open(str(inputs[0]))
     vs = first.streams.video[0]
@@ -63,16 +64,22 @@ def _pyav_concat(inputs: list[Path], output: Path) -> bool:
     rate = vs.average_rate
     first.close()
 
+    tb = Fraction(rate.denominator, rate.numerator)
     out = av.open(str(output), mode="w")
     ostream = out.add_stream("h264", rate=rate)
     ostream.width, ostream.height = w, h
     ostream.pix_fmt = "yuv420p"
+    ostream.time_base = tb
     ostream.options = {"crf": "24", "preset": "medium"}
+    pts = 0
     for p in inputs:
         cont = av.open(str(p))
         for frame in cont.decode(video=0):
             if frame.width != w or frame.height != h:
                 frame = frame.reformat(width=w, height=h)
+            frame.pts = pts
+            frame.time_base = tb
+            pts += 1
             for pkt in ostream.encode(frame):
                 out.mux(pkt)
         cont.close()

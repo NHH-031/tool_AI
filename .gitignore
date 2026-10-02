@@ -11,3 +11,15 @@ venv/
 # OS
 Thumbs.db
 .DS_Store
+
+# Environment & local secrets
+.env
+.env.local
+
+# Output artifacts
+out/
+
+# Node / Frontend
+node_modules/
+.next/
+dist/
