@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Banana Palm Tree with Hanging Fruit -->
+  <g id="tree_with_bananas" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Ground Mound -->
+    <path d="M 100 750 Q 300 720 500 750" stroke-width="5" />
+    <path d="M 180 760 Q 300 740 420 760" stroke-width="3" stroke-dasharray="8 6" />
+
+    <!-- Trunk Base to Canopy -->
+    <path d="M 240 740 Q 250 700 270 550 Q 285 400 280 250" />
+    <path d="M 360 740 Q 350 700 330 550 Q 345 400 320 250" />
+
+    <!-- Trunk Segments Texture -->
+    <path d="M 245 700 Q 300 685 355 700" stroke-width="4" />
+    <path d="M 255 640 Q 300 625 345 640" stroke-width="4" />
+    <path d="M 262 580 Q 300 565 338 580" stroke-width="4" />
+    <path d="M 272 520 Q 305 505 338 520" stroke-width="4" />
+    <path d="M 278 460 Q 310 445 342 460" stroke-width="4" />
+    <path d="M 282 400 Q 312 385 340 400" stroke-width="4" />
+    <path d="M 284 340 Q 310 325 334 340" stroke-width="4" />
+    <path d="M 282 280 Q 302 268 322 280" stroke-width="4" />
+
+    <!-- Palm Fronds Canopy -->
+    <path d="M 300 250 Q 200 150 70 210" stroke-width="7" />
+    <path d="M 300 250 Q 250 80 180 50" stroke-width="7" />
+    <path d="M 300 250 Q 320 60 380 40" stroke-width="7" />
+    <path d="M 300 250 Q 420 140 530 190" stroke-width="7" />
+    <path d="M 300 250 Q 450 250 540 340" stroke-width="7" />
+    <path d="M 300 250 Q 170 270 80 360" stroke-width="7" />
+
+    <!-- Hanging Banana Bunch Stalk -->
+    <path d="M 320 260 Q 350 290 350 330" stroke-width="6" stroke="#4A7C20" />
+    <!-- Banana Cluster Left -->
+    <path d="M 350 330 Q 380 345 390 380 Q 375 385 350 355" fill="#FFE135" stroke="#1A1A1A" stroke-width="5" />
+    <!-- Banana Cluster Center -->
+    <path d="M 350 330 Q 365 360 360 400 Q 345 395 340 355" fill="#FFE135" stroke="#1A1A1A" stroke-width="5" />
+    <!-- Banana Cluster Right -->
+    <path d="M 350 330 Q 330 355 315 390 Q 305 380 335 345" fill="#FFE135" stroke="#1A1A1A" stroke-width="5" />
+    <!-- Stalk Cap -->
+    <circle cx="350" cy="330" r="8" fill="#4A7C20" stroke="#1A1A1A" stroke-width="4" />
+  </g>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Dog Running -->
+  <g id="dog_running" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Tail (Wagging High) -->
+    <path d="M 120 180 Q 70 140 80 90" />
+    
+    <!-- Body -->
+    <ellipse cx="230" cy="200" rx="110" ry="60" transform="rotate(5 230 200)" />
+
+    <!-- Back Left Leg (Extended Backwards in Stride) -->
+    <path d="M 150 220 Q 90 280 60 320" />
+    <!-- Back Right Leg -->
+    <path d="M 180 230 Q 130 300 110 340" />
+
+    <!-- Front Left Leg (Reaching Forward) -->
+    <path d="M 300 230 Q 360 280 400 320" />
+    <!-- Front Right Leg -->
+    <path d="M 280 240 Q 330 300 370 340" />
+
+    <!-- Neck & Head -->
+    <path d="M 310 180 L 360 120" />
+    <circle cx="380" cy="110" r="45" />
+
+    <!-- Flapping Ear -->
+    <path d="M 360 90 Q 310 70 320 120" />
+
+    <!-- Snout & Nose -->
+    <path d="M 400 100 L 440 115 L 415 135" />
+    <circle cx="438" cy="115" r="5" fill="#1A1A1A" />
+    <!-- Happy Panting Tongue -->
+    <path d="M 410 135 Q 425 160 415 170 Q 405 160 405 138" fill="#FF7080" />
+
+    <!-- Eye -->
+    <circle cx="390" cy="98" r="4" fill="#1A1A1A" />
+  </g>
+</svg>

@@ -1,0 +1,258 @@
+{
+  "version": "1.0",
+  "name": "Whiteboard Standard Vector Asset Library",
+  "assets": [
+    {
+      "id": "asset_monkey",
+      "name": "monkey",
+      "category": "character",
+      "tags": ["khỉ", "con khỉ", "chú khỉ", "monkey", "ape", "chimp", "primate"],
+      "format": "svg",
+      "path": "svg/monkey_standing.svg",
+      "poses": {
+        "standing": {
+          "name": "standing",
+          "file_path": "svg/monkey_standing.svg",
+          "description": "Standing upright with playful expression and waving arm",
+          "view_box": "0 0 500 500"
+        },
+        "climbing": {
+          "name": "climbing",
+          "file_path": "svg/monkey_climbing.svg",
+          "description": "Climbing vertically up tree trunk gripping with hands and feet",
+          "view_box": "0 0 500 500"
+        },
+        "eating": {
+          "name": "eating",
+          "file_path": "svg/monkey_eating.svg",
+          "description": "Sitting peacefully while joyfully munching a ripe banana",
+          "view_box": "0 0 500 500"
+        },
+        "walking": {
+          "name": "walking",
+          "file_path": "svg/monkey_walking.svg",
+          "description": "Four-legged walking movement stride",
+          "view_box": "0 0 500 500"
+        },
+        "sitting": {
+          "name": "sitting",
+          "file_path": "svg/monkey_sitting.svg",
+          "description": "Sitting curiously scratching head",
+          "view_box": "0 0 500 500"
+        },
+        "jumping": {
+          "name": "jumping",
+          "file_path": "svg/monkey_jumping.svg",
+          "description": "Dynamic leap in mid-air reaching forward",
+          "view_box": "0 0 500 500"
+        }
+      },
+      "actions": ["standing", "climbing", "eating", "walking", "sitting", "jumping", "reaching"],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "line_color": "#1A1A1A",
+        "stroke_width": 6
+      }
+    },
+    {
+      "id": "asset_tree",
+      "name": "tree",
+      "category": "structure",
+      "tags": ["cây", "cái cây", "thân cây", "cây cối", "tree", "palm tree", "jungle tree"],
+      "format": "svg",
+      "path": "svg/tree_palm.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/tree_palm.svg",
+          "description": "Tropical tall palm tree with wide drooping fronds",
+          "view_box": "0 0 600 800"
+        },
+        "with_bananas": {
+          "name": "with_bananas",
+          "file_path": "svg/tree_with_bananas.svg",
+          "description": "Palm tree with hanging ripe banana bunch",
+          "view_box": "0 0 600 800"
+        }
+      },
+      "actions": ["standing", "bearing_fruit", "waving_fronds"],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "line_color": "#1A1A1A"
+      }
+    },
+    {
+      "id": "asset_banana",
+      "name": "banana",
+      "category": "object",
+      "tags": ["chuối", "quả chuối", "trái chuối", "nải chuối", "banana", "fruit"],
+      "format": "svg",
+      "path": "svg/banana_single.svg",
+      "poses": {
+        "single": {
+          "name": "single",
+          "file_path": "svg/banana_single.svg",
+          "description": "Single ripe curved yellow banana",
+          "view_box": "0 0 300 300"
+        },
+        "bunch": {
+          "name": "bunch",
+          "file_path": "svg/banana_bunch.svg",
+          "description": "Cluster cluster of 3 ripe bananas",
+          "view_box": "0 0 400 400"
+        }
+      },
+      "actions": ["located_on", "hanging", "peeling"],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart"
+      }
+    },
+    {
+      "id": "asset_dog",
+      "name": "dog",
+      "category": "character",
+      "tags": ["chó", "con chó", "chú chó", "dog", "puppy", "canine"],
+      "format": "svg",
+      "path": "svg/dog_running.svg",
+      "poses": {
+        "running": {
+          "name": "running",
+          "file_path": "svg/dog_running.svg",
+          "description": "Playful dog running full stride with wagging tail",
+          "view_box": "0 0 500 400"
+        }
+      },
+      "actions": ["running", "chasing", "wagging"],
+      "metadata": {"author": "WhiteboardStudio"}
+    },
+    {
+      "id": "asset_ball",
+      "name": "ball",
+      "category": "object",
+      "tags": ["bóng", "quả bóng", "trái bóng", "ball", "tennis ball"],
+      "format": "svg",
+      "path": "svg/ball.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/ball.svg",
+          "description": "Bouncing sports ball with speed motion lines",
+          "view_box": "0 0 200 200"
+        }
+      },
+      "actions": ["bouncing", "rolling"],
+      "metadata": {"author": "WhiteboardStudio"}
+    },
+    {
+      "id": "asset_teacher",
+      "name": "teacher",
+      "category": "character",
+      "tags": ["giáo viên", "thầy giáo", "cô giáo", "teacher", "professor", "instructor"],
+      "format": "svg",
+      "path": "svg/teacher.svg",
+      "poses": {
+        "explaining": {
+          "name": "explaining",
+          "file_path": "svg/teacher.svg",
+          "description": "Teacher pointing with pointer stick",
+          "view_box": "0 0 400 600"
+        }
+      },
+      "actions": ["explaining", "teaching", "pointing"],
+      "metadata": {"author": "WhiteboardStudio"}
+    },
+    {
+      "id": "asset_blackboard_math",
+      "name": "mathematics",
+      "category": "diagram",
+      "tags": ["toán", "toán học", "bảng đen", "công thức", "mathematics", "math", "blackboard", "equations"],
+      "format": "svg",
+      "path": "svg/blackboard_math.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/blackboard_math.svg",
+          "description": "Blackboard filled with formulas, graphs and equations",
+          "view_box": "0 0 600 400"
+        }
+      },
+      "actions": ["displaying"],
+      "metadata": {"author": "WhiteboardStudio"}
+    },
+    {
+      "id": "asset_temperature_heat",
+      "name": "temperature",
+      "category": "diagram",
+      "tags": ["nhiệt độ", "nguồn nhiệt", "lửa", "độ nóng", "temperature", "heat", "burner", "thermometer"],
+      "format": "svg",
+      "path": "svg/temperature_heat.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/temperature_heat.svg",
+          "description": "Rising red thermometer with burner flame",
+          "view_box": "0 0 400 500"
+        }
+      },
+      "actions": ["heating", "rising"],
+      "metadata": {"author": "WhiteboardStudio"}
+    },
+    {
+      "id": "asset_molecules",
+      "name": "molecules",
+      "category": "diagram",
+      "tags": ["phân tử", "nguyên tử", "hạt", "molecules", "particles", "atoms"],
+      "format": "svg",
+      "path": "svg/molecules_diagram.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/molecules_diagram.svg",
+          "description": "Molecules with velocity streak arrows inside a container",
+          "view_box": "0 0 600 450"
+        }
+      },
+      "actions": ["accelerating", "vibrating", "colliding"],
+      "metadata": {"author": "WhiteboardStudio"}
+    },
+    {
+      "id": "asset_inflation",
+      "name": "inflation",
+      "category": "metaphor",
+      "tags": ["lạm phát", "mức giá", "giá cả", "inflation", "price balloon", "price tag"],
+      "format": "svg",
+      "path": "svg/inflation_balloon.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/inflation_balloon.svg",
+          "description": "Rising price tag balloon skyrocketing upwards",
+          "view_box": "0 0 500 500"
+        }
+      },
+      "actions": ["rising", "skyrocketing", "eroding"],
+      "metadata": {"author": "WhiteboardStudio"}
+    },
+    {
+      "id": "asset_money",
+      "name": "money",
+      "category": "metaphor",
+      "tags": ["tiền", "đồng tiền", "sức mua", "ví tiền", "money", "wallet", "purchasing power"],
+      "format": "svg",
+      "path": "svg/money_wallet.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/money_wallet.svg",
+          "description": "Wallet and banknote losing value with downward trend",
+          "view_box": "0 0 500 400"
+        }
+      },
+      "actions": ["shrinking", "devaluing", "eroding"],
+      "metadata": {"author": "WhiteboardStudio"}
+    }
+  ]
+}

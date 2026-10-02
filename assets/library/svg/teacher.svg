@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Teacher Explaining with Pointer -->
+  <g id="teacher" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Head & Hair -->
+    <circle cx="200" cy="120" r="50" />
+    <path d="M 155 110 Q 200 60 245 110" stroke-width="8" />
+    <!-- Glasses -->
+    <rect x="175" y="105" width="22" height="16" rx="3" stroke-width="4" />
+    <rect x="203" y="105" width="22" height="16" rx="3" stroke-width="4" />
+    <line x1="197" y1="113" x2="203" y2="113" stroke-width="4" />
+    <!-- Smile -->
+    <path d="M 190 140 Q 200 150 210 140" />
+
+    <!-- Torso / Jacket -->
+    <path d="M 170 170 L 150 330 L 250 330 L 230 170 Z" />
+    <line x1="200" y1="170" x2="200" y2="330" stroke-dasharray="8 6" />
+
+    <!-- Left Arm Holding Books -->
+    <path d="M 160 190 Q 130 260 150 290" />
+    <rect x="135" y="270" width="30" height="40" rx="3" stroke-width="4" />
+
+    <!-- Right Arm Holding Pointer Stick pointing right -->
+    <path d="M 240 190 Q 290 230 330 210" />
+    <line x1="330" y1="210" x2="420" y2="150" stroke-width="7" stroke="#7A5C3D" />
+
+    <!-- Legs & Shoes -->
+    <line x1="175" y1="330" x2="175" y2="520" stroke-width="8" />
+    <line x1="225" y1="330" x2="225" y2="520" stroke-width="8" />
+    <ellipse cx="165" cy="530" rx="20" ry="10" />
+    <ellipse cx="235" cy="530" rx="20" ry="10" />
+  </g>
+</svg>

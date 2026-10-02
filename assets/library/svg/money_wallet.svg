@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Money Wallet and Deflating Purchasing Power -->
+  <g id="money_wallet" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Leather Wallet Body -->
+    <rect x="100" y="140" width="280" height="180" rx="20" fill="#ED8936" stroke-width="8" />
+    <path d="M 100 180 L 380 180" stroke-width="5" />
+    
+    <!-- Wallet Flap & Clasp -->
+    <path d="M 320 200 L 380 200 Q 400 230 380 260 L 320 260 Z" fill="#DD6B20" stroke-width="6" />
+    <circle cx="360" cy="230" r="10" fill="#ECC94B" stroke-width="4" />
+
+    <!-- Banknote Sticking Out (Shrinking) -->
+    <rect x="140" y="80" width="200" height="90" rx="8" fill="#C6F6D5" stroke-width="6" />
+    <circle cx="240" cy="125" r="22" stroke-width="4" fill="#9AE6B4" />
+    <text x="232" y="133" font-family="sans-serif" font-size="24" stroke="none" fill="#1A1A1A">$</text>
+
+    <!-- Downward Erosion Arrow -->
+    <line x1="420" y1="120" x2="420" y2="280" stroke-width="8" stroke="#E53E3E" />
+    <polyline points="395,255 420,280 445,255" stroke-width="8" stroke="#E53E3E" />
+    <text x="405" y="325" font-family="sans-serif" font-size="24" font-weight="bold" stroke="none" fill="#E53E3E">- 50%</text>
+
+    <!-- Coins Dropping Out -->
+    <ellipse cx="80" cy="320" rx="25" ry="18" fill="#ECC94B" stroke-width="5" />
+    <text x="75" y="327" font-family="sans-serif" font-size="16" stroke="none" fill="#1A1A1A">¢</text>
+  </g>
+</svg>

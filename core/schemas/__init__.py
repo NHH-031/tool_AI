@@ -25,6 +25,7 @@ from .scene_graph import (
 )
 from .script import ProductionScript, SceneScript, ScriptOutput, ScriptSegment, SubtitleCue
 from .visual_plan import SceneVisualPlan, VisualPlanOutput
+from .asset import AssetLookupQuery, AssetLookupResult, AssetPose, VisualAsset
 
 __all__ = [
     # Baseline compatibility
@@ -57,4 +58,9 @@ __all__ = [
     "ScriptOutput",
     "SceneVisualPlan",
     "VisualPlanOutput",
+    # Phase 05 additions
+    "VisualAsset",
+    "AssetPose",
+    "AssetLookupQuery",
+    "AssetLookupResult",
 ]

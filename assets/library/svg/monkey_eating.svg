@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Monkey Eating Banana Pose -->
+  <g id="monkey_eating" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Tail (Curled relaxedly on ground) -->
+    <path d="M 210 390 C 140 430, 90 380, 100 320 C 110 270, 150 280, 140 320" />
+
+    <!-- Crossed / Folded Legs (Sitting Pose) -->
+    <path d="M 190 390 Q 140 420 170 450 Q 220 460 250 430" />
+    <path d="M 310 390 Q 360 420 330 450 Q 280 460 250 430" />
+
+    <!-- Body Torso -->
+    <ellipse cx="250" cy="330" rx="65" ry="80" />
+    <ellipse cx="250" cy="340" rx="40" ry="50" stroke-dasharray="4 2" />
+
+    <!-- Head Outline -->
+    <circle cx="250" cy="165" r="68" />
+
+    <!-- Left Ear -->
+    <path d="M 185 150 C 150 140, 150 190, 185 185" />
+    <path d="M 180 160 C 165 155, 165 180, 180 175" />
+    <!-- Right Ear -->
+    <path d="M 315 150 C 350 140, 350 190, 315 185" />
+    <path d="M 320 160 C 335 155, 335 180, 320 175" />
+
+    <!-- Happy Closed Eyes (Joyful eating) -->
+    <path d="M 215 150 Q 230 140 240 150" />
+    <path d="M 260 150 Q 270 140 285 150" />
+
+    <!-- Snout & Chewing Mouth -->
+    <ellipse cx="250" cy="180" rx="28" ry="18" />
+    <!-- Cheeks puffed slightly -->
+    <path d="M 240 185 Q 250 198 260 185" />
+
+    <!-- Arms Holding the Banana -->
+    <!-- Left Hand -->
+    <path d="M 190 280 Q 210 240 230 220" />
+    <!-- Right Hand -->
+    <path d="M 310 280 Q 290 240 270 220" />
+
+    <!-- The Banana Being Eaten -->
+    <g id="banana_in_hands">
+      <!-- Banana Body -->
+      <path d="M 225 240 Q 250 220 275 240 L 265 290 Q 250 270 235 290 Z" fill="#FFE135" stroke="#1A1A1A" stroke-width="5" />
+      <!-- Banana Peels Hanging Down -->
+      <path d="M 225 240 Q 205 230 210 210" stroke="#E5C100" />
+      <path d="M 275 240 Q 295 230 290 210" stroke="#E5C100" />
+      <!-- Top Fruit Tip entering mouth -->
+      <path d="M 240 210 Q 250 190 260 210" fill="#FFF275" stroke="#1A1A1A" stroke-width="4" />
+      <!-- Hands wrapped around banana -->
+      <circle cx="230" cy="245" r="10" />
+      <circle cx="270" cy="245" r="10" />
+    </g>
+  </g>
+</svg>

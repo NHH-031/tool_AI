@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whiteboard SVG Vector Library & Visual Inspection Preview</title>
+  <style>
+    :root {
+      --bg-color: #F6F1E3;
+      --card-bg: #FFFFFF;
+      --stroke-color: #1A1A1A;
+      --accent: #2B6CB0;
+      --border: #E2D9C8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background-color: var(--bg-color);
+      color: var(--stroke-color);
+      padding: 30px;
+      line-height: 1.5;
+    }
+    header {
+      margin-bottom: 30px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 15px;
+    }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    p.subtitle { color: #555; font-size: 15px; }
+
+    .section-title {
+      font-size: 20px;
+      margin: 30px 0 15px;
+      border-left: 5px solid var(--accent);
+      padding-left: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .asset-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .asset-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.08);
+    }
+
+    .svg-viewer {
+      width: 100%;
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #FAF8F2;
+      border-radius: 8px;
+      border: 1px dashed #D6CEBE;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .svg-viewer object, .svg-viewer img, .svg-viewer svg {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+
+    .asset-info {
+      width: 100%;
+      text-align: left;
+    }
+    .asset-title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      background: #EBF8FF;
+      color: #2B6CB0;
+      font-weight: 600;
+    }
+    .meta-text {
+      font-size: 13px;
+      color: #666;
+    }
+
+    /* Composite Scene Container */
+    .composite-container {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      margin-top: 20px;
+    }
+    .whiteboard-stage {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+      height: 540px; /* 16:9 ratio */
+      background: #FAF6ED;
+      border: 2px solid #8C7B65;
+      border-radius: 8px;
+      margin: 0 auto;
+      overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+    }
+    .stage-element {
+      position: absolute;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    #stage-tree {
+      left: 45%;
+      top: 5%;
+      width: 48%;
+      height: 90%;
+      z-index: 1;
+    }
+    #stage-monkey {
+      left: 50%;
+      top: 36%;
+      width: 25%;
+      height: 45%;
+      z-index: 2;
+      animation: climbPulse 3s ease-in-out infinite alternate;
+    }
+    #stage-banana {
+      left: 68%;
+      top: 18%;
+      width: 15%;
+      height: 25%;
+      z-index: 3;
+    }
+    @keyframes climbPulse {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-15px); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Whiteboard SVG Asset Library & Pose Verification</h1>
+    <p class="subtitle">Kiểm định hiển thị trực quan các vector assets chuẩn cho Whiteboard Animation Engine (Phase 05).</p>
+  </header>
+
+  <h2 class="section-title">1. Monkey Poses (standing, climbing, eating, walking, sitting, jumping)</h2>
+  <div class="grid">
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/monkey_standing.svg" alt="Monkey Standing">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Monkey <span class="badge">standing</span></div>
+        <p class="meta-text">Tư thế đứng thẳng chào và vẫy tay, biểu cảm tươi vui.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/monkey_climbing.svg" alt="Monkey Climbing">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Monkey <span class="badge">climbing</span></div>
+        <p class="meta-text">Tư thế bám thân cây leo lên cao, đuôi quấn quanh thân.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/monkey_eating.svg" alt="Monkey Eating">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Monkey <span class="badge">eating</span></div>
+        <p class="meta-text">Ngồi ăn chuối ngon lành, mắt nhắm tít, chuối bóc vỏ.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/monkey_walking.svg" alt="Monkey Walking">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Monkey <span class="badge">walking</span></div>
+        <p class="meta-text">Chuyển động bước đi 4 chân sải bước về phía trước.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/monkey_sitting.svg" alt="Monkey Sitting">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Monkey <span class="badge">sitting</span></div>
+        <p class="meta-text">Ngồi gãi đầu tò mò suy nghĩ, dáng vẻ đáng yêu.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/monkey_jumping.svg" alt="Monkey Jumping">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Monkey <span class="badge">jumping</span></div>
+        <p class="meta-text">Bật nhảy trên không vươn tay với đuôi bay trong gió.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title">2. Environment & Objects (Tree & Banana)</h2>
+  <div class="grid">
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/tree_palm.svg" alt="Palm Tree">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Tree <span class="badge">palm_tree</span></div>
+        <p class="meta-text">Cây dừa nhiệt đới cao, tán lá xòe rộng, thân cây có vân.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/tree_with_bananas.svg" alt="Banana Tree">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Tree <span class="badge">with_bananas</span></div>
+        <p class="meta-text">Cây có nải chuối chín treo lủng lẳng dưới vòm lá.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/banana_single.svg" alt="Single Banana">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Banana <span class="badge">single</span></div>
+        <p class="meta-text">Một quả chuối chín vàng cong đều có cuống rõ nét.</p>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="svg-viewer">
+        <img src="library/svg/banana_bunch.svg" alt="Banana Bunch">
+      </div>
+      <div class="asset-info">
+        <div class="asset-title">Banana <span class="badge">bunch</span></div>
+        <p class="meta-text">Nải 3 quả chuối kết chùm thành nải đầy đặn.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title">3. Composite Scene Visual Test (Monkey Climbing Tree for Banana)</h2>
+  <div class="composite-container">
+    <p style="margin-bottom: 15px; font-weight: 500;">
+      Trực quan hóa phối cảnh không gian 1920x1080 (Scaled down) kiểm tra sự ăn khớp giữa 3 entities:
+      <strong>Tree (Structure)</strong> + <strong>Monkey Climbing (Character)</strong> + <strong>Banana (Object)</strong>.
+    </p>
+    <div class="whiteboard-stage">
+      <img id="stage-tree" class="stage-element" src="library/svg/tree_palm.svg" alt="Tree">
+      <img id="stage-monkey" class="stage-element" src="library/svg/monkey_climbing.svg" alt="Monkey Climbing">
+      <img id="stage-banana" class="stage-element" src="library/svg/banana_bunch.svg" alt="Banana Bunch">
+    </div>
+  </div>
+</body>
+</html>

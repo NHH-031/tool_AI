@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Temperature Heat Source & Thermometer -->
+  <g id="temperature_heat" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Thermometer Body -->
+    <rect x="70" y="50" width="40" height="260" rx="20" />
+    <circle cx="90" cy="330" r="35" />
+    <!-- Rising Red Liquid Level -->
+    <line x1="90" y1="120" x2="90" y2="330" stroke="#E53E3E" stroke-width="16" />
+    <circle cx="90" cy="330" r="28" fill="#E53E3E" stroke="none" />
+    <!-- Degree Ticks -->
+    <line x1="115" y1="90" x2="135" y2="90" stroke-width="4" />
+    <line x1="115" y1="130" x2="135" y2="130" stroke-width="4" />
+    <line x1="115" y1="170" x2="135" y2="170" stroke-width="4" />
+    <line x1="115" y1="210" x2="135" y2="210" stroke-width="4" />
+
+    <!-- Bunsen Burner / Flame Source -->
+    <rect x="200" y="380" width="120" height="40" rx="5" />
+    <line x1="260" y1="380" x2="260" y2="320" stroke-width="12" />
+    <!-- Flames -->
+    <path d="M 260 320 Q 240 280 250 250 Q 260 210 260 180 Q 275 220 280 260 Q 290 290 260 320 Z" stroke="#DD6B20" fill="#FBD38D" />
+    <path d="M 260 320 Q 250 290 260 260 Q 270 290 260 320 Z" stroke="#E53E3E" fill="#FEB2B2" />
+    <!-- Thermal Radiation Waves -->
+    <path d="M 310 220 Q 330 240 310 260" stroke-width="4" stroke-dasharray="6 4" />
+    <path d="M 330 200 Q 360 230 330 270" stroke-width="4" stroke-dasharray="6 4" />
+  </g>
+</svg>
