@@ -26,6 +26,7 @@ from .scene_graph import (
 from .script import ProductionScript, SceneScript, ScriptOutput, ScriptSegment, SubtitleCue
 from .visual_plan import SceneVisualPlan, VisualPlanOutput
 from .asset import AssetLookupQuery, AssetLookupResult, AssetPose, VisualAsset
+from .tts import NarrationTiming, SentenceTiming, TTSAudioResult, VoiceConfig, WordTiming
 
 __all__ = [
     # Baseline compatibility
@@ -63,4 +64,10 @@ __all__ = [
     "AssetPose",
     "AssetLookupQuery",
     "AssetLookupResult",
+    # Phase 07 additions
+    "VoiceConfig",
+    "WordTiming",
+    "SentenceTiming",
+    "NarrationTiming",
+    "TTSAudioResult",
 ]
