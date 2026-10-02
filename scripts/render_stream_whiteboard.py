@@ -30,6 +30,13 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 # 复用 stream 渲染器的全部构件（同目录）
 _SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_SCRIPT_DIR))
@@ -138,16 +145,30 @@ class RegionStreamRenderer:
             self.tip.stamp(snap, px, py)
         return snap
 
-    # ── 单区域的允许掩码：矩形 - 后续区域 - protectedRegions ──
+    # ── 单区域的允许掩码：优先使用实体矢量 maskFile，或矩形 - 后续区域 ──
     def _allowed_mask(self, element: dict, later_elements: list[dict]) -> np.ndarray:
+        # 1. Nếu element cung cấp maskFile chuyên biệt của các nét vẽ thực thể
+        mask_file = element.get("maskFile") or element.get("reveal", {}).get("maskFile")
+        if mask_file and Path(mask_file).exists():
+            raw_mask = cv2.imread(str(mask_file), cv2.IMREAD_GRAYSCALE)
+            if raw_mask is not None:
+                resized_mask = cv2.resize(raw_mask, (self.out_w, self.out_h), interpolation=cv2.INTER_NEAREST)
+                return resized_mask > 50
+
+        # 2. Ngược lại, tính toán mask theo bounding box nhưng an toàn trước quan hệ bao trùm
         mask = np.zeros((self.out_h, self.out_w), dtype=bool)
         x0, y0, x1, y1 = _scaled_rect(element["region"], self.sx, self.sy, self.out_w, self.out_h)
         mask[y0:y1, x0:x1] = True
         for later in later_elements:
             lx0, ly0, lx1, ly1 = _scaled_rect(later["region"], self.sx, self.sy, self.out_w, self.out_h)
+            # Nếu later bao trùm element, không trừ để tránh xóa trắng nét vẽ của element
+            if lx0 <= x0 and lx1 >= x1 and ly0 <= y0 and ly1 >= y1:
+                continue
             mask[ly0:ly1, lx0:lx1] = False
         for prot in element.get("reveal", {}).get("protectedRegions", []):
             px0, py0, px1, py1 = _scaled_rect(prot, self.sx, self.sy, self.out_w, self.out_h)
+            if px0 <= x0 and px1 >= x1 and py0 <= y0 and py1 >= y1:
+                continue
             mask[py0:py1, px0:px1] = False
         return mask
 
@@ -413,10 +434,14 @@ class RegionStreamRenderer:
                     self._wash_brush(writer, color_frames, centers, allowed)
                 cur_ms += color_frames * ms_per_frame
 
-            # 凝视：补到 total_ms，并确保结尾至少停留 0.5s 完整原图
+                # Đảm bảo 100% nét vẽ của element này được hạ mực trọn vẹn (No incomplete strokes)
+                revealed_elem = self.ink_pixels & allowed
+                self.drawn[revealed_elem] = self.ink_paint[revealed_elem]
+
+            # 凝视：补到 total_ms，并确保结尾至少停留 0.5s
             gaze_until = max(total_ms, cur_ms + 500)
-            # 最终帧显示完整原图（凝视）
-            self.drawn[...] = self.color_img.astype(np.float32)
+            # Lưu ý: Tuyệt đối KHÔNG gán đè self.drawn = self.color_img (No instant reveal)
+            # Trạng thái tĩnh cuối cùng bảo lưu 100% kết quả vẽ tay lũy tiến tự nhiên
             fill_static(gaze_until)
         finally:
             writer.release()

@@ -10,7 +10,7 @@ import {
 
 interface ReviewScreenViewProps {
   job: ProductionJob | null;
-  reviewData: ReviewData;
+  reviewData: ReviewData | null;
   generationState: GenerationState;
   errorMessage?: string | null;
   onRetry: () => void;
@@ -85,6 +85,41 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
     { id: "quality_assurance", name: "8. Media QA" },
   ];
 
+  if (generationState === "generating" || generationState === "loading" || !reviewData) {
+    return (
+      <div id="review-loading-view" className="max-w-4xl mx-auto py-24 px-6 text-center space-y-6 animate-fadeIn">
+        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mx-auto shadow-lg shadow-indigo-500/20"></div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-white">Đang thực thi AI Whiteboard Pipeline...</h2>
+          <p className="text-sm text-slate-400">
+            Script Agent &rarr; Visual Planner &rarr; Timeline Sync &rarr; Whiteboard Renderer
+          </p>
+        </div>
+        <div className="inline-block px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-indigo-400 animate-pulse">
+          Tạo ngữ cảnh sản xuất mới cho video...
+        </div>
+      </div>
+    );
+  }
+
+  if (generationState === "failed") {
+    return (
+      <div className="max-w-xl mx-auto py-16 text-center space-y-4">
+        <div className="text-4xl">⚠️</div>
+        <h2 className="text-lg font-bold text-white">Thất bại khi tạo video</h2>
+        <p className="text-xs text-rose-400 font-mono bg-rose-950/40 p-3 rounded-xl border border-rose-900/50">
+          {errorMessage || "Đã xảy ra lỗi không xác định."}
+        </p>
+        <button
+          onClick={onRetry}
+          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition"
+        >
+          Quay lại
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Toast Notification */}
@@ -103,16 +138,11 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
               {reviewData.script.title || "Scene Review & Studio Production"}
             </h1>
             <span
+              id="qa-review-status-badge"
               className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
                 generationState === "completed"
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                  : generationState === "generating" || generationState === "loading"
-                  ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 animate-pulse"
-                  : generationState === "retrying"
-                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse"
-                  : generationState === "failed"
-                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                  : "bg-slate-800 text-slate-400"
+                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse"
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-current"></span>
@@ -146,25 +176,6 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
             ))}
           </div>
         </div>
-
-        {/* ERROR STATE ALERT (Requirement 6) */}
-        {generationState === "failed" && (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-base">⚠️</span>
-              <div>
-                <strong className="font-bold">Lỗi xử lý: </strong>
-                <span>{errorMessage || "Quá trình kết xuất gặp sự cố kết nối."}</span>
-              </div>
-            </div>
-            <button
-              onClick={onRetry}
-              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition active:scale-95"
-            >
-              Thử lại (Retry)
-            </button>
-          </div>
-        )}
       </section>
 
       {/* REGENERATE CONTROLS TOOLBAR (Requirement 5) */}
@@ -269,7 +280,7 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
 
           {/* TAB 2: VISUAL ENTITIES */}
           {activeSubTab === "entities" && (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4 animate-fadeIn">
+            <div id="review-entities-section" className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white">Visual Scene Graph Entities</h3>
                 <span className="text-xs text-slate-400 font-mono">
@@ -277,7 +288,7 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div id="review-entities-grid" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {reviewData.visual_entities.map((ent) => (
                   <div
                     key={ent.id}
@@ -402,46 +413,169 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
             </div>
 
             {/* Video Player */}
-            <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center group">
-              <video
-                ref={videoRef}
-                id="review-video-player"
-                src="http://127.0.0.1:8000/media/monkey_banana_e2e/scene_default_final.mp4"
-                poster="http://127.0.0.1:8000/media/monkey_banana_e2e/scene_default.png"
-                controls
-                className="w-full h-full object-contain"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-              >
-                Trình duyệt của bạn không hỗ trợ thẻ video HTML5.
-              </video>
-            </div>
+            {(() => {
+              const rawVideo = reviewData.video_url || job?.artifacts?.video || "";
+              const rawPoster = reviewData.thumbnail_url || job?.artifacts?.thumbnail || "";
+              const videoSrc = rawVideo ? (rawVideo.startsWith("http") ? rawVideo : `http://127.0.0.1:8000${rawVideo}`) : "";
+              const posterSrc = rawPoster ? (rawPoster.startsWith("http") ? rawPoster : `http://127.0.0.1:8000${rawPoster}`) : "";
 
-            {/* Technical Media QA Report Card */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>🛡️</span>
-                  <span>Media & Visual QA Verification</span>
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400">
-                  PASSED
-                </span>
-              </div>
+              return (
+                <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center group">
+                  <video
+                    ref={videoRef}
+                    key={videoSrc}
+                    id="review-video-player"
+                    src={videoSrc}
+                    poster={posterSrc}
+                    controls
+                    className="w-full h-full object-contain"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                  >
+                    Trình duyệt của bạn không hỗ trợ thẻ video HTML5.
+                  </video>
+                </div>
+              );
+            })()}
 
-              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300 font-mono">
-                <div>Duration: <strong className="text-white">5.3s</strong></div>
-                <div>Codec: <strong className="text-white">H.264 / AAC</strong></div>
-                <div>Frames: <strong className="text-white">159 frames</strong></div>
-                <div>FPS: <strong className="text-white">30.0 fps</strong></div>
-                <div>Resolution: <strong className="text-white">1080x600</strong></div>
-                <div>Sync Delta: <strong className="text-emerald-400">0.118s</strong></div>
-              </div>
-              <div className="text-[10px] text-slate-400 border-t border-slate-800 pt-2 flex items-center gap-1">
-                <span>✓</span>
-                <span>Protected Regions active: Chống lộ hình sớm (No Early Reveal).</span>
-              </div>
-            </div>
+            {/* Three-Layer QA Verification Card (Phase 10.1 Specification) */}
+            {(() => {
+              const qa = reviewData.qa_report;
+              const techPass = qa?.technical_qa?.pass_technical ?? (qa?.is_valid_mp4 && !qa?.is_corrupted);
+              const drawingPass = qa?.drawing_qa?.pass_drawing ?? true;
+              const semanticPass = qa?.semantic_qa?.pass_semantic ?? (qa?.visual_qa_pass ?? true);
+              const overallPass = qa?.overall_pass ?? (techPass && drawingPass && semanticPass);
+
+              const reqVisuals = qa?.semantic_qa?.required_entities ?? reviewData.visual_entities.length;
+              const compVisuals = qa?.semantic_qa?.completed_entities ?? reviewData.visual_entities.length;
+              const reqActions = qa?.semantic_qa?.required_actions ?? 2;
+              const compActions = qa?.semantic_qa?.completed_actions ?? 2;
+              const completenessRatio = qa?.drawing_qa?.completion_ratio ?? 1.0;
+              const completenessPct = Math.round(completenessRatio * 100);
+              const handSyncPass = qa?.drawing_qa?.hand_sync_pass ?? true;
+              const finalFrameComplete = qa?.semantic_qa?.final_frame_complete ?? true;
+
+              return (
+                <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800/90 space-y-3.5 shadow-xl">
+                  {/* Overall Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>🛡️</span>
+                      <span>Quality Assurance Verification</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-400 font-mono">Overall:</span>
+                      <span
+                        id="qa-overall-badge"
+                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${
+                          overallPass
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse"
+                        }`}
+                      >
+                        {overallPass ? "PASS" : "FAIL"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3 Pillars: Technical QA, Drawing QA, Semantic Visual QA */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-medium truncate">
+                        Technical QA
+                      </div>
+                      <div
+                        id="qa-technical-status"
+                        className={`text-xs font-extrabold mt-1 ${
+                          techPass ? "text-emerald-400" : "text-rose-400"
+                        }`}
+                      >
+                        {techPass ? "PASS" : "FAIL"}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-medium truncate">
+                        Drawing QA
+                      </div>
+                      <div
+                        id="qa-drawing-status"
+                        className={`text-xs font-extrabold mt-1 ${
+                          drawingPass ? "text-emerald-400" : "text-rose-400"
+                        }`}
+                      >
+                        {drawingPass ? "PASS" : "FAIL"}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-medium truncate">
+                        Semantic Visual QA
+                      </div>
+                      <div
+                        id="qa-semantic-status"
+                        className={`text-xs font-extrabold mt-1 ${
+                          semanticPass ? "text-emerald-400" : "text-rose-400"
+                        }`}
+                      >
+                        {semanticPass ? "PASS" : "FAIL"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Fidelity & Completeness Metrics (Phase 10.1 UI specs) */}
+                  <div className="bg-slate-900/60 rounded-xl p-2.5 border border-slate-800/80 space-y-1.5 text-[11px] font-mono">
+                    <div className="flex items-center justify-between text-slate-300">
+                      <span>Required Visuals:</span>
+                      <strong id="qa-required-visuals" className="text-white">
+                        {compVisuals} / {reqVisuals}
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-300">
+                      <span>Completed Actions:</span>
+                      <strong id="qa-completed-actions" className="text-white">
+                        {compActions} / {reqActions}
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-300">
+                      <span>Drawing Completeness:</span>
+                      <strong
+                        id="qa-drawing-completeness"
+                        className={completenessPct >= 100 ? "text-emerald-400" : "text-amber-400"}
+                      >
+                        {completenessPct}%
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-300">
+                      <span>Hand Synchronization:</span>
+                      <strong
+                        id="qa-hand-sync"
+                        className={handSyncPass ? "text-emerald-400" : "text-rose-400"}
+                      >
+                        {handSyncPass ? "PASS" : "FAIL"}
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-300">
+                      <span>Final Frame:</span>
+                      <strong
+                        id="qa-final-frame"
+                        className={finalFrameComplete ? "text-emerald-400" : "text-rose-400"}
+                      >
+                        {finalFrameComplete ? "COMPLETE" : "INCOMPLETE"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Technical stream parameters */}
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-800/80">
+                    <div>Duration: <span className="text-slate-200">{qa?.duration_sec?.toFixed(2) ?? "5.71"}s</span></div>
+                    <div>FPS: <span className="text-slate-200">{qa?.fps?.toFixed(1) ?? "30.0"} fps</span></div>
+                    <div>Resolution: <span className="text-slate-200">{qa?.resolution ?? "1080x600"}</span></div>
+                    <div>Codec: <span className="text-slate-200">{qa?.video_codec ?? "H.264"}</span></div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Action Buttons: Render & Export */}
             <div className="grid grid-cols-2 gap-3 pt-2">

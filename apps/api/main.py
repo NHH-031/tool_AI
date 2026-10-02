@@ -44,6 +44,7 @@ def create_app() -> FastAPI:
     output_dir = PROJECT_ROOT / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/media", StaticFiles(directory=str(output_dir)), name="media")
+    app.mount("/output", StaticFiles(directory=str(output_dir)), name="output")
 
     assets_dir = PROJECT_ROOT / "assets"
     if assets_dir.exists():

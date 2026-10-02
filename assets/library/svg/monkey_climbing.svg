@@ -1,68 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
   <!-- Whiteboard Line Art: Monkey Climbing Pose -->
   <g id="monkey_climbing" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Tree Trunk Segment Reference (Dotted Guide) -->
-    <g id="tree_guide">
-      <path id="guide_trunk_l" d="M 340 20 L 340 480" stroke-width="8" stroke="#7A5C3D" />
-      <path id="guide_trunk_r" d="M 370 20 L 370 480" stroke-width="8" stroke="#7A5C3D" />
-      <path id="guide_ring_1" d="M 340 100 Q 355 105 370 100" stroke-width="4" stroke="#7A5C3D" />
-      <path id="guide_ring_2" d="M 340 220 Q 355 225 370 220" stroke-width="4" stroke="#7A5C3D" />
-      <path id="guide_ring_3" d="M 340 360 Q 355 365 370 360" stroke-width="4" stroke="#7A5C3D" />
-    </g>
-
-    <!-- Tail Wrapped around Trunk -->
+    <!-- Tail (Curling playfully behind) -->
     <g id="tail">
-      <path id="tail_wrap" d="M 210 360 C 170 390, 160 440, 200 460 C 240 480, 310 450, 330 400 C 345 370, 375 370, 380 400" />
+      <path id="tail_wrap" d="M 195 340 C 135 365 115 435 165 470 C 215 495 260 460 250 415 C 240 375 190 390 195 425" />
     </g>
 
-    <!-- Arms (Reaching & Gripping Trunk) -->
+    <!-- Arms (Reaching High & Gripping Tree Trunk) -->
     <g id="arms">
-      <!-- Upper Arm Reaching High on Trunk -->
-      <path id="arm_upper" d="M 230 200 Q 280 150 340 130" />
-      <ellipse id="hand_upper" cx="345" cy="130" rx="12" ry="8" />
+      <!-- Upper Arm Reaching High Along Trunk -->
+      <path id="arm_upper" d="M 250 200 Q 320 150 415 120" />
+      <path id="hand_upper" d="M 415 120 C 430 110 455 115 458 128 C 460 138 440 148 420 138" />
 
-      <!-- Lower Arm Gripping Trunk -->
-      <path id="arm_lower" d="M 240 240 Q 290 230 338 235" />
-      <ellipse id="hand_lower" cx="343" cy="235" rx="12" ry="8" />
+      <!-- Lower Arm Clasping Around Trunk -->
+      <path id="arm_lower" d="M 270 240 Q 345 235 425 235" />
+      <path id="hand_lower" d="M 425 235 C 440 225 460 230 462 242 C 465 252 445 260 428 250" />
     </g>
 
-    <!-- Legs (Climbing & Supporting on Trunk) -->
+    <!-- Legs (Climbing & Bracing Against Tree Trunk) -->
     <g id="legs">
-      <!-- Upper Leg (Bent Climbing Knee) -->
-      <path id="leg_upper" d="M 220 300 Q 260 270 300 290 L 340 300" />
-      <ellipse id="foot_upper" cx="345" cy="300" rx="12" ry="8" />
+      <!-- Upper Leg Bent in Climbing Motion -->
+      <path id="leg_upper" d="M 245 305 Q 315 275 415 300" />
+      <path id="foot_upper" d="M 415 300 C 430 290 452 295 455 305 C 458 315 440 325 420 315" />
 
       <!-- Lower Leg Supporting on Trunk -->
-      <path id="leg_lower" d="M 210 330 Q 250 350 310 360 L 340 370" />
-      <ellipse id="foot_lower" cx="345" cy="370" rx="12" ry="8" />
+      <path id="leg_lower" d="M 225 335 Q 305 365 410 375" />
+      <path id="foot_lower" d="M 410 375 C 425 365 448 370 450 380 C 452 390 435 400 415 390" />
     </g>
 
-    <!-- Body Torso (Tilted 30 degrees towards tree) -->
+    <!-- Body Torso (Athletic curved posture tilted toward tree) -->
     <g id="body">
-      <ellipse id="body_torso" cx="220" cy="270" rx="55" ry="75" transform="rotate(15 220 270)" />
-      <!-- Belly Outline -->
-      <ellipse id="belly_patch" cx="230" cy="275" rx="35" ry="50" transform="rotate(15 230 275)" stroke-dasharray="4 2" />
+      <path id="body_torso" d="M 230 190 C 180 210 170 300 215 350 C 265 375 295 345 290 280 C 285 235 270 200 230 190 Z" />
+      <path id="belly_patch" d="M 235 220 C 205 235 200 295 230 325 C 260 345 275 320 270 275 C 265 245 255 225 235 220 Z" stroke-dasharray="4 2" />
     </g>
 
-    <!-- Head & Ears (Tilted looking up towards top of tree) -->
+    <!-- Head & Ears (Looking up towards bananas) -->
     <g id="head">
-      <circle id="head_outline" cx="215" cy="140" r="58" />
-      <!-- Left Ear -->
-      <path id="ear_left" d="M 160 135 C 130 130, 130 170, 160 165" />
-      <!-- Right Ear -->
-      <path id="ear_right" d="M 270 120 C 300 115, 300 155, 270 150" />
+      <path id="head_outline" d="M 260 85 C 220 85 185 115 185 155 C 185 195 220 225 260 225 C 300 225 330 195 330 155 C 330 115 300 85 260 85 Z" />
+      <path id="ear_left" d="M 188 135 C 150 130 145 175 185 175" />
+      <path id="ear_left_inner" d="M 182 145 C 165 142 162 165 182 165" stroke-width="4" />
+      <path id="ear_right" d="M 322 125 C 355 120 355 165 322 165" />
+      <path id="face_mask" d="M 225 135 C 225 118 250 118 258 135 C 266 118 290 118 290 135 C 290 175 225 175 225 135 Z" />
     </g>
 
-    <!-- Face Features -->
+    <!-- Face Features (Expressive focused look) -->
     <g id="face">
-      <!-- Face Mask Contour -->
-      <path id="face_mask" d="M 180 125 C 180 110, 215 110, 215 130 C 215 110, 250 110, 250 125 C 250 160, 180 160, 180 125 Z" />
-      <!-- Eyes (Looking upwards & right) -->
-      <circle id="eye_left" cx="205" cy="125" r="5" fill="#1A1A1A" />
-      <circle id="eye_right" cx="240" cy="122" r="5" fill="#1A1A1A" />
-      <!-- Snout & Focused Smile -->
-      <ellipse id="snout" cx="225" cy="155" rx="25" ry="16" />
-      <path id="mouth_smile" d="M 215 160 Q 225 170 238 160" />
+      <circle id="eye_left" cx="244" cy="135" r="5" fill="#1A1A1A" />
+      <circle id="eye_right" cx="274" cy="133" r="5" fill="#1A1A1A" />
+      <path id="snout" d="M 242 155 C 242 145 278 145 278 155 C 278 175 242 175 242 155 Z" />
+      <path id="mouth_smile" d="M 248 162 Q 260 172 272 162" />
     </g>
   </g>
 </svg>

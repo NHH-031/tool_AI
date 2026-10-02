@@ -32,25 +32,31 @@ class SemanticValidator:
     # Từ điển ánh xạ từ vựng tiếng Việt và tiếng Anh sang entity canonical key
     ENTITY_KEYWORDS: Dict[str, List[str]] = {
         # Case 5 & General
-        "monkey": ["khỉ", "con khỉ", "chú khỉ", "monkey", "ape"],
-        "tree": ["cây", "cái cây", "thân cây", "tree"],
-        "banana": ["chuối", "quả chuối", "trái chuối", "banana"],
-        "mountain": ["núi", "núi giả", "hòn non bộ", "mountain", "rockery"],
-        "children": ["trẻ em", "em bé", "bọn trẻ", "khán giả", "children", "kids", "crowd"],
-        "car": ["xe", "ô tô", "xe hơi", "car"],
+        "monkey": ["khỉ", "con khỉ", "chú khỉ", "con khi", "chu khi", "monkey", "ape"],
+        "tree": ["cây", "cái cây", "thân cây", "cay", "cai cay", "than cay", "tree"],
+        "banana": ["chuối", "quả chuối", "trái chuối", "chuoi", "qua chuoi", "trai chuoi", "banana"],
+        "mountain": ["núi", "núi giả", "hòn non bộ", "nui", "nui gia", "mountain", "rockery"],
+        "children": ["trẻ em", "em bé", "bọn trẻ", "khán giả", "tre em", "em be", "bon tre", "children", "kids", "crowd"],
+        "car": ["xe", "ô tô", "xe hơi", "xe hoi", "o to", "car"],
         # Case 1: Dog running after ball
-        "dog": ["chó", "con chó", "chú chó", "dog", "puppy", "canine"],
-        "ball": ["bóng", "quả bóng", "trái bóng", "ball"],
+        "dog": ["chó", "con chó", "chú chó", "cho", "con cho", "chu cho", "dog", "puppy", "canine"],
+        "ball": ["bóng", "quả bóng", "trái bóng", "bong", "qua bong", "trai bong", "ball"],
         # Case 2: Teacher explaining mathematics
-        "teacher": ["giáo viên", "thầy giáo", "cô giáo", "teacher", "instructor", "professor"],
-        "mathematics": ["toán", "toán học", "công thức", "bảng đen", "mathematics", "math", "formula", "blackboard", "equations"],
+        "teacher": ["giáo viên", "thầy giáo", "cô giáo", "giao vien", "thay giao", "co giao", "teacher", "instructor", "professor"],
+        "mathematics": ["toán", "toán học", "công thức", "bảng đen", "toan", "toan hoc", "cong thuc", "bang den", "mathematics", "math", "formula", "blackboard", "equations"],
         # Case 3: Temperature makes molecules move faster
-        "temperature": ["nhiệt độ", "nguồn nhiệt", "lửa", "độ nóng", "temperature", "heat", "heat_source", "burner"],
-        "molecules": ["phân tử", "nguyên tử", "hạt", "molecules", "atoms", "particles"],
+        "temperature": ["nhiệt độ", "nguồn nhiệt", "lửa", "độ nóng", "nhiet do", "nguon nhiet", "lua", "do nong", "temperature", "heat", "heat_source", "burner"],
+        "molecules": ["phân tử", "nguyên tử", "hạt", "phan tu", "nguyen tu", "hat", "molecules", "atoms", "particles"],
         # Case 4: Inflation
-        "inflation": ["lạm phát", "mức giá", "giá cả", "inflation", "price", "price_tag", "prices"],
-        "money": ["tiền", "đồng tiền", "sức mua", "ví tiền", "money", "currency", "purchasing_power", "wallet", "dollar"],
-        "goods_basket": ["giỏ hàng", "hàng hóa", "shopping cart", "goods", "basket"],
+        "inflation": ["lạm phát", "mức giá", "giá cả", "lam phat", "muc gia", "gia ca", "inflation", "price", "price_tag", "prices"],
+        "goods_basket": ["giỏ hàng", "hàng hóa", "gio hang", "hang hoa", "shopping cart", "goods", "basket"],
+        # Astronomy: Earth around Sun
+        "earth": ["trái đất", "quả đất", "địa cầu", "trai dat", "qua dat", "dia cau", "earth", "globe", "planet"],
+        "sun": ["mặt trời", "thái dương", "mat troi", "thai duong", "sun", "sunlight"],
+        "orbit": ["quỹ đạo", "vòng quay", "quy dao", "vong quay", "orbit", "orbiting", "ellipse"],
+        # Agriculture: Farmer planting tree
+        "farmer": ["nông dân", "người nông dân", "bác nông dân", "nong dan", "nguoi nong dan", "bac nong dan", "farmer", "grower"],
+        "ground": ["mặt đất", "mảnh đất", "đồng ruộng", "cánh đồng", "mat dat", "manh dat", "dong ruong", "canh dong", "ground", "soil"],
     }
 
     # Từ điển ánh xạ hành động / quan hệ: (action_key, source, target, keywords)
@@ -107,6 +113,20 @@ class SemanticValidator:
             "source": "inflation",
             "target": "money",
             "keywords": ["làm giảm sức mua", "bào mòn", "tăng cao", "eroding", "devaluing", "shrinking", "inflating"],
+        },
+        # Astronomy: Earth orbiting Sun
+        {
+            "action": "orbiting",
+            "source": "earth",
+            "target": "sun",
+            "keywords": ["quay quanh", "quay xung quanh", "orbit", "orbits", "orbiting", "revolve", "revolves"],
+        },
+        # Agriculture: Farmer planting tree
+        {
+            "action": "planting",
+            "source": "farmer",
+            "target": "tree",
+            "keywords": ["trồng", "chăm sóc", "gieo", "plant", "planting", "tưới"],
         },
     ]
 

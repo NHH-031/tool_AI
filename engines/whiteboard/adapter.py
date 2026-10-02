@@ -120,6 +120,20 @@ class WhiteboardEngineAdapter:
                 else (pos.x + pos.width, pos.y + pos.height)
             )
 
+            # Tạo stroke mask riêng biệt cho từng thực thể (Vector Stroke Isolation)
+            ent_mask = np.zeros((timeline.canvas_height, timeline.canvas_width), dtype=np.uint8)
+            for ev in ent_draw_events:
+                if ev.points and len(ev.points) >= 2:
+                    pts = np.array(ev.points, dtype=np.int32).reshape((-1, 1, 2))
+                    cv2.polylines(ent_mask, [pts], isClosed=False, color=255, thickness=8, lineType=cv2.LINE_AA)
+            if np.any(ent_mask > 0):
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+                ent_mask = cv2.dilate(ent_mask, kernel)
+            
+            mask_filename = f"{scene_id}_{entity.id}_mask.png"
+            mask_file_path = output_dir / mask_filename
+            cv2.imwrite(str(mask_file_path), ent_mask)
+
             # Các vùng bảo vệ: Tất cả các thực thể xuất hiện sau thực thể này (bảo vệ khỏi việc lộ nét trước)
             protected_regions = [
                 RegionSchema(
@@ -131,21 +145,17 @@ class WhiteboardEngineAdapter:
                 for oe in ordered_entities[idx + 1 :]
             ]
 
+            role = entity.visual_role or ("main" if entity.importance == "primary" else "context")
+            vtype = entity.visual_type or entity.category or entity.semantic_type or "object"
+
             elements.append(
                 ElementSchema(
                     id=entity.id,
                     label=entity.name or entity.label,
                     sequence=idx + 1,
-                    narrativeRole="main" if entity.name == "monkey" else "context",
+                    narrativeRole=role,
                     subtitle=entity.name or entity.label,
-                    type=entity.visual_type
-                    or (
-                        "character"
-                        if entity.name == "monkey"
-                        else "structure"
-                        if entity.name == "tree"
-                        else "object"
-                    ),
+                    type=vtype,
                     region=RegionSchema(
                         x=int(pos.x),
                         y=int(pos.y),
@@ -164,6 +174,7 @@ class WhiteboardEngineAdapter:
                         end=(int(last_pt[0]), int(last_pt[1])),
                         easing="easeInOut",
                     ),
+                    maskFile=str(mask_file_path),
                 )
             )
 

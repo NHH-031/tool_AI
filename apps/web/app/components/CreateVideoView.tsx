@@ -11,6 +11,8 @@ interface CreateVideoViewProps {
   onGenerate: (config: {
     title: string;
     prompt: string;
+    script: string;
+    input_mode: string;
     language: string;
     voice_id: string;
     speed: number;
@@ -30,13 +32,12 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
   onGenerate,
   isGenerating,
 }) => {
-  // 1. Idea & Title
+  // 1. Idea & Script Input
+  const [inputMode, setInputMode] = useState<"SCRIPT" | "IDEA">("SCRIPT");
   const [title, setTitle] = useState(
     initialPrompt ? initialPrompt.slice(0, 30) : "Video Hoạt Hình Bảng Trắng"
   );
-  const [prompt, setPrompt] = useState(
-    initialPrompt || "Con khỉ đang trèo lên cây để lấy một quả chuối."
-  );
+  const [prompt, setPrompt] = useState(initialPrompt || "");
 
   // 2. Language
   const [language, setLanguage] = useState<string>("vi");
@@ -78,6 +79,8 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
     onGenerate({
       title: title.trim() || "Whiteboard Story",
       prompt: prompt.trim(),
+      script: prompt.trim(),
+      input_mode: inputMode,
       language,
       voice_id: voiceId,
       speed,
@@ -104,16 +107,42 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* STEP 1: IDEA & SCRIPT PROMPT */}
+        {/* STEP 1: SCRIPT & IDEA INPUT */}
         <section className="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 sm:p-7 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
                 1
               </span>
-              <h2 className="text-base font-bold text-white">Video Idea & Prompt</h2>
+              <h2 className="text-base font-bold text-white">Input Source & Script</h2>
             </div>
-            <span className="text-xs text-slate-400">Required</span>
+            {/* Input Mode Selector */}
+            <div className="flex gap-1.5 p-1 bg-slate-950/80 rounded-xl border border-slate-800 w-fit">
+              <button
+                type="button"
+                id="btn-mode-script"
+                onClick={() => setInputMode("SCRIPT")}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                  inputMode === "SCRIPT"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                📝 Kịch bản trực tiếp (Source of Truth)
+              </button>
+              <button
+                type="button"
+                id="btn-mode-idea"
+                onClick={() => setInputMode("IDEA")}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                  inputMode === "IDEA"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                💡 Ý tưởng ngắn (AI Sinh Kịch Bản)
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -133,15 +162,24 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Ý tưởng kịch bản (Story Idea)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-slate-300">
+                  {inputMode === "SCRIPT" ? "Nội dung kịch bản lời thoại (User Script)" : "Ý tưởng kịch bản (Story Idea)"}
+                </label>
+                <span className="text-[11px] text-indigo-400">
+                  {inputMode === "SCRIPT" ? "✓ Source of Truth (Đi xuyên suốt pipeline)" : "AI mở rộng phân cảnh"}
+                </span>
+              </div>
               <textarea
                 id="input-create-prompt"
                 rows={3}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Mô tả phân cảnh bạn muốn thể hiện (ví dụ: Con khỉ đang trèo lên cây để lấy một quả chuối...)"
+                placeholder={
+                  inputMode === "SCRIPT"
+                    ? "Nhập kịch bản chi tiết (ví dụ: Con chó đang chạy theo quả bóng...)"
+                    : "Mô tả ý tưởng ngắn gọn để AI phát triển kịch bản..."
+                }
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed resize-none"
                 required
               />

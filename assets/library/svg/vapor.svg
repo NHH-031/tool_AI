@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Rising Steam and Vapor with Upward Motion Arrows -->
+  <g id="vapor" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Rising Wavy Steam Streams -->
+    <path d="M 120 440 Q 90 360 140 280 T 110 140 T 150 40" stroke-width="5" />
+    <path d="M 200 450 Q 240 370 190 270 T 230 130 T 200 30" stroke-width="6" />
+    <path d="M 280 430 Q 310 350 260 260 T 300 120 T 270 40" stroke-width="5" />
+    <!-- Upward Motion Vector Arrows -->
+    <path d="M 135 55 L 150 40 L 165 55" stroke-width="6" />
+    <path d="M 185 45 L 200 30 L 215 45" stroke-width="6" />
+    <path d="M 255 55 L 270 40 L 285 55" stroke-width="6" />
+    <!-- Micro Evaporation Droplets -->
+    <circle cx="80" cy="220" r="6" />
+    <circle cx="330" cy="200" r="7" />
+    <circle cx="170" cy="180" r="5" />
+  </g>
+</svg>

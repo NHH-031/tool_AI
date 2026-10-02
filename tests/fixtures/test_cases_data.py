@@ -309,7 +309,7 @@ def get_case_5_monkey_tree_banana() -> Dict[str, Any]:
             importance="primary",
             drawing_intent="Playful monkey clinging to tree trunk with arm outstretched upwards",
             actions=["climbing", "reaching"],
-            position=Position(x=950, y=400, width=320, height=450),
+            position=Position(x=930, y=380, width=360, height=440),
             layer=1,
         ),
         VisualEntity(

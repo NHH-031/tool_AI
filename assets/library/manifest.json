@@ -6,7 +6,15 @@
       "id": "asset_monkey",
       "name": "monkey",
       "category": "character",
-      "tags": ["khỉ", "con khỉ", "chú khỉ", "monkey", "ape", "chimp", "primate"],
+      "tags": [
+        "khỉ",
+        "con khỉ",
+        "chú khỉ",
+        "monkey",
+        "ape",
+        "chimp",
+        "primate"
+      ],
       "format": "svg",
       "path": "svg/monkey_standing.svg",
       "poses": {
@@ -47,7 +55,15 @@
           "view_box": "0 0 500 500"
         }
       },
-      "actions": ["standing", "climbing", "eating", "walking", "sitting", "jumping", "reaching"],
+      "actions": [
+        "standing",
+        "climbing",
+        "eating",
+        "walking",
+        "sitting",
+        "jumping",
+        "reaching"
+      ],
       "metadata": {
         "author": "WhiteboardStudio",
         "style": "clean_lineart",
@@ -59,7 +75,15 @@
       "id": "asset_tree",
       "name": "tree",
       "category": "structure",
-      "tags": ["cây", "cái cây", "thân cây", "cây cối", "tree", "palm tree", "jungle tree"],
+      "tags": [
+        "cây",
+        "cái cây",
+        "thân cây",
+        "cây cối",
+        "tree",
+        "palm tree",
+        "jungle tree"
+      ],
       "format": "svg",
       "path": "svg/tree_palm.svg",
       "poses": {
@@ -76,7 +100,11 @@
           "view_box": "0 0 600 800"
         }
       },
-      "actions": ["standing", "bearing_fruit", "waving_fronds"],
+      "actions": [
+        "standing",
+        "bearing_fruit",
+        "waving_fronds"
+      ],
       "metadata": {
         "author": "WhiteboardStudio",
         "style": "clean_lineart",
@@ -87,7 +115,14 @@
       "id": "asset_banana",
       "name": "banana",
       "category": "object",
-      "tags": ["chuối", "quả chuối", "trái chuối", "nải chuối", "banana", "fruit"],
+      "tags": [
+        "chuối",
+        "quả chuối",
+        "trái chuối",
+        "nải chuối",
+        "banana",
+        "fruit"
+      ],
       "format": "svg",
       "path": "svg/banana_single.svg",
       "poses": {
@@ -104,7 +139,11 @@
           "view_box": "0 0 400 400"
         }
       },
-      "actions": ["located_on", "hanging", "peeling"],
+      "actions": [
+        "located_on",
+        "hanging",
+        "peeling"
+      ],
       "metadata": {
         "author": "WhiteboardStudio",
         "style": "clean_lineart"
@@ -114,7 +153,14 @@
       "id": "asset_dog",
       "name": "dog",
       "category": "character",
-      "tags": ["chó", "con chó", "chú chó", "dog", "puppy", "canine"],
+      "tags": [
+        "chó",
+        "con chó",
+        "chú chó",
+        "dog",
+        "puppy",
+        "canine"
+      ],
       "format": "svg",
       "path": "svg/dog_running.svg",
       "poses": {
@@ -125,14 +171,26 @@
           "view_box": "0 0 500 400"
         }
       },
-      "actions": ["running", "chasing", "wagging"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "running",
+        "chasing",
+        "wagging"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     },
     {
       "id": "asset_ball",
       "name": "ball",
       "category": "object",
-      "tags": ["bóng", "quả bóng", "trái bóng", "ball", "tennis ball"],
+      "tags": [
+        "bóng",
+        "quả bóng",
+        "trái bóng",
+        "ball",
+        "tennis ball"
+      ],
       "format": "svg",
       "path": "svg/ball.svg",
       "poses": {
@@ -143,14 +201,26 @@
           "view_box": "0 0 200 200"
         }
       },
-      "actions": ["bouncing", "rolling"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "bouncing",
+        "rolling"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     },
     {
       "id": "asset_teacher",
       "name": "teacher",
       "category": "character",
-      "tags": ["giáo viên", "thầy giáo", "cô giáo", "teacher", "professor", "instructor"],
+      "tags": [
+        "giáo viên",
+        "thầy giáo",
+        "cô giáo",
+        "teacher",
+        "professor",
+        "instructor"
+      ],
       "format": "svg",
       "path": "svg/teacher.svg",
       "poses": {
@@ -161,14 +231,29 @@
           "view_box": "0 0 400 600"
         }
       },
-      "actions": ["explaining", "teaching", "pointing"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "explaining",
+        "teaching",
+        "pointing"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     },
     {
       "id": "asset_blackboard_math",
       "name": "mathematics",
       "category": "diagram",
-      "tags": ["toán", "toán học", "bảng đen", "công thức", "mathematics", "math", "blackboard", "equations"],
+      "tags": [
+        "toán",
+        "toán học",
+        "bảng đen",
+        "công thức",
+        "mathematics",
+        "math",
+        "blackboard",
+        "equations"
+      ],
       "format": "svg",
       "path": "svg/blackboard_math.svg",
       "poses": {
@@ -179,14 +264,27 @@
           "view_box": "0 0 600 400"
         }
       },
-      "actions": ["displaying"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "displaying"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     },
     {
       "id": "asset_temperature_heat",
       "name": "temperature",
       "category": "diagram",
-      "tags": ["nhiệt độ", "nguồn nhiệt", "lửa", "độ nóng", "temperature", "heat", "burner", "thermometer"],
+      "tags": [
+        "nhiệt độ",
+        "nguồn nhiệt",
+        "lửa",
+        "độ nóng",
+        "temperature",
+        "heat",
+        "burner",
+        "thermometer"
+      ],
       "format": "svg",
       "path": "svg/temperature_heat.svg",
       "poses": {
@@ -197,14 +295,26 @@
           "view_box": "0 0 400 500"
         }
       },
-      "actions": ["heating", "rising"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "heating",
+        "rising"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     },
     {
       "id": "asset_molecules",
       "name": "molecules",
       "category": "diagram",
-      "tags": ["phân tử", "nguyên tử", "hạt", "molecules", "particles", "atoms"],
+      "tags": [
+        "phân tử",
+        "nguyên tử",
+        "hạt",
+        "molecules",
+        "particles",
+        "atoms"
+      ],
       "format": "svg",
       "path": "svg/molecules_diagram.svg",
       "poses": {
@@ -215,14 +325,27 @@
           "view_box": "0 0 600 450"
         }
       },
-      "actions": ["accelerating", "vibrating", "colliding"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "accelerating",
+        "vibrating",
+        "colliding"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     },
     {
       "id": "asset_inflation",
       "name": "inflation",
       "category": "metaphor",
-      "tags": ["lạm phát", "mức giá", "giá cả", "inflation", "price balloon", "price tag"],
+      "tags": [
+        "lạm phát",
+        "mức giá",
+        "giá cả",
+        "inflation",
+        "price balloon",
+        "price tag"
+      ],
       "format": "svg",
       "path": "svg/inflation_balloon.svg",
       "poses": {
@@ -233,14 +356,28 @@
           "view_box": "0 0 500 500"
         }
       },
-      "actions": ["rising", "skyrocketing", "eroding"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "rising",
+        "skyrocketing",
+        "eroding"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     },
     {
       "id": "asset_money",
       "name": "money",
       "category": "metaphor",
-      "tags": ["tiền", "đồng tiền", "sức mua", "ví tiền", "money", "wallet", "purchasing power"],
+      "tags": [
+        "tiền",
+        "đồng tiền",
+        "sức mua",
+        "ví tiền",
+        "money",
+        "wallet",
+        "purchasing power"
+      ],
       "format": "svg",
       "path": "svg/money_wallet.svg",
       "poses": {
@@ -251,8 +388,286 @@
           "view_box": "0 0 500 400"
         }
       },
-      "actions": ["shrinking", "devaluing", "eroding"],
-      "metadata": {"author": "WhiteboardStudio"}
+      "actions": [
+        "shrinking",
+        "devaluing",
+        "eroding"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_earth",
+      "name": "earth",
+      "category": "object",
+      "tags": [
+        "trái đất",
+        "địa cầu",
+        "hành tinh",
+        "earth",
+        "globe",
+        "planet"
+      ],
+      "format": "svg",
+      "path": "svg/earth.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/earth.svg",
+          "description": "Earth globe with continents and coordinate lines",
+          "view_box": "0 0 400 400"
+        }
+      },
+      "actions": [
+        "orbiting",
+        "rotating"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_sun",
+      "name": "sun",
+      "category": "object",
+      "tags": [
+        "mặt trời",
+        "thái dương",
+        "sun",
+        "solar"
+      ],
+      "format": "svg",
+      "path": "svg/sun.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/sun.svg",
+          "description": "Radiant sun with solar flare rays",
+          "view_box": "0 0 500 500"
+        }
+      },
+      "actions": [
+        "shining",
+        "radiating"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_orbit",
+      "name": "orbit",
+      "category": "diagram",
+      "tags": [
+        "quỹ đạo",
+        "đường quay",
+        "vòng quanh",
+        "orbit",
+        "trajectory"
+      ],
+      "format": "svg",
+      "path": "svg/orbit.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/orbit.svg",
+          "description": "Elliptical orbital trajectory with direction arrows",
+          "view_box": "0 0 800 500"
+        }
+      },
+      "actions": [
+        "guiding",
+        "looping"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_water",
+      "name": "water",
+      "category": "object",
+      "tags": [
+        "nước",
+        "nước nóng",
+        "chất lỏng",
+        "nồi nước",
+        "water",
+        "hot water",
+        "liquid"
+      ],
+      "format": "svg",
+      "path": "svg/water.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/water.svg",
+          "description": "Boiling water in container with bubbles",
+          "view_box": "0 0 500 400"
+        }
+      },
+      "actions": [
+        "boiling",
+        "heating",
+        "evaporating"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_vapor",
+      "name": "vapor",
+      "category": "metaphor",
+      "tags": [
+        "hơi nước",
+        "bốc hơi",
+        "khói",
+        "vapor",
+        "steam",
+        "evaporation"
+      ],
+      "format": "svg",
+      "path": "svg/vapor.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/vapor.svg",
+          "description": "Rising steam and vapor streams with upward motion arrows",
+          "view_box": "0 0 400 500"
+        }
+      },
+      "actions": [
+        "rising",
+        "evaporating"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_farmer",
+      "name": "farmer",
+      "category": "character",
+      "tags": [
+        "nông dân",
+        "người nông dân",
+        "bác nông dân",
+        "farmer",
+        "planter",
+        "gardener"
+      ],
+      "format": "svg",
+      "path": "svg/farmer.svg",
+      "poses": {
+        "planting": {
+          "name": "planting",
+          "file_path": "svg/farmer.svg",
+          "description": "Farmer bending down planting a seedling in the soil",
+          "view_box": "0 0 500 500"
+        }
+      },
+      "actions": [
+        "planting",
+        "kneeling",
+        "gardening"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_ground",
+      "name": "ground",
+      "category": "structure",
+      "tags": [
+        "đất",
+        "mặt đất",
+        "đồng ruộng",
+        "ground",
+        "soil",
+        "earth_ground"
+      ],
+      "format": "svg",
+      "path": "svg/ground.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/ground.svg",
+          "description": "Soil horizon with earth clods and grass tufts",
+          "view_box": "0 0 800 300"
+        }
+      },
+      "actions": [
+        "supporting",
+        "grounding"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_price_chart",
+      "name": "price",
+      "category": "diagram",
+      "tags": [
+        "giá cả",
+        "mức giá",
+        "giá",
+        "bảng giá",
+        "price",
+        "price tag",
+        "cost"
+      ],
+      "format": "svg",
+      "path": "svg/price_chart.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/price_chart.svg",
+          "description": "Price tag symbol with currency markings",
+          "view_box": "0 0 500 400"
+        }
+      },
+      "actions": [
+        "increasing",
+        "fluctuating"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
+    },
+    {
+      "id": "asset_upward_trend",
+      "name": "upward_trend",
+      "category": "diagram",
+      "tags": [
+        "xu hướng tăng",
+        "tăng trưởng",
+        "mũi tên tăng",
+        "upward trend",
+        "growth chart",
+        "rising trend"
+      ],
+      "format": "svg",
+      "path": "svg/upward_trend.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/upward_trend.svg",
+          "description": "Chart with steep ascending arrow curve",
+          "view_box": "0 0 600 450"
+        }
+      },
+      "actions": [
+        "rising",
+        "skyrocketing",
+        "trending_up"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio"
+      }
     }
   ]
 }

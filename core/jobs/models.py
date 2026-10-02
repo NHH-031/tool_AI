@@ -39,8 +39,19 @@ class JobStageProgress(BaseModel):
 
 class ProductionJob(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Mã định danh job duy nhất")
+    project_id: str = Field(default="proj-default", description="Mã dự án liên kết")
     title: str = Field(description="Tiêu đề dự án video")
     prompt: str = Field(default="", description="Yêu cầu / ý tưởng kịch bản ban đầu của người dùng")
+    input_mode: str = Field(default="SCRIPT", description="Chế độ đầu vào: 'SCRIPT' | 'IDEA'")
+    original_input: str = Field(default="", description="Nội dung nhập ban đầu của người dùng")
+    script: str = Field(default="", description="Kịch bản hoàn chỉnh dùng làm source of truth")
+    script_hash: str = Field(default="", description="Mã băm SHA-256 xác thực kịch bản nhất quán")
+    language: str = Field(default="vi", description="Mã ngôn ngữ (vi, en, ...)")
+    voice_id: str = Field(default="vi-VN-Standard-B", description="Mã giọng đọc TTS")
+    speed: float = Field(default=1.0, description="Tốc độ đọc TTS")
+    music_id: str = Field(default="whimsical_play", description="Mã nhạc nền")
+    visual_style: str = Field(default="notion_minimal", description="Phong cách hình ảnh")
+    aspect_ratio: str = Field(default="16:9", description="Tỉ lệ khung hình")
     status: JobStatus = Field(default=JobStatus.PENDING, description="Trạng thái thực thi hiện tại")
     current_stage: JobStage = Field(default=JobStage.QUEUED, description="Giai đoạn pipeline đang thực hiện")
     progress_percent: float = Field(default=0.0, ge=0.0, le=100.0, description="Tiến độ tổng thể 0-100%")
@@ -51,7 +62,15 @@ class ProductionJob(BaseModel):
     error_message: Optional[str] = Field(default=None, description="Chi tiết thông báo lỗi nếu thất bại")
 
     @classmethod
-    def create_default(cls, title: str, prompt: str = "") -> ProductionJob:
+    def create_default(
+        cls,
+        title: str,
+        prompt: str = "",
+        script: str = "",
+        input_mode: str = "SCRIPT",
+        original_input: str = "",
+        project_id: str = "proj-default",
+    ) -> ProductionJob:
         stages = [
             JobStageProgress(stage=s)
             for s in [
@@ -65,7 +84,20 @@ class ProductionJob(BaseModel):
                 JobStage.QUALITY_ASSURANCE,
             ]
         ]
-        return cls(title=title, prompt=prompt, stages=stages)
+        orig = original_input or script or prompt
+        final_script = script or prompt
+        import hashlib
+        h = hashlib.sha256(final_script.strip().encode("utf-8")).hexdigest()[:12] if final_script else ""
+        return cls(
+            title=title,
+            prompt=prompt,
+            script=final_script,
+            original_input=orig,
+            input_mode=input_mode,
+            script_hash=h,
+            project_id=project_id,
+            stages=stages,
+        )
 
     def transition_to(self, stage: JobStage, status: JobStatus = JobStatus.RUNNING) -> None:
         self.current_stage = stage

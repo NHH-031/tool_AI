@@ -142,6 +142,45 @@ export interface TimelineEventItem {
   semantic_purpose: string;
 }
 
+export interface TechnicalQASummary {
+  pass_technical: boolean;
+  is_valid_mp4: boolean;
+  duration_sec: number;
+  video_codec: string;
+  resolution: string;
+  fps: number;
+  frame_count: number;
+  audio_codec: string;
+  audio_duration_sec?: number;
+  duration_delta?: number;
+  is_corrupted: boolean;
+  errors?: string[];
+}
+
+export interface DrawingQASummary {
+  pass_drawing: boolean;
+  required_strokes: number;
+  completed_strokes: number;
+  completion_ratio: number;
+  hand_sync_pass: boolean;
+  no_early_reveal_pass: boolean;
+  errors?: string[];
+  details?: string[];
+}
+
+export interface SemanticQASummary {
+  pass_semantic: boolean;
+  required_entities: number;
+  completed_entities: number;
+  required_actions: number;
+  completed_actions: number;
+  required_relationships: number;
+  completed_relationships: number;
+  final_frame_complete: boolean;
+  errors?: string[];
+  details?: string[];
+}
+
 export interface MediaQAReport {
   is_valid_mp4: boolean;
   duration_sec: number;
@@ -154,6 +193,11 @@ export interface MediaQAReport {
   duration_delta?: number;
   is_corrupted: boolean;
   visual_qa_pass: boolean;
+  // Three-layer QA
+  technical_qa?: TechnicalQASummary;
+  drawing_qa?: DrawingQASummary;
+  semantic_qa?: SemanticQASummary;
+  overall_pass?: boolean;
 }
 
 export interface ReviewData {

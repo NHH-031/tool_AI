@@ -22,6 +22,11 @@ class MockTTSProvider(TTSProvider):
     """
 
     DEFAULT_VOICES = [
+        "vi-VN-Standard-A",
+        "vi-VN-Standard-B",
+        "vi-VN-Neural-C",
+        "en-US-Standard-A",
+        "en-US-Standard-B",
         "vi-VN-HoaiMyNeural",
         "vi-VN-NamMinhNeural",
         "en-US-AriaNeural",

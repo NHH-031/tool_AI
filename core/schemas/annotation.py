@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Literal, Tuple
+from typing import List, Literal, Optional, Tuple
 from pydantic import BaseModel, Field
 
 
@@ -45,6 +45,7 @@ class ElementSchema(BaseModel):
     region: RegionSchema = Field(description="Vùng giới hạn trên ảnh")
     reveal: RevealSchema = Field(description="Thông số thời gian và che chắn")
     handPath: HandPathSchema = Field(description="Quỹ đạo tay cho preview")
+    maskFile: Optional[str] = Field(default=None, description="Đường dẫn file mask nét vẽ chuyên biệt của phần tử")
 
 
 class AnnotationSchema(BaseModel):

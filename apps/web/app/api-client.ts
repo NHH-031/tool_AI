@@ -138,16 +138,53 @@ export const DEFAULT_REVIEW_DATA: ReviewData = {
   ],
   qa_report: {
     is_valid_mp4: true,
-    duration_sec: 5.3,
+    duration_sec: 5.71,
     video_codec: "h264",
     resolution: "1080x600",
     fps: 30.0,
-    frame_count: 159,
+    frame_count: 171,
     audio_codec: "aac",
     audio_duration_sec: 5.182,
-    duration_delta: 0.118,
+    duration_delta: 0.528,
     is_corrupted: false,
     visual_qa_pass: true,
+    technical_qa: {
+      pass_technical: true,
+      is_valid_mp4: true,
+      duration_sec: 5.71,
+      video_codec: "h264",
+      resolution: "1080x600",
+      fps: 30.0,
+      frame_count: 171,
+      audio_codec: "aac",
+      audio_duration_sec: 5.182,
+      duration_delta: 0.528,
+      is_corrupted: false,
+      errors: [],
+    },
+    drawing_qa: {
+      pass_drawing: true,
+      required_strokes: 67,
+      completed_strokes: 67,
+      completion_ratio: 1.0,
+      hand_sync_pass: true,
+      no_early_reveal_pass: true,
+      errors: [],
+      details: ["Tree strokes: 41/41", "Monkey strokes: 20/20", "Banana strokes: 6/6"],
+    },
+    semantic_qa: {
+      pass_semantic: true,
+      required_entities: 3,
+      completed_entities: 3,
+      required_actions: 2,
+      completed_actions: 2,
+      required_relationships: 3,
+      completed_relationships: 3,
+      final_frame_complete: true,
+      errors: [],
+      details: ["Monkey climbing verified", "Monkey reaching banana verified", "Banana in tree verified"],
+    },
+    overall_pass: true,
   },
 };
 
@@ -442,21 +479,21 @@ export async function fetchJobs(): Promise<ProductionJob[]> {
 }
 
 export async function fetchJobReview(jobId: string): Promise<ReviewData> {
-  try {
-    const res = await fetch(`${API_BASE}/jobs/${jobId}/review`, { signal: AbortSignal.timeout(2500) });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.review_data) {
-        return data.review_data as ReviewData;
-      }
+  const res = await fetch(`${API_BASE}/jobs/${jobId}/review`, { signal: AbortSignal.timeout(10000) });
+  if (res.ok) {
+    const data = await res.json();
+    if (data.review_data) {
+      return data.review_data as ReviewData;
     }
-  } catch {}
-  return DEFAULT_REVIEW_DATA;
+  }
+  throw new Error(`Không tìm thấy dữ liệu review hợp lệ cho job: ${jobId}`);
 }
 
 export async function createProductionJob(payload: {
   title: string;
   prompt: string;
+  script?: string;
+  input_mode?: string;
   language: string;
   voice_id: string;
   speed: number;
@@ -465,44 +502,24 @@ export async function createProductionJob(payload: {
   visual_style: string;
   aspect_ratio: string;
 }): Promise<ProductionJob> {
-  try {
-    const res = await fetch(`${API_BASE}/jobs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, auto_run: true }),
-      signal: AbortSignal.timeout(5000),
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-  } catch {}
+  const res = await fetch(`${API_BASE}/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      script: payload.script || payload.prompt,
+      input_mode: payload.input_mode || "SCRIPT",
+      auto_run: true,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
 
-  // Fallback local job simulation
-  const jobId = `job-${Date.now()}`;
-  return {
-    id: jobId,
-    title: payload.title,
-    prompt: payload.prompt,
-    status: "completed",
-    current_stage: "completed",
-    progress_percent: 100.0,
-    stages: [
-      { stage: "script_generation", status: "completed" },
-      { stage: "narration_synthesis", status: "completed" },
-      { stage: "visual_planning", status: "completed" },
-      { stage: "asset_generation", status: "completed" },
-      { stage: "timeline_annotation", status: "completed" },
-      { stage: "whiteboard_rendering", status: "completed" },
-      { stage: "audio_compositing", status: "completed" },
-      { stage: "quality_assurance", status: "completed" },
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    artifacts: {
-      video: "/media/monkey_banana_e2e/scene_default_final.mp4",
-      thumbnail: "/media/monkey_banana_e2e/scene_default.png",
-    },
-  };
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Lỗi tạo job sản xuất video (HTTP ${res.status})`);
+  }
+
+  return await res.json();
 }
 
 export async function regenerateJobComponent(

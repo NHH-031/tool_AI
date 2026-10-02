@@ -50,7 +50,7 @@ export default function Home() {
 
   // Active Job & Review State
   const [activeJob, setActiveJob] = useState<ProductionJob | null>(null);
-  const [reviewData, setReviewData] = useState<ReviewData>(DEFAULT_REVIEW_DATA);
+  const [reviewData, setReviewData] = useState<ReviewData | null>(DEFAULT_REVIEW_DATA);
   const [generationState, setGenerationState] = useState<GenerationState>("completed");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -98,6 +98,8 @@ export default function Home() {
   const handleCreateVideo = async (config: {
     title: string;
     prompt: string;
+    script?: string;
+    input_mode?: string;
     language: string;
     voice_id: string;
     speed: number;
@@ -106,6 +108,8 @@ export default function Home() {
     visual_style: string;
     aspect_ratio: string;
   }) => {
+    setActiveJob(null);
+    setReviewData(null);
     setGenerationState("generating");
     setErrorMessage(null);
     setActiveTab("review");
@@ -118,28 +122,9 @@ export default function Home() {
       const updatedJobs = await fetchJobs();
       setJobs(updatedJobs);
 
-      // Fetch or synthesize review data
+      // Fetch authentic review data from the backend pipeline
       const rev = await fetchJobReview(newJob.id);
-      setReviewData({
-        ...rev,
-        idea: config.prompt,
-        visual_style: config.visual_style,
-        voice_id: config.voice_id,
-        aspect_ratio: config.aspect_ratio,
-        script: {
-          title: config.title,
-          full_text: config.prompt,
-          segments: [
-            {
-              segment_id: "seg-01",
-              text: config.prompt,
-              estimated_duration: 5.18,
-              semantic_meaning: "Diễn hoạt phân cảnh dựa trên ý tưởng người dùng",
-              keywords: ["khỉ", "trèo", "cây", "chuối"],
-            },
-          ],
-        },
-      });
+      setReviewData(rev);
 
       setGenerationState("completed");
     } catch (err: any) {
@@ -150,11 +135,15 @@ export default function Home() {
 
   // Inspect Project from Dashboard
   const handleOpenProject = async (projectId: string) => {
-    const matchedJob = jobs.find((j) => j.id.includes("monkey") || j.id === projectId) || jobs[0];
+    const matchedJob = jobs.find((j) => j.id === projectId) || jobs[0];
     if (matchedJob) {
       setActiveJob(matchedJob);
-      const rev = await fetchJobReview(matchedJob.id);
-      setReviewData(rev);
+      try {
+        const rev = await fetchJobReview(matchedJob.id);
+        setReviewData(rev);
+      } catch (err: any) {
+        console.error("Failed to load review data for project:", err);
+      }
     }
     setGenerationState("completed");
     setActiveTab("review");
@@ -191,10 +180,12 @@ export default function Home() {
   // Export MP4
   const handleExportMP4 = () => {
     const videoUrl =
-      reviewData.video_url || "http://127.0.0.1:8000/media/monkey_banana_e2e/scene_default_final.mp4";
+      reviewData?.video_url ||
+      (activeJob ? `http://127.0.0.1:8000/media/${activeJob.id}/scene_default_final.mp4` : "");
+    if (!videoUrl) return;
     const a = document.createElement("a");
     a.href = videoUrl;
-    a.download = "whiteboard_video_studio.mp4";
+    a.download = `whiteboard_video_${activeJob?.id || "studio"}.mp4`;
     a.target = "_blank";
     document.body.appendChild(a);
     a.click();
