@@ -18,6 +18,7 @@ Thumbs.db
 
 # Output artifacts
 out/
+output/
 
 # Node / Frontend
 node_modules/
