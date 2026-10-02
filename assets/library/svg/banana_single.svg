@@ -1,19 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
   <!-- Whiteboard Line Art: Single Ripe Banana -->
   <g id="banana_single" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Banana Outer Curve (Back) -->
-    <path d="M 60 70 C 130 50, 230 110, 250 220" />
-    
-    <!-- Banana Inner Curve (Belly) -->
-    <path d="M 60 70 C 110 110, 180 150, 250 220" />
-
-    <!-- Banana Longitudinal Facet Ridge -->
-    <path d="M 65 73 C 120 85, 205 130, 248 217" stroke-width="4" stroke-dasharray="8 4" />
-
     <!-- Top Stem Cap -->
-    <path d="M 60 70 L 45 55 L 55 45 L 68 62 Z" fill="#5A8A28" stroke-width="5" />
+    <g id="stem">
+      <path id="stem_cap" d="M 60 70 L 45 55 L 55 45 L 68 62 Z" fill="#5A8A28" stroke-width="5" />
+    </g>
 
-    <!-- Bottom Tip (Brown/Dark tip) -->
-    <path d="M 250 220 L 260 232 L 252 238 L 244 226 Z" fill="#4A3525" stroke-width="4" />
+    <!-- Banana Main Body -->
+    <g id="banana_body">
+      <!-- Banana Outer Curve (Back) -->
+      <path id="banana_outer" d="M 60 70 C 130 50, 230 110, 250 220" />
+      
+      <!-- Banana Inner Curve (Belly) -->
+      <path id="banana_inner" d="M 60 70 C 110 110, 180 150, 250 220" />
+
+      <!-- Banana Longitudinal Facet Ridge -->
+      <path id="banana_facet" d="M 65 73 C 120 85, 205 130, 248 217" stroke-width="4" stroke-dasharray="8 4" />
+
+      <!-- Bottom Tip (Brown/Dark tip) -->
+      <path id="banana_tip" d="M 250 220 L 260 232 L 252 238 L 244 226 Z" fill="#4A3525" stroke-width="4" />
+    </g>
   </g>
 </svg>

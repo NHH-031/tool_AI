@@ -2,51 +2,50 @@
   <!-- Whiteboard Line Art: Monkey Standing Pose -->
   <g id="monkey_standing" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <!-- Tail (Curled) -->
-    <path d="M 210 370 C 150 400, 100 370, 90 310 C 80 250, 130 220, 150 250 C 160 270, 140 290, 125 285" />
+    <g id="tail">
+      <path id="tail_curled" d="M 210 370 C 150 400, 100 370, 90 310 C 80 250, 130 220, 150 250 C 160 270, 140 290, 125 285" />
+    </g>
     
-    <!-- Left Leg and Foot -->
-    <path d="M 210 380 L 200 450 L 170 460" />
-    <path d="M 170 460 C 160 460, 160 450, 180 445" />
+    <!-- Legs and Feet -->
+    <g id="legs">
+      <path id="leg_left" d="M 210 380 L 200 450 L 170 460" />
+      <path id="foot_left" d="M 170 460 C 160 460, 160 450, 180 445" />
+      <path id="leg_right" d="M 290 380 L 300 450 L 330 460" />
+      <path id="foot_right" d="M 330 460 C 340 460, 340 450, 320 445" />
+    </g>
 
-    <!-- Right Leg and Foot -->
-    <path d="M 290 380 L 300 450 L 330 460" />
-    <path d="M 330 460 C 340 460, 340 450, 320 445" />
+    <!-- Body Torso & Belly -->
+    <g id="body">
+      <ellipse id="body_torso" cx="250" cy="320" rx="65" ry="85" />
+      <ellipse id="belly_patch" cx="250" cy="330" rx="42" ry="55" stroke-dasharray="4 2" />
+    </g>
 
-    <!-- Body Torso -->
-    <ellipse cx="250" cy="320" rx="65" ry="85" />
-    <!-- Tummy Belly Patch -->
-    <ellipse cx="250" cy="330" rx="42" ry="55" stroke-dasharray="4 2" />
+    <!-- Arms & Hands -->
+    <g id="arms">
+      <path id="arm_left" d="M 190 280 Q 150 330 160 380" />
+      <circle id="hand_left" cx="160" cy="385" r="10" />
+      <path id="arm_right" d="M 310 280 Q 360 260 380 210" />
+      <circle id="hand_right" cx="385" cy="205" r="10" />
+    </g>
 
-    <!-- Left Arm -->
-    <path d="M 190 280 Q 150 330 160 380" />
-    <circle cx="160" cy="385" r="10" />
+    <!-- Head Outline & Ears -->
+    <g id="head">
+      <circle id="head_outline" cx="250" cy="165" r="68" />
+      <path id="ear_left_outer" d="M 185 150 C 150 140, 150 190, 185 185" />
+      <path id="ear_left_inner" d="M 180 160 C 165 155, 165 180, 180 175" />
+      <path id="ear_right_outer" d="M 315 150 C 350 140, 350 190, 315 185" />
+      <path id="ear_right_inner" d="M 320 160 C 335 155, 335 180, 320 175" />
+    </g>
 
-    <!-- Right Arm (Waving) -->
-    <path d="M 310 280 Q 360 260 380 210" />
-    <circle cx="385" cy="205" r="10" />
-
-    <!-- Left Ear -->
-    <path d="M 185 150 C 150 140, 150 190, 185 185" />
-    <path d="M 180 160 C 165 155, 165 180, 180 175" />
-
-    <!-- Right Ear -->
-    <path d="M 315 150 C 350 140, 350 190, 315 185" />
-    <path d="M 320 160 C 335 155, 335 180, 320 175" />
-
-    <!-- Head Outline -->
-    <circle cx="250" cy="165" r="68" />
-
-    <!-- Face Mask Contour -->
-    <path d="M 210 145 C 210 125, 250 125, 250 150 C 250 125, 290 125, 290 145 C 290 185, 210 185, 210 145 Z" />
-
-    <!-- Eyes -->
-    <circle cx="230" cy="150" r="5" fill="#1A1A1A" />
-    <circle cx="270" cy="150" r="5" fill="#1A1A1A" />
-
-    <!-- Snout & Mouth -->
-    <ellipse cx="250" cy="180" rx="28" ry="18" />
-    <circle cx="243" cy="175" r="2" fill="#1A1A1A" />
-    <circle cx="257" cy="175" r="2" fill="#1A1A1A" />
-    <path d="M 238 185 Q 250 196 262 185" />
+    <!-- Face Features -->
+    <g id="face">
+      <path id="face_mask" d="M 210 145 C 210 125, 250 125, 250 150 C 250 125, 290 125, 290 145 C 290 185, 210 185, 210 145 Z" />
+      <circle id="eye_left" cx="230" cy="150" r="5" fill="#1A1A1A" />
+      <circle id="eye_right" cx="270" cy="150" r="5" fill="#1A1A1A" />
+      <ellipse id="snout" cx="250" cy="180" rx="28" ry="18" />
+      <circle id="nostril_left" cx="243" cy="175" r="2" fill="#1A1A1A" />
+      <circle id="nostril_right" cx="257" cy="175" r="2" fill="#1A1A1A" />
+      <path id="mouth_smile" d="M 238 185 Q 250 196 262 185" />
+    </g>
   </g>
 </svg>

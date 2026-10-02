@@ -2,69 +2,77 @@
   <!-- Whiteboard Line Art: Tropical Palm Tree -->
   <g id="tree_palm" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <!-- Ground Contour Mound -->
-    <path d="M 100 750 Q 300 720 500 750" stroke-width="5" />
-    <path d="M 180 760 Q 300 740 420 760" stroke-width="3" stroke-dasharray="8 6" />
+    <g id="ground" stroke-width="5">
+      <path id="ground_contour" d="M 100 750 Q 300 720 500 750" />
+      <path id="ground_accent" d="M 180 760 Q 300 740 420 760" stroke-width="3" stroke-dasharray="8 6" />
+    </g>
 
-    <!-- Trunk Root Flare -->
-    <path d="M 230 740 Q 240 700 270 550" />
-    <path d="M 370 740 Q 360 700 330 550" />
+    <!-- Trunk Root Flare & Curved Mid-Section -->
+    <g id="trunk">
+      <path id="trunk_left_flare" d="M 230 740 Q 240 700 270 550" />
+      <path id="trunk_right_flare" d="M 370 740 Q 360 700 330 550" />
+      <path id="trunk_left_stem" d="M 270 550 Q 285 400 280 250" />
+      <path id="trunk_right_stem" d="M 330 550 Q 345 400 320 250" />
+    </g>
 
-    <!-- Trunk Curved Mid-Section -->
-    <path d="M 270 550 Q 285 400 280 250" />
-    <path d="M 330 550 Q 345 400 320 250" />
+    <!-- Trunk Ring Texture (Branches/Bark segments) -->
+    <g id="branches" stroke-width="4">
+      <path id="trunk_ring_1" d="M 245 700 Q 300 685 355 700" />
+      <path id="trunk_ring_2" d="M 255 640 Q 300 625 345 640" />
+      <path id="trunk_ring_3" d="M 262 580 Q 300 565 338 580" />
+      <path id="trunk_ring_4" d="M 272 520 Q 305 505 338 520" />
+      <path id="trunk_ring_5" d="M 278 460 Q 310 445 342 460" />
+      <path id="trunk_ring_6" d="M 282 400 Q 312 385 340 400" />
+      <path id="trunk_ring_7" d="M 284 340 Q 310 325 334 340" />
+      <path id="trunk_ring_8" d="M 282 280 Q 302 268 322 280" />
+    </g>
 
-    <!-- Trunk Ring Texture (Segments) -->
-    <path d="M 245 700 Q 300 685 355 700" stroke-width="4" />
-    <path d="M 255 640 Q 300 625 345 640" stroke-width="4" />
-    <path d="M 262 580 Q 300 565 338 580" stroke-width="4" />
-    <path d="M 272 520 Q 305 505 338 520" stroke-width="4" />
-    <path d="M 278 460 Q 310 445 342 460" stroke-width="4" />
-    <path d="M 282 400 Q 312 385 340 400" stroke-width="4" />
-    <path d="M 284 340 Q 310 325 334 340" stroke-width="4" />
-    <path d="M 282 280 Q 302 268 322 280" stroke-width="4" />
+    <!-- Palm Fronds (Leaves Canopy) -->
+    <g id="leaves">
+      <!-- Frond 1 (Top Left Arch) -->
+      <path id="frond_1_main" d="M 300 250 Q 200 150 70 210" stroke-width="7" />
+      <path id="frond_1_leaf_1" d="M 220 195 L 200 240" stroke-width="4" />
+      <path id="frond_1_leaf_2" d="M 180 185 L 160 235" stroke-width="4" />
+      <path id="frond_1_leaf_3" d="M 140 185 L 120 230" stroke-width="4" />
+      <path id="frond_1_leaf_4" d="M 100 195 L 80 230" stroke-width="4" />
 
-    <!-- Palm Fronds (Canopy) -->
-    <!-- Frond 1 (Top Left Arch) -->
-    <path d="M 300 250 Q 200 150 70 210" stroke-width="7" />
-    <path d="M 220 195 L 200 240" stroke-width="4" />
-    <path d="M 180 185 L 160 235" stroke-width="4" />
-    <path d="M 140 185 L 120 230" stroke-width="4" />
-    <path d="M 100 195 L 80 230" stroke-width="4" />
+      <!-- Frond 2 (Top Arch High) -->
+      <path id="frond_2_main" d="M 300 250 Q 250 80 180 50" stroke-width="7" />
+      <path id="frond_2_leaf_1" d="M 270 160 L 230 165" stroke-width="4" />
+      <path id="frond_2_leaf_2" d="M 245 120 L 205 130" stroke-width="4" />
+      <path id="frond_2_leaf_3" d="M 220 85 L 180 100" stroke-width="4" />
 
-    <!-- Frond 2 (Top Arch High) -->
-    <path d="M 300 250 Q 250 80 180 50" stroke-width="7" />
-    <path d="M 270 160 L 230 165" stroke-width="4" />
-    <path d="M 245 120 L 205 130" stroke-width="4" />
-    <path d="M 220 85 L 180 100" stroke-width="4" />
+      <!-- Frond 3 (Crown Center High) -->
+      <path id="frond_3_main" d="M 300 250 Q 320 60 380 40" stroke-width="7" />
+      <path id="frond_3_leaf_1" d="M 315 150 L 355 140" stroke-width="4" />
+      <path id="frond_3_leaf_2" d="M 330 110 L 370 95" stroke-width="4" />
+      <path id="frond_3_leaf_3" d="M 350 70 L 390 60" stroke-width="4" />
 
-    <!-- Frond 3 (Crown Center High) -->
-    <path d="M 300 250 Q 320 60 380 40" stroke-width="7" />
-    <path d="M 315 150 L 355 140" stroke-width="4" />
-    <path d="M 330 110 L 370 95" stroke-width="4" />
-    <path d="M 350 70 L 390 60" stroke-width="4" />
+      <!-- Frond 4 (Top Right Arch) -->
+      <path id="frond_4_main" d="M 300 250 Q 420 140 530 190" stroke-width="7" />
+      <path id="frond_4_leaf_1" d="M 370 190 L 390 235" stroke-width="4" />
+      <path id="frond_4_leaf_2" d="M 410 180 L 435 230" stroke-width="4" />
+      <path id="frond_4_leaf_3" d="M 455 180 L 480 225" stroke-width="4" />
+      <path id="frond_4_leaf_4" d="M 495 190 L 520 225" stroke-width="4" />
 
-    <!-- Frond 4 (Top Right Arch) -->
-    <path d="M 300 250 Q 420 140 530 190" stroke-width="7" />
-    <path d="M 370 190 L 390 235" stroke-width="4" />
-    <path d="M 410 180 L 435 230" stroke-width="4" />
-    <path d="M 455 180 L 480 225" stroke-width="4" />
-    <path d="M 495 190 L 520 225" stroke-width="4" />
+      <!-- Frond 5 (Right Drooping) -->
+      <path id="frond_5_main" d="M 300 250 Q 450 250 540 340" stroke-width="7" />
+      <path id="frond_5_leaf_1" d="M 380 260 L 410 305" stroke-width="4" />
+      <path id="frond_5_leaf_2" d="M 430 275 L 460 325" stroke-width="4" />
+      <path id="frond_5_leaf_3" d="M 480 300 L 510 345" stroke-width="4" />
 
-    <!-- Frond 5 (Right Drooping) -->
-    <path d="M 300 250 Q 450 250 540 340" stroke-width="7" />
-    <path d="M 380 260 L 410 305" stroke-width="4" />
-    <path d="M 430 275 L 460 325" stroke-width="4" />
-    <path d="M 480 300 L 510 345" stroke-width="4" />
+      <!-- Frond 6 (Left Drooping) -->
+      <path id="frond_6_main" d="M 300 250 Q 170 270 80 360" stroke-width="7" />
+      <path id="frond_6_leaf_1" d="M 230 270 L 200 315" stroke-width="4" />
+      <path id="frond_6_leaf_2" d="M 180 285 L 150 335" stroke-width="4" />
+      <path id="frond_6_leaf_3" d="M 130 315 L 100 360" stroke-width="4" />
+    </g>
 
-    <!-- Frond 6 (Left Drooping) -->
-    <path d="M 300 250 Q 170 270 80 360" stroke-width="7" />
-    <path d="M 230 270 L 200 315" stroke-width="4" />
-    <path d="M 180 285 L 150 335" stroke-width="4" />
-    <path d="M 130 315 L 100 360" stroke-width="4" />
-
-    <!-- Coconut / Crown Core -->
-    <circle cx="285" cy="250" r="14" fill="#6B4423" stroke="#1A1A1A" stroke-width="4" />
-    <circle cx="310" cy="255" r="14" fill="#6B4423" stroke="#1A1A1A" stroke-width="4" />
-    <circle cx="295" cy="265" r="14" fill="#6B4423" stroke="#1A1A1A" stroke-width="4" />
+    <!-- Coconut / Crown Core (Fruits) -->
+    <g id="fruits">
+      <circle id="coconut_1" cx="285" cy="250" r="14" fill="#6B4423" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="coconut_2" cx="310" cy="255" r="14" fill="#6B4423" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="coconut_3" cx="295" cy="265" r="14" fill="#6B4423" stroke="#1A1A1A" stroke-width="4" />
+    </g>
   </g>
 </svg>
