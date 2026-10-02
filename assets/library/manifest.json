@@ -753,6 +753,197 @@
         "style": "clean_lineart",
         "stroke_width": 6
       }
+    },
+    {
+      "id": "asset_dog",
+      "name": "dog",
+      "category": "character",
+      "tags": [
+        "chó",
+        "con chó",
+        "chú chó",
+        "cún",
+        "dog",
+        "puppy",
+        "hound",
+        "canine"
+      ],
+      "format": "svg",
+      "path": "svg/dog_running.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/dog_running.svg",
+          "description": "Expressive running dog in full athletic stride",
+          "view_box": "0 0 600 400"
+        },
+        "running": {
+          "name": "running",
+          "file_path": "svg/dog_running.svg",
+          "description": "Running dog stretching legs forward and backward in motion",
+          "view_box": "0 0 600 400"
+        },
+        "chasing": {
+          "name": "chasing",
+          "file_path": "svg/dog_running.svg",
+          "description": "Dog energetically chasing a ball with ears flapping",
+          "view_box": "0 0 600 400"
+        }
+      },
+      "actions": [
+        "running",
+        "chasing",
+        "playing"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
+    },
+    {
+      "id": "asset_ball",
+      "name": "ball",
+      "category": "item",
+      "tags": [
+        "bóng",
+        "quả bóng",
+        "trái bóng",
+        "ball",
+        "soccer",
+        "play_ball"
+      ],
+      "format": "svg",
+      "path": "svg/ball.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/ball.svg",
+          "description": "Bouncing sports ball with pentagon facets and speed motion arcs",
+          "view_box": "0 0 300 300"
+        }
+      },
+      "actions": [
+        "rolling",
+        "bouncing"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
+    },
+    {
+      "id": "asset_farmer",
+      "name": "farmer",
+      "category": "character",
+      "tags": [
+        "nông dân",
+        "người nông dân",
+        "bác nông dân",
+        "farmer",
+        "planter",
+        "gardener"
+      ],
+      "format": "svg",
+      "path": "svg/farmer.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/farmer.svg",
+          "description": "Farmer in conical hat bending down to plant a green seedling",
+          "view_box": "0 0 600 500"
+        },
+        "planting": {
+          "name": "planting",
+          "file_path": "svg/farmer.svg",
+          "description": "Farmer hands gently embedding seedling root ball into soil",
+          "view_box": "0 0 600 500"
+        }
+      },
+      "actions": [
+        "planting",
+        "gardening",
+        "farming"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
+    },
+    {
+      "id": "asset_earth_sun",
+      "name": "earth_sun",
+      "category": "diagram",
+      "tags": [
+        "trái đất",
+        "mặt trời",
+        "earth",
+        "sun",
+        "quỹ đạo",
+        "orbit",
+        "solar_system"
+      ],
+      "format": "svg",
+      "path": "svg/earth_orbit_sun.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/earth_orbit_sun.svg",
+          "description": "Central radiating sun with elliptical orbit and tilted Earth",
+          "view_box": "0 0 800 500"
+        }
+      },
+      "actions": [
+        "orbiting",
+        "revolving"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
+    },
+    {
+      "id": "asset_astronaut",
+      "name": "astronaut",
+      "category": "character",
+      "tags": [
+        "phi hành gia",
+        "tàu vũ trụ",
+        "sao hỏa",
+        "astronaut",
+        "mars",
+        "spacecraft",
+        "lander"
+      ],
+      "format": "svg",
+      "path": "svg/astronaut_mars.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/astronaut_mars.svg",
+          "description": "Astronaut in spacesuit stepping down from lander onto Martian rocky soil",
+          "view_box": "0 0 800 600"
+        },
+        "stepping": {
+          "name": "stepping",
+          "file_path": "svg/astronaut_mars.svg",
+          "description": "Astronaut stepping foot forward onto Martian cratered surface",
+          "view_box": "0 0 800 600"
+        }
+      },
+      "actions": [
+        "stepping",
+        "exploring",
+        "landing"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
     }
   ]
 }

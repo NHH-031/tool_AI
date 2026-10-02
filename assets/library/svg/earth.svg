@@ -1,16 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
-  <!-- Whiteboard Line Art: Earth with Continents and Lat/Long Lines -->
-  <g id="earth" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Globe Outline -->
-    <circle cx="200" cy="200" r="160" />
-    <!-- Equatorial and Meridian Curves -->
-    <path d="M 40 200 Q 200 260 360 200" stroke-dasharray="8 6" />
-    <path d="M 200 40 Q 260 200 200 360" />
-    <path d="M 200 40 Q 140 200 200 360" />
-    <!-- Simplified Continents -->
-    <path d="M 120 120 Q 160 100 190 140 Q 170 180 130 170 Z" fill="#E8F5E9" />
-    <path d="M 220 130 Q 270 120 290 170 Q 260 210 230 180 Z" fill="#E8F5E9" />
-    <path d="M 150 220 Q 190 220 180 280 Q 140 300 130 250 Z" fill="#E8F5E9" />
-    <path d="M 250 230 Q 300 240 290 310 Q 240 290 250 230 Z" fill="#E8F5E9" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 350" width="100%" height="100%">
+  <!-- Tilted Earth globe with continents and equator in whiteboard line-art style -->
+  <g id="earth" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Earth sphere -->
+    <circle cx="160" cy="160" r="110" />
+
+    <!-- Axial tilt axis (23.5 degrees) -->
+    <line x1="120" y1="20" x2="200" y2="300" stroke-width="4" stroke-dasharray="8 6" />
+
+    <!-- Equator ellipse -->
+    <ellipse cx="160" cy="160" rx="110" ry="32" transform="rotate(-23.5 160 160)" stroke-width="4" />
+
+    <!-- Continents outline -->
+    <!-- North / South America shape -->
+    <path d="M 120 95 Q 135 110 130 135 Q 115 150 120 170 Q 135 190 140 220 Q 130 240 125 245" stroke-width="5" />
+    
+    <!-- Eurasia / Africa shape -->
+    <path d="M 175 90 Q 210 95 230 115 Q 215 140 205 160 Q 220 185 210 225 Q 190 230 180 205 Q 170 170 180 140 Z" stroke-width="5" />
+
+    <!-- Mini Moon in orbit -->
+    <circle cx="295" cy="75" r="18" stroke-width="5" />
+    <path d="M 292 70 A 10 10 0 0 0 302 85" stroke-width="3" />
+    <!-- Moon orbit dotted streak -->
+    <path d="M 270 95 Q 285 85 305 60" stroke-width="3" stroke-dasharray="4 4" />
   </g>
 </svg>

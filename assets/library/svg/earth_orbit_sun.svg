@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <!-- High-Quality Whiteboard Line Art: Earth Orbiting the Sun -->
+  <g id="earth_orbit_sun" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    
+    <!-- 1. Central Radiating Sun -->
+    <!-- Warm Orange Flare Accent (#E67E22) -->
+    <circle cx="360" cy="250" r="75" stroke="#1A1A1A" stroke-width="7" fill="#FFFDE7" />
+    <circle cx="360" cy="250" r="60" stroke="#E67E22" stroke-width="4" stroke-dasharray="8 6" />
+
+    <!-- Sun Corona Rays (Alternating Long Straight & Playful Curved Rays) -->
+    <path d="M 360 160 L 360 120" stroke-width="6" stroke="#E67E22" />
+    <path d="M 360 340 L 360 380" stroke-width="6" stroke="#E67E22" />
+    <path d="M 270 250 L 230 250" stroke-width="6" stroke="#E67E22" />
+    <path d="M 450 250 L 490 250" stroke-width="6" stroke="#E67E22" />
+
+    <!-- Diagonal Corona Rays -->
+    <path d="M 295 185 L 265 155" stroke-width="5" />
+    <path d="M 425 185 L 455 155" stroke-width="5" />
+    <path d="M 295 315 L 265 345" stroke-width="5" />
+    <path d="M 425 315 L 455 345" stroke-width="5" />
+
+    <!-- Playful Gentle Facial Expression on the Sun (Notion style) -->
+    <path d="M 335 235 C 340 230, 350 230, 355 235" stroke-width="4" />
+    <path d="M 365 235 C 370 230, 380 230, 385 235" stroke-width="4" />
+    <path d="M 345 260 C 355 272, 365 272, 375 260" stroke-width="5" />
+
+    <!-- 2. Clean Elliptical Orbit Track with Directional Arrows -->
+    <!-- Ellipse centered at Sun (cx=360, cy=250), rx=320, ry=160 -->
+    <ellipse cx="360" cy="250" rx="330" ry="170" stroke="#1A1A1A" stroke-width="4" stroke-dasharray="14 10" />
+
+    <!-- Orbital Direction Arrows along Ellipse -->
+    <!-- Top arrow (moving counter-clockwise) -->
+    <path d="M 370 80 L 350 72 L 358 92" stroke-width="5" fill="#1A1A1A" />
+    <!-- Bottom arrow -->
+    <path d="M 350 420 L 370 428 L 362 408" stroke-width="5" fill="#1A1A1A" />
+    <!-- Left apex arrow -->
+    <path d="M 30 240 L 38 260 L 18 252" stroke-width="5" fill="#1A1A1A" />
+
+    <!-- 3. Tilted Earth on Orbit (At right focal position: x=650, y=230) -->
+    <!-- Blue Water Accent (#3498DB) on Continents -->
+    <g transform="translate(650, 230)">
+      <!-- Earth Globe Silhouette -->
+      <circle cx="0" cy="0" r="48" stroke="#1A1A1A" stroke-width="6" fill="#FFFDE7" />
+
+      <!-- Axial Tilt Line (23.5 degrees) -->
+      <path d="M -15 -62 L 15 62" stroke="#1A1A1A" stroke-width="4" stroke-dasharray="6 4" />
+      <!-- North Pole / South Pole Markers -->
+      <circle cx="-15" cy="-62" r="3" fill="#1A1A1A" />
+      <circle cx="15" cy="62" r="3" fill="#1A1A1A" />
+
+      <!-- Equator & Tropic Curves -->
+      <path d="M -46 5 C -20 20, 20 20, 46 5" stroke-width="4" />
+      <path d="M -38 -20 C -15 -5, 15 -5, 38 -20" stroke-width="3" stroke-dasharray="6 4" />
+      <path d="M -38 30 C -15 45, 15 45, 38 30" stroke-width="3" stroke-dasharray="6 4" />
+
+      <!-- Meridian Longitude Arch -->
+      <path d="M 0 -48 C 25 -25, 25 25, 0 48" stroke-width="4" />
+
+      <!-- Hand-Drawn Continent Outlines with Blue Tint (#3498DB) -->
+      <path d="M -25 -25 C -15 -35, -5 -25, -10 -10 C -18 5, -35 -5, -25 -25 Z" stroke="#3498DB" stroke-width="4" fill="#E8F8F5" />
+      <path d="M 10 -15 C 25 -25, 35 -10, 28 10 C 15 20, 5 5, 10 -15 Z" stroke="#3498DB" stroke-width="4" fill="#E8F8F5" />
+      <path d="M -15 20 C -5 15, 5 30, -5 38 C -15 38, -20 30, -15 20 Z" stroke="#3498DB" stroke-width="4" fill="#E8F8F5" />
+
+      <!-- 4. Miniature Moon in Orbit around Earth -->
+      <ellipse cx="0" cy="0" rx="75" ry="35" stroke="#1A1A1A" stroke-width="3" stroke-dasharray="6 6" />
+      <circle cx="68" cy="-18" r="10" stroke="#1A1A1A" stroke-width="4" fill="#FFFDE7" />
+      <circle cx="65" cy="-20" r="2" fill="#1A1A1A" />
+    </g>
+  </g>
+</svg>

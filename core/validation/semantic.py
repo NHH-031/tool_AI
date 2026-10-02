@@ -61,10 +61,13 @@ class SemanticValidator:
         "inflation": ["lạm phát", "mức giá", "giá cả", "lam phat", "muc gia", "gia ca", "inflation", "price", "price_tag", "prices"],
         "goods_basket": ["giỏ hàng", "hàng hóa", "gio hang", "hang hoa", "shopping cart", "goods", "basket"],
         "mathematics": ["toán học", "công thức", "bảng đen", "toán", "toan", "toan hoc", "cong thuc", "bang den", "mathematics", "math", "formula", "blackboard", "equations"],
-        # Astronomy
+        # Astronomy & Space Exploration
         "earth": ["trái đất", "quả đất", "địa cầu", "trai dat", "qua dat", "dia cau", "earth", "globe", "planet"],
         "sun": ["mặt trời", "thái dương", "mat troi", "thai duong", "sun", "sunlight"],
         "orbit": ["quỹ đạo", "vòng quay", "quy dao", "vong quay", "orbit", "orbiting", "ellipse"],
+        "astronaut": ["phi hành gia", "nhà du hành", "người du hành vũ trụ", "astronaut", "cosmonaut", "spaceman"],
+        "spacecraft": ["tàu vũ trụ", "con tàu", "phi thuyền", "tàu đổ bộ", "spacecraft", "spaceship", "lander", "rocket"],
+        "mars": ["sao hỏa", "hỏa tinh", "sao hoa", "hoa tinh", "mars", "martian", "martian surface"],
     }
 
     # Từ điển ánh xạ hành động / quan hệ tổng quát: (action, sources, targets, keywords, relation_type)
@@ -177,6 +180,14 @@ class SemanticValidator:
             "targets": ["vapor"],
             "keywords": ["bốc hơi", "bay hơi", "evaporating", "evaporates"],
             "relation_type": "evaporating",
+        },
+        # Space exploration: Stepping / Landing on celestial body
+        {
+            "action": "stepping",
+            "sources": ["astronaut", "character"],
+            "targets": ["mars", "spacecraft", "ground"],
+            "keywords": ["bước ra", "bước xuống", "đặt chân", "bước", "stepping", "steps out", "landing"],
+            "relation_type": "stepping_on",
         },
     ]
 

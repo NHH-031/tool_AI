@@ -1,12 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
-  <!-- Whiteboard Line Art: Elliptical Planetary Orbit Path with Motion Direction -->
-  <g id="orbit" stroke="#1A1A1A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Dashed Elliptical Trajectory -->
-    <ellipse cx="400" cy="250" rx="350" ry="180" stroke-dasharray="14 10" />
-    <!-- Directional Orbital Arrows -->
-    <path d="M 740 230 L 755 250 L 735 265" stroke-width="5" />
-    <path d="M 60 270 L 45 250 L 65 235" stroke-width="5" />
-    <path d="M 420 70 L 400 65 L 415 85" stroke-width="5" />
-    <path d="M 380 430 L 400 435 L 385 415" stroke-width="5" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" height="100%">
+  <!-- Elliptical planetary orbit with direction arrows -->
+  <g id="orbit" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Main elliptical orbital track -->
+    <ellipse cx="500" cy="300" rx="440" ry="240" stroke-dasharray="16 12" />
+
+    <!-- Trajectory direction arrow (top counter-clockwise) -->
+    <path d="M 520 55 L 490 60 L 515 75" stroke-width="6" />
+
+    <!-- Trajectory direction arrow (bottom counter-clockwise) -->
+    <path d="M 480 545 L 510 540 L 485 525" stroke-width="6" />
+
+    <!-- Left focal curve arrow -->
+    <path d="M 65 285 L 60 315 L 78 290" stroke-width="6" />
   </g>
 </svg>

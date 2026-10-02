@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <!-- High-Quality Whiteboard Line Art: Astronaut Stepping onto Mars from Spacecraft -->
+  <g id="astronaut_mars" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    
+    <!-- 1. Spacecraft / Mars Lander (Left-Background Silhouette) -->
+    <!-- Lander Body / Capsule Structure -->
+    <path d="M 80 200 L 160 120 L 240 200 L 260 320 L 60 320 Z" stroke-width="7" fill="#FFFDE7" />
+    <!-- Lander Top Antenna & Radar Dish -->
+    <path d="M 160 120 L 160 70" stroke-width="6" />
+    <path d="M 140 70 C 160 55, 180 55, 200 70" stroke-width="5" />
+    <!-- Capsule Hatch Door (Open) -->
+    <path d="M 130 210 C 130 190, 190 190, 190 210 L 190 310 L 130 310 Z" stroke-width="6" />
+    <!-- Dark Interior of Open Hatch -->
+    <path d="M 140 225 L 180 225 L 180 300 L 140 300 Z" stroke-width="4" stroke-dasharray="6 4" />
+
+    <!-- Lander Tripod Legs & Shock Absorbers -->
+    <path d="M 70 310 L 30 460" stroke-width="8" />
+    <path d="M 10 460 L 50 460" stroke-width="8" />
+    <path d="M 250 310 L 290 460" stroke-width="8" />
+    <path d="M 270 460 L 310 460" stroke-width="8" />
+
+    <!-- Descent Ladder Steps (Leading down from hatch) -->
+    <path d="M 195 300 L 225 430" stroke-width="6" />
+    <path d="M 220 300 L 250 430" stroke-width="6" />
+    <!-- Rungs -->
+    <path d="M 200 320 L 225 320" stroke-width="5" />
+    <path d="M 207 350 L 232 350" stroke-width="5" />
+    <path d="M 215 380 L 240 380" stroke-width="5" />
+    <path d="M 222 410 L 247 410" stroke-width="5" />
+
+    <!-- 2. Astronaut Stepping Down onto Martian Surface -->
+    <!-- Life Support Backpack (PLSS Unit) -->
+    <rect x="290" y="240" width="55" height="110" rx="10" stroke-width="7" fill="#FFFDE7" />
+    <!-- Oxygen Hoses from Backpack to Helmet/Chest -->
+    <path d="M 330 250 C 370 240, 390 250, 400 270" stroke-width="5" />
+    <path d="M 330 270 C 380 265, 410 280, 420 300" stroke-width="5" />
+
+    <!-- Helmet & Bubble Visor with Reflection Arc -->
+    <!-- Visor Tinted in Warm Orange/Gold (#E67E22 / Whiteboard Accent) -->
+    <circle cx="410" cy="230" r="45" stroke-width="7" fill="#FFFDE7" />
+    <ellipse cx="418" cy="230" rx="28" ry="32" stroke="#E67E22" stroke-width="6" fill="#FAD7A0" />
+    <!-- Visor Glass Glare Highlights -->
+    <path d="M 405 210 C 420 205, 435 215, 440 230" stroke="#FFF" stroke-width="4" />
+
+    <!-- Torso in Padded Spacesuit with Chest Control Pack -->
+    <path d="M 380 275 C 370 330, 375 365, 385 400" stroke-width="7" />
+    <path d="M 440 275 C 455 330, 450 365, 440 400" stroke-width="7" />
+    <!-- Chest Remote Control Module (Red & Blue status lights #E05A47, #3498DB) -->
+    <rect x="390" y="300" width="40" height="35" rx="5" stroke-width="5" fill="#FFFDE7" />
+    <circle cx="400" cy="312" r="3" stroke="#E05A47" stroke-width="3" fill="#E05A47" />
+    <circle cx="415" cy="312" r="3" stroke="#3498DB" stroke-width="3" fill="#3498DB" />
+    <path d="M 396 324 L 424 324" stroke-width="3" />
+
+    <!-- Right Arm Holding the Ladder Handrail -->
+    <path d="M 380 285 C 320 300, 270 330, 245 350" stroke-width="6" />
+    <path d="M 370 305 C 330 320, 285 345, 260 360" stroke-width="6" />
+    <!-- Glove gripping ladder rung -->
+    <ellipse cx="245" cy="355" rx="12" ry="9" stroke-width="5" fill="#FFFDE7" />
+
+    <!-- Left Arm Balancing in Low Gravity -->
+    <path d="M 440 285 C 480 300, 520 315, 545 305" stroke-width="6" />
+    <path d="M 435 305 C 475 320, 510 330, 535 320" stroke-width="6" />
+    <!-- Open Glove Hand in Exploration Gesture -->
+    <ellipse cx="550" cy="312" rx="14" ry="10" stroke-width="5" fill="#FFFDE7" />
+    <path d="M 560 308 L 570 305" stroke-width="4" />
+    <path d="M 562 315 L 572 316" stroke-width="4" />
+
+    <!-- Right Leg Stepping Down from Ladder (Trailing Leg) -->
+    <path d="M 390 400 C 375 435, 345 460, 310 475" stroke-width="7" />
+    <path d="M 410 400 C 395 440, 365 470, 330 488" stroke-width="7" />
+    <!-- Padded Knee Joint Ridges -->
+    <path d="M 370 435 C 380 438, 390 442, 400 445" stroke-width="4" />
+    <!-- Heavy Moon/Mars Boot (Still on Bottom Ladder Rung / Low Step) -->
+    <path d="M 310 475 L 340 488 L 325 500 L 295 490 Z" stroke-width="6" fill="#FFFDE7" />
+
+    <!-- Left Leg Stepping Forward: Making First Contact on Martian Soil! -->
+    <path d="M 435 400 C 455 435, 480 460, 515 480" stroke-width="8" />
+    <path d="M 415 400 C 435 440, 460 470, 490 495" stroke-width="8" />
+    <!-- Padded Left Knee Ridges -->
+    <path d="M 445 440 C 455 445, 465 450, 475 455" stroke-width="4" />
+    <!-- Heavy Boot Firmly Touching Down into Mars Dust/Rock -->
+    <path d="M 515 480 L 560 495 L 555 520 L 485 520 L 490 495 Z" stroke-width="7" fill="#FFFDE7" />
+    <!-- Deep Boot Tread Impression in Mars Soil -->
+    <path d="M 480 520 L 565 520" stroke-width="6" />
+    <path d="M 495 525 L 510 525" stroke-width="4" />
+    <path d="M 525 525 L 540 525" stroke-width="4" />
+
+    <!-- 3. Martian Landscape & Craters (Warm Red/Orange Mineral Accents) -->
+    <!-- Horizon Line with Distant Martian Hills / Volcanoes -->
+    <path d="M 20 470 C 140 455, 300 465, 460 450 C 600 440, 720 455, 780 470" stroke-width="5" stroke-dasharray="16 8" />
+    <!-- Distant Olympus Mons Silhouette -->
+    <path d="M 560 445 C 620 415, 680 415, 740 450" stroke-width="4" />
+
+    <!-- Rocky Surface & Craters in Foreground -->
+    <ellipse cx="660" cy="510" rx="60" ry="18" stroke-width="5" stroke="#E05A47" />
+    <ellipse cx="660" cy="510" rx="45" ry="10" stroke-width="3" stroke-dasharray="6 4" />
+    <!-- Mars Rocks and Pebbles -->
+    <path d="M 600 480 L 615 470 L 630 480 Z" stroke-width="5" />
+    <path d="M 370 520 L 385 510 L 400 520 Z" stroke-width="4" />
+    <circle cx="430" cy="535" r="4" fill="#1A1A1A" />
+    <circle cx="610" cy="530" r="5" fill="#1A1A1A" />
+
+    <!-- Distant Stars and Phobos Moon in Sky -->
+    <circle cx="700" cy="110" r="14" stroke-width="4" fill="#FFFDE7" />
+    <circle cx="696" cy="107" r="3" stroke-width="3" />
+    <path d="M 520 80 L 526 92 L 538 98 L 526 104 L 520 116 L 514 104 L 502 98 L 514 92 Z" stroke-width="3" fill="#1A1A1A" />
+    <circle cx="620" cy="70" r="2" fill="#1A1A1A" />
+    <circle cx="450" cy="60" r="2" fill="#1A1A1A" />
+  </g>
+</svg>

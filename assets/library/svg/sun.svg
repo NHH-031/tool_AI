@@ -1,25 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
-  <!-- Whiteboard Line Art: Radiant Sun with Dynamic Solar Rays -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <!-- Sun with radiant rays in whiteboard line-art style -->
   <g id="sun" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Center Solar Disk -->
-    <circle cx="250" cy="250" r="110" fill="#FFF9C4" />
-    <!-- Radiating Solar Flares / Rays -->
-    <path d="M 250 110 L 250 40" stroke-width="7" />
-    <path d="M 250 390 L 250 460" stroke-width="7" />
-    <path d="M 110 250 L 40 250" stroke-width="7" />
-    <path d="M 390 250 L 460 250" stroke-width="7" />
-    <path d="M 150 150 L 95 95" stroke-width="6" />
-    <path d="M 350 350 L 405 405" stroke-width="6" />
-    <path d="M 350 150 L 405 95" stroke-width="6" />
-    <path d="M 150 350 L 95 405" stroke-width="6" />
-    <!-- Secondary Wavy Flare Rays -->
-    <path d="M 200 120 Q 185 80 205 55" stroke-width="4" />
-    <path d="M 300 120 Q 315 80 295 55" stroke-width="4" />
-    <path d="M 380 200 Q 420 185 445 205" stroke-width="4" />
-    <path d="M 380 300 Q 420 315 445 295" stroke-width="4" />
-    <path d="M 200 380 Q 185 420 205 445" stroke-width="4" />
-    <path d="M 300 380 Q 315 420 295 445" stroke-width="4" />
-    <path d="M 120 200 Q 80 185 55 205" stroke-width="4" />
-    <path d="M 120 300 Q 80 315 55 295" stroke-width="4" />
+    <!-- Center solar sphere -->
+    <circle cx="200" cy="200" r="85" />
+    
+    <!-- Primary cardinal rays -->
+    <line x1="200" y1="95" x2="200" y2="40" stroke-width="7" />
+    <line x1="200" y1="305" x2="200" y2="360" stroke-width="7" />
+    <line x1="95" y1="200" x2="40" y2="200" stroke-width="7" />
+    <line x1="305" y1="200" x2="360" y2="200" stroke-width="7" />
+
+    <!-- Diagonal rays -->
+    <line x1="126" y1="126" x2="85" y2="85" stroke-width="6" />
+    <line x1="274" y1="126" x2="315" y2="85" stroke-width="6" />
+    <line x1="126" y1="274" x2="85" y2="315" stroke-width="6" />
+    <line x1="274" y1="274" x2="315" y2="315" stroke-width="6" />
+
+    <!-- Intermediate subtle rays -->
+    <line x1="200" y1="80" x2="200" y2="60" stroke-width="4" />
+    <line x1="200" y1="320" x2="200" y2="340" stroke-width="4" />
+    <line x1="80" y1="200" x2="60" y2="200" stroke-width="4" />
+    <line x1="320" y1="200" x2="340" y2="200" stroke-width="4" />
   </g>
 </svg>

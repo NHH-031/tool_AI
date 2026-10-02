@@ -257,11 +257,11 @@ class SemanticVisualPlanner:
         """Suy luận (semantic_type, category, visual_type) dựa trên bản chất thực thể."""
         if key in ["cat", "dog", "monkey", "bird"]:
             return "animal", "character", "character"
-        elif key in ["farmer", "teacher", "children", "hiker", "engineer"]:
+        elif key in ["farmer", "teacher", "children", "hiker", "engineer", "astronaut"]:
             return "human", "character", "character"
         elif key in ["areca_palm", "tree", "plant", "seedling"]:
             return "plant", "structure", "structure"
-        elif key in ["ground", "mountain", "bridge", "nest"]:
+        elif key in ["ground", "mountain", "bridge", "nest", "spacecraft", "mars"]:
             return "structure", "structure", "structure"
         elif key in ["sun", "earth", "orbit", "molecules", "mathematics"]:
             return "diagram", "diagram", "diagram"
@@ -297,6 +297,7 @@ class SemanticVisualPlanner:
         cross_rel = next((r for r in req_rels if r[1] in ["crossing"]), None)
         repair_rel = next((r for r in req_rels if r[1] in ["repairing"]), None)
         evap_rel = next((r for r in req_rels if r[1] in ["evaporating"]), None)
+        step_rel = next((r for r in req_rels if r[1] in ["stepping", "stepping_on"]), None)
 
         if climb_rel:
             src, act, tgt = climb_rel
@@ -551,6 +552,85 @@ class SemanticVisualPlanner:
                     relation_type="flying_from",
                     action="flying",
                     description=f"{src} bay khỏi {tgt}",
+                    required=True,
+                )
+            )
+
+        elif step_rel:
+            src, act, tgt = step_rel
+            handled_entities.update([src, tgt, "spacecraft", "mars"])
+            src_sem, src_cat, src_vtype = cls._infer_semantic_types(src)
+            tgt_sem, tgt_cat, tgt_vtype = cls._infer_semantic_types(tgt)
+
+            # 1. Tàu vũ trụ / Lander ở bên trái
+            spacecraft_ent = VisualEntity(
+                id="spacecraft_1",
+                label="spacecraft",
+                species="spacecraft",
+                semantic_type="structure",
+                category="structure",
+                visual_type="structure",
+                visual_role="origin_vehicle",
+                importance="primary",
+                required=True,
+                drawing_intent="Tàu vũ trụ đổ bộ trên bề mặt Sao Hỏa",
+                actions=["landing"],
+                position=Position(x=120, y=140, width=540, height=660),
+                layer=0,
+                priority=1,
+            )
+            # 2. Bề mặt Sao Hỏa ở bên dưới
+            mars_ent = VisualEntity(
+                id="mars_1",
+                label="mars",
+                species="mars",
+                semantic_type="structure",
+                category="structure",
+                visual_type="structure",
+                visual_role="environment",
+                importance="secondary",
+                required=True,
+                drawing_intent="Bề mặt đất đá gồ ghề của Sao Hỏa",
+                actions=["supporting"],
+                position=Position(x=100, y=700, width=1720, height=280),
+                layer=0,
+                priority=2,
+            )
+            # 3. Phi hành gia đang bước chân xuống đất
+            astronaut_ent = VisualEntity(
+                id=f"{src}_1",
+                label=src,
+                species=src,
+                semantic_type=src_sem,
+                category=src_cat,  # type: ignore
+                visual_type=src_vtype,  # type: ignore
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="stepping",
+                actions=["stepping", "exploring"],
+                drawing_intent=f"Phi hành gia {src} đang bước chân khám phá Sao Hỏa",
+                position=Position(x=680, y=260, width=480, height=560),
+                layer=1,
+                priority=3,
+            )
+            entities.extend([spacecraft_ent, mars_ent, astronaut_ent])
+            actions.append(
+                VisualAction(
+                    id=f"act_{src}_stepping",
+                    entity_id=astronaut_ent.id,
+                    action_type="stepping",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id=f"rel_{src}_mars_stepping",
+                    source_id=astronaut_ent.id,
+                    target_id=mars_ent.id,
+                    relation_type="stepping_on",
+                    action="stepping",
+                    description=f"{src} đặt chân lên {tgt}",
                     required=True,
                 )
             )

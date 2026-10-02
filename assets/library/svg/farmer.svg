@@ -1,28 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
-  <!-- Whiteboard Line Art: Farmer Bending Down Kneeling to Plant a Seedling -->
-  <g id="farmer" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Conical Straw Hat -->
-    <path d="M 120 180 L 220 90 L 320 180 Z" fill="#FFFDE7" />
-    <path d="M 100 185 Q 220 205 340 185" stroke-width="5" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" width="100%" height="100%">
+  <!-- High-Quality Whiteboard Line Art: Farmer Planting a Tree Seedling into Soil -->
+  <g id="farmer_planting" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
     
-    <!-- Head Under Hat -->
-    <circle cx="220" cy="195" r="30" />
-    
-    <!-- Torso Bending Forward -->
-    <path d="M 230 225 Q 260 280 290 320" stroke-width="7" />
-    
-    <!-- Arms Reaching Down to Plant Seedling -->
-    <path d="M 235 245 Q 220 310 180 380" stroke-width="6" />
-    <path d="M 255 245 Q 240 320 200 390" stroke-width="6" />
-    <!-- Hands Tending the Soil -->
-    <circle cx="175" cy="385" r="10" />
-    <circle cx="195" cy="395" r="10" />
-    
-    <!-- Bent Legs / Kneeling on Ground -->
-    <path d="M 290 320 Q 350 360 380 430" stroke-width="7" />
-    <path d="M 270 320 Q 300 380 320 440" stroke-width="7" />
-    <!-- Boots on Ground -->
-    <path d="M 370 430 L 410 435" stroke-width="8" />
-    <path d="M 310 440 L 350 445" stroke-width="8" />
+    <!-- Conical Straw Leaf Hat (Nón Lá) -->
+    <path d="M 120 180 L 260 70 L 400 180 Z" fill="#FFFDE7" />
+    <path d="M 95 185 C 260 215, 260 215, 425 185" stroke-width="6" />
+    <!-- Hat Texture Ribs -->
+    <path d="M 260 70 L 190 190" stroke-width="4" stroke-dasharray="6 4" />
+    <path d="M 260 70 L 260 195" stroke-width="4" stroke-dasharray="6 4" />
+    <path d="M 260 70 L 330 190" stroke-width="4" stroke-dasharray="6 4" />
+
+    <!-- Head & Cheerful Side Profile Under the Hat Brim -->
+    <path d="M 230 195 C 220 220, 240 240, 265 240 C 285 240, 295 220, 290 195" />
+    <!-- Friendly Eye & Smile -->
+    <circle cx="245" cy="215" r="4" fill="#1A1A1A" />
+    <path d="M 240 228 C 248 234, 255 234, 262 230" stroke-width="4" />
+
+    <!-- Torso Bending Naturally (Curved Spine of Manual Labor) -->
+    <path d="M 270 235 C 310 250, 360 280, 395 320" stroke-width="7" />
+    <path d="M 255 240 C 285 280, 320 330, 355 365" stroke-width="6" />
+
+    <!-- Rolled Sleeves & Muscular Arms Reaching Down to Earth -->
+    <path d="M 285 255 C 270 300, 240 350, 205 400" stroke-width="6" />
+    <path d="M 305 265 C 290 315, 260 365, 225 410" stroke-width="6" />
+    <!-- Rolled Sleeve Cuff -->
+    <ellipse cx="280" cy="275" rx="14" ry="8" transform="rotate(-30 280 275)" />
+
+    <!-- Farmer Hands Gently Embedding the Seedling Root Ball -->
+    <path d="M 205 400 C 190 405, 175 415, 180 430 C 185 440, 200 440, 215 435" />
+    <path d="M 225 410 C 215 420, 205 430, 215 445 C 225 450, 240 445, 245 430" />
+
+    <!-- The Seedling / Young Tree in the Soil -->
+    <!-- Fresh Green Leaves (#27AE60 / Accent Highlight) -->
+    <path d="M 180 370 C 170 330, 140 320, 130 335 C 125 350, 150 375, 180 370" stroke="#27AE60" stroke-width="6" fill="#A9DFBF" />
+    <path d="M 180 370 C 190 325, 220 315, 230 330 C 235 345, 210 370, 180 370" stroke="#27AE60" stroke-width="6" fill="#A9DFBF" />
+    <!-- Sprout Stem -->
+    <path d="M 180 370 C 182 390, 185 410, 188 430" stroke="#27AE60" stroke-width="7" />
+    <!-- Leaf Vein -->
+    <path d="M 180 370 L 140 335" stroke="#27AE60" stroke-width="3" />
+    <path d="M 180 370 L 220 330" stroke="#27AE60" stroke-width="3" />
+
+    <!-- Tilled Soil Mound Around the Seedling -->
+    <path d="M 120 445 C 145 425, 185 420, 220 425 C 255 430, 270 445, 290 450" stroke-width="7" />
+    <path d="M 140 440 C 160 435, 170 440, 185 438" stroke-width="4" />
+    <circle cx="150" cy="448" r="3" fill="#1A1A1A" />
+    <circle cx="235" cy="442" r="3" fill="#1A1A1A" />
+    <circle cx="255" cy="448" r="4" fill="#1A1A1A" />
+
+    <!-- Kneeling / Squatting Legs in Sturdy Dungarees -->
+    <path d="M 395 320 C 440 360, 470 405, 490 455" stroke-width="8" />
+    <path d="M 355 365 C 390 400, 420 440, 445 470" stroke-width="8" />
+    <!-- Rear Foot & Heavy Work Boot Planted Firmly on Ground -->
+    <path d="M 490 455 C 510 460, 530 460, 540 475 L 480 475 Z" stroke-width="7" fill="#FFFDE7" />
+    <path d="M 445 470 L 410 475 L 375 475" stroke-width="7" />
+
+    <!-- Ground Baseline -->
+    <path d="M 60 475 L 560 475" stroke-width="5" />
+    <path d="M 80 485 L 180 485" stroke-width="4" stroke-dasharray="12 8" />
+    <path d="M 460 485 L 540 485" stroke-width="4" stroke-dasharray="12 8" />
   </g>
 </svg>
