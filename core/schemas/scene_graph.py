@@ -15,9 +15,25 @@ class VisualEntity(BaseModel):
     """Đối tượng thị giác trong Scene Graph."""
     id: str = Field(description="Mã định danh duy nhất của thực thể trong scene")
     label: str = Field(description="Nhãn danh từ mô tả đối tượng (ví dụ: 'monkey', 'tree')")
-    category: Literal["character", "structure", "object", "text", "background"] = Field(
+    category: Literal["character", "structure", "object", "diagram", "metaphor", "text", "background"] = Field(
         default="object",
         description="Phân loại ngữ nghĩa của đối tượng",
+    )
+    visual_type: Literal["character", "object", "diagram", "metaphor", "structure", "background", "text"] = Field(
+        default="object",
+        description="Kiểu thị giác chi tiết (tránh dùng text làm phần tử chính)",
+    )
+    importance: Literal["primary", "secondary", "background"] = Field(
+        default="primary",
+        description="Mức độ quan trọng trong khung hình",
+    )
+    drawing_intent: str = Field(
+        default="",
+        description="Ý đồ phác thảo thị giác (line art style, sketch instructions)",
+    )
+    actions: List[str] = Field(
+        default_factory=list,
+        description="Các động tác hoặc chuyển động thực thể thực hiện",
     )
     position: Position = Field(description="Vị trí và kích thước trên canvas")
     layer: int = Field(default=0, ge=0, description="Thứ tự lớp vẽ (0 = nền, số cao hơn đè lên)")

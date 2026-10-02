@@ -8,6 +8,7 @@ from .base import (
     StorageProvider,
     TTSProvider,
 )
+from .gemini import GeminiProvider, LLMProviderError, LLMStructuredOutputError
 from .mock import (
     MockImageProvider,
     MockLLMProvider,
@@ -28,4 +29,7 @@ __all__ = [
     "MockTTSProvider",
     "MockImageProvider",
     "MockStorageProvider",
+    "GeminiProvider",
+    "LLMProviderError",
+    "LLMStructuredOutputError",
 ]

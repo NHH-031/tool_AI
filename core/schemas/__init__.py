@@ -23,7 +23,8 @@ from .scene_graph import (
     VisualEntity,
     VisualRelationship,
 )
-from .script import ProductionScript, SceneScript, SubtitleCue
+from .script import ProductionScript, SceneScript, ScriptOutput, ScriptSegment, SubtitleCue
+from .visual_plan import SceneVisualPlan, VisualPlanOutput
 
 __all__ = [
     # Baseline compatibility
@@ -51,4 +52,9 @@ __all__ = [
     "Project",
     "RenderArtifact",
     "QAResult",
+    # Phase 04 additions
+    "ScriptSegment",
+    "ScriptOutput",
+    "SceneVisualPlan",
+    "VisualPlanOutput",
 ]

@@ -22,8 +22,18 @@ T = TypeVar("T", bound=BaseModel)
 class MockLLMProvider(LLMProvider):
     """Mock LLM Provider phục vụ unit test và phát triển cục bộ."""
 
-    def __init__(self, predefined_responses: Optional[Dict[str, str]] = None):
+    def __init__(
+        self,
+        predefined_responses: Optional[Dict[str, str]] = None,
+        structured_responses: Optional[List[Any]] = None,
+        custom_structured_handler: Optional[Any] = None,
+        fail_first_n_structured: int = 0,
+    ):
         self.predefined_responses = predefined_responses or {}
+        self.structured_responses = list(structured_responses) if structured_responses else []
+        self.custom_structured_handler = custom_structured_handler
+        self.fail_first_n_structured = fail_first_n_structured
+        self.structured_call_count = 0
         self.call_history: List[List[LLMMessage]] = []
 
     async def generate_text(
@@ -51,7 +61,34 @@ class MockLLMProvider(LLMProvider):
         temperature: float = 0.2,
     ) -> T:
         self.call_history.append(messages)
-        # Sinh một instance tối thiểu mặc định của schema
+        self.structured_call_count += 1
+
+        # Mô phỏng lỗi nếu được yêu cầu
+        if self.fail_first_n_structured > 0:
+            self.fail_first_n_structured -= 1
+            from .gemini import LLMStructuredOutputError
+            raise LLMStructuredOutputError(
+                "Simulated malformed JSON response from LLM",
+                raw_content="{'malformed': json...}",
+            )
+
+        # Nếu có handler tùy biến
+        if self.custom_structured_handler:
+            result = self.custom_structured_handler(messages, response_schema)
+            if isinstance(result, response_schema):
+                return result
+
+        # Nếu có hàng đợi structured_responses được nạp sẵn
+        if self.structured_responses:
+            item = self.structured_responses.pop(0)
+            if isinstance(item, Exception):
+                raise item
+            if isinstance(item, response_schema):
+                return item
+            if isinstance(item, dict):
+                return response_schema.model_validate(item)
+
+        # Fallback: sinh một instance hợp lệ tối thiểu của schema
         return response_schema.model_validate(
             response_schema.model_construct()
         )

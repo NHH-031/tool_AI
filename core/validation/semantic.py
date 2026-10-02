@@ -15,6 +15,9 @@ class SemanticValidationResult(BaseModel):
     missing_relationships: List[str] = Field(
         default_factory=list, description="Các quan hệ/hành động kịch bản yêu cầu nhưng thiếu trong Scene Graph"
     )
+    show_dont_write_violations: List[str] = Field(
+        default_factory=list, description="Các vi phạm nguyên tắc Show Don't Write (dùng text thay vì minh họa trực quan)"
+    )
     errors: List[str] = Field(default_factory=list, description="Chi tiết thông báo lỗi ngữ nghĩa")
     warnings: List[str] = Field(default_factory=list, description="Các cảnh báo lệch nhẹ")
 
@@ -22,21 +25,37 @@ class SemanticValidationResult(BaseModel):
 class SemanticValidator:
     """
     Bộ thẩm định ngữ nghĩa: Đối chiếu nội dung lời thuyết minh (Narration) với Scene Graph
-    để phát hiện đối tượng bị bỏ sót (missing entity) hoặc hành động bị thiếu (missing relationship).
+    để phát hiện đối tượng bị bỏ sót (missing entity), hành động bị thiếu (missing relationship),
+    hoặc vi phạm nguyên tắc Show Don't Write (lạm dụng text thay cho hình vẽ).
     """
 
     # Từ điển ánh xạ từ vựng tiếng Việt và tiếng Anh sang entity canonical key
     ENTITY_KEYWORDS: Dict[str, List[str]] = {
+        # Case 5 & General
         "monkey": ["khỉ", "con khỉ", "chú khỉ", "monkey", "ape"],
         "tree": ["cây", "cái cây", "thân cây", "tree"],
         "banana": ["chuối", "quả chuối", "trái chuối", "banana"],
         "mountain": ["núi", "núi giả", "hòn non bộ", "mountain", "rockery"],
         "children": ["trẻ em", "em bé", "bọn trẻ", "khán giả", "children", "kids", "crowd"],
         "car": ["xe", "ô tô", "xe hơi", "car"],
+        # Case 1: Dog running after ball
+        "dog": ["chó", "con chó", "chú chó", "dog", "puppy", "canine"],
+        "ball": ["bóng", "quả bóng", "trái bóng", "ball"],
+        # Case 2: Teacher explaining mathematics
+        "teacher": ["giáo viên", "thầy giáo", "cô giáo", "teacher", "instructor", "professor"],
+        "mathematics": ["toán", "toán học", "công thức", "bảng đen", "mathematics", "math", "formula", "blackboard", "equations"],
+        # Case 3: Temperature makes molecules move faster
+        "temperature": ["nhiệt độ", "nguồn nhiệt", "lửa", "độ nóng", "temperature", "heat", "heat_source", "burner"],
+        "molecules": ["phân tử", "nguyên tử", "hạt", "molecules", "atoms", "particles"],
+        # Case 4: Inflation
+        "inflation": ["lạm phát", "mức giá", "giá cả", "inflation", "price", "price_tag", "prices"],
+        "money": ["tiền", "đồng tiền", "sức mua", "ví tiền", "money", "currency", "purchasing_power", "wallet", "dollar"],
+        "goods_basket": ["giỏ hàng", "hàng hóa", "shopping cart", "goods", "basket"],
     }
 
     # Từ điển ánh xạ hành động / quan hệ: (action_key, source, target, keywords)
     RELATIONSHIP_RULES: List[Dict] = [
+        # Case 5
         {
             "action": "climbing",
             "source": "monkey",
@@ -60,6 +79,34 @@ class SemanticValidator:
             "source": "monkey",
             "target": "banana",
             "keywords": ["cướp", "giật", "chộp", "grab", "snatch", "grabbing"],
+        },
+        # Case 1: Dog running after ball
+        {
+            "action": "chasing",
+            "source": "dog",
+            "target": "ball",
+            "keywords": ["đuổi theo", "chạy theo", "vồ", "chasing", "running after", "runs after", "pursuing"],
+        },
+        # Case 2: Teacher explaining mathematics
+        {
+            "action": "explaining",
+            "source": "teacher",
+            "target": "mathematics",
+            "keywords": ["giảng", "giảng giải", "giải thích", "dạy", "chỉ vào", "explaining", "teaching", "pointing to"],
+        },
+        # Case 3: Temperature makes molecules move faster
+        {
+            "action": "accelerating",
+            "source": "temperature",
+            "target": "molecules",
+            "keywords": ["làm chuyển động nhanh hơn", "tăng tốc", "khiến chuyển động", "accelerating", "speeding up", "vibrating", "makes move faster", "heating"],
+        },
+        # Case 4: Inflation
+        {
+            "action": "eroding",
+            "source": "inflation",
+            "target": "money",
+            "keywords": ["làm giảm sức mua", "bào mòn", "tăng cao", "eroding", "devaluing", "shrinking", "inflating"],
         },
     ]
 
@@ -183,10 +230,67 @@ class SemanticValidator:
                     f"Missing relationship: Lời thoại yêu cầu hành động '{rel_desc}' nhưng Scene Graph không khai báo"
                 )
 
+        # 5. Kiểm tra nguyên tắc Show Don't Write
+        sdw_violations = cls.validate_show_dont_write(scene_graph)
+        for viol in sdw_violations:
+            errors.append(viol)
+
         return SemanticValidationResult(
             is_valid=len(errors) == 0,
             missing_entities=missing_entities,
             missing_relationships=missing_relationships,
+            show_dont_write_violations=sdw_violations,
             errors=errors,
             warnings=warnings,
         )
+
+    @classmethod
+    def validate_show_dont_write(cls, scene_graph: SceneGraph) -> List[str]:
+        """
+        Kiểm tra nguyên tắc 'Show Don't Write':
+        Bảng trắng vẽ tranh minh họa trực quan, không được dùng Text làm nhân vật/vật thể chính.
+        Ví dụ: Không được tạo entity text="CON KHỈ" hay text="CÂY" thay vì vẽ hình con khỉ, cây cối.
+        """
+        violations: List[str] = []
+        if not scene_graph.entities:
+            return violations
+
+        text_entities = [
+            e for e in scene_graph.entities
+            if getattr(e, "visual_type", e.category) == "text" or e.category == "text"
+        ]
+
+        for ent in text_entities:
+            importance = getattr(ent, "importance", "primary")
+            # Nếu một thực thể chính lại là Text
+            if importance == "primary":
+                violations.append(
+                    f"Show Don't Write violation: Thực thể chính '{ent.label}' (id={ent.id}) có visual_type='text'. "
+                    f"Video whiteboard yêu cầu vẽ hình minh họa (character, object, diagram, metaphor), không viết chữ thay thế."
+                )
+
+        # Nếu toàn bộ các thực thể trong scene đều là Text (hoặc > 60% là text)
+        if len(scene_graph.entities) > 1 and len(text_entities) / len(scene_graph.entities) > 0.6:
+            violations.append(
+                f"Show Don't Write violation: Phân cảnh có quá nhiều phần tử dạng Text ({len(text_entities)}/{len(scene_graph.entities)}). "
+                f"Whiteboard video phải tập trung vào hình vẽ minh họa nét tay."
+            )
+
+        return violations
+
+    @classmethod
+    def format_repair_feedback(cls, result: SemanticValidationResult) -> str:
+        """Định dạng phản hồi lỗi logic thành chỉ dẫn sửa chữa để LLM tự động hiệu chỉnh (repair loop)."""
+        lines = ["Phát hiện lỗi logic trong kế hoạch thị giác vừa sinh:"]
+        if result.missing_entities:
+            lines.append(f"- Thiếu thực thể bắt buộc: {', '.join(result.missing_entities)}")
+        if result.missing_relationships:
+            lines.append(f"- Thiếu quan hệ/hành động tương tác: {'; '.join(result.missing_relationships)}")
+        if result.show_dont_write_violations:
+            for v in result.show_dont_write_violations:
+                lines.append(f"- Vi phạm Show Don't Write: {v}")
+        lines.append(
+            "Yêu cầu: Hãy bổ sung đầy đủ các thực thể và mối quan hệ hành động trên dưới dạng hình vẽ minh họa (character, object, diagram, metaphor), "
+            "tuyệt đối KHÔNG dùng text làm phần tử chính, và gán tọa độ canvas hợp lệ."
+        )
+        return "\n".join(lines)
