@@ -1,0 +1,116 @@
+{
+  "id": "scene-monkey-banana-demo",
+  "scene_index": 1,
+  "title": "Chuyện chú khỉ và cây chuối",
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration_ms": 10000,
+  "text_required": false,
+  "scene_graph": {
+    "entities": [
+      {
+        "id": "tree",
+        "label": "tree",
+        "category": "structure",
+        "position": {
+          "x": 200,
+          "y": 150,
+          "width": 700,
+          "height": 850
+        },
+        "layer": 0,
+        "start_ms": 500,
+        "duration_ms": 3000
+      },
+      {
+        "id": "banana",
+        "label": "banana",
+        "category": "object",
+        "position": {
+          "x": 650,
+          "y": 250,
+          "width": 180,
+          "height": 180
+        },
+        "layer": 1,
+        "start_ms": 3500,
+        "duration_ms": 2000
+      },
+      {
+        "id": "monkey",
+        "label": "monkey",
+        "category": "character",
+        "position": {
+          "x": 400,
+          "y": 300,
+          "width": 320,
+          "height": 450
+        },
+        "layer": 2,
+        "start_ms": 5500,
+        "duration_ms": 3500
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-01",
+        "source_id": "monkey",
+        "target_id": "tree",
+        "relation_type": "climbing",
+        "action": "trèo lên cây",
+        "description": "monkey -> climbing -> tree"
+      },
+      {
+        "id": "rel-02",
+        "source_id": "monkey",
+        "target_id": "banana",
+        "relation_type": "reaching",
+        "action": "với tới quả chuối",
+        "description": "monkey -> reaching -> banana"
+      },
+      {
+        "id": "rel-03",
+        "source_id": "banana",
+        "target_id": "tree",
+        "relation_type": "located_on",
+        "action": "nằm trên cây",
+        "description": "banana -> located_on -> tree"
+      }
+    ]
+  },
+  "narration": [
+    {
+      "id": "narr-01",
+      "text": "Con khỉ đang trèo lên cây và với lấy quả chuối ở trên cây.",
+      "cue_index": 1,
+      "start_ms": 500,
+      "end_ms": 8500,
+      "duration_ms": 8000
+    }
+  ],
+  "drawing_actions": [
+    {
+      "id": "act-tree",
+      "entity_id": "tree",
+      "action_type": "ink",
+      "start_ms": 500,
+      "duration_ms": 3000
+    },
+    {
+      "id": "act-banana",
+      "entity_id": "banana",
+      "action_type": "ink",
+      "start_ms": 3500,
+      "duration_ms": 2000
+    },
+    {
+      "id": "act-monkey",
+      "entity_id": "monkey",
+      "action_type": "ink",
+      "start_ms": 5500,
+      "duration_ms": 3500
+    }
+  ]
+}
