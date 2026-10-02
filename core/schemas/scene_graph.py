@@ -83,6 +83,7 @@ class VisualEntity(BaseModel):
     asset_id: Optional[str] = Field(default=None, description="Mã tham chiếu Asset ảnh mẫu nếu có", alias="assetId")
     asset_variant: Optional[str] = Field(default=None, description="Biến thể asset (pose/variant)", alias="assetVariant")
     pose: Optional[str] = Field(default=None, description="Tư thế thực thể")
+    species: Optional[str] = Field(default=None, description="Loài sinh vật hoặc thực vật (cat, areca_palm, dog, etc.)")
     visual_style: Dict[str, Any] = Field(default_factory=dict, description="Thuộc tính style tùy biến")
 
     # Tracking tính hoàn thiện nét vẽ & Asset Completeness (Section 8)

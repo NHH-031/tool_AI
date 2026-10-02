@@ -181,6 +181,16 @@ export interface SemanticQASummary {
   details?: string[];
 }
 
+export interface VisualStyleQASummary {
+  pass_style: boolean;
+  background_warm_tone: boolean;
+  stroke_line_consistency: boolean;
+  layout_spacing_valid: boolean;
+  manual_review_required: boolean;
+  errors?: string[];
+  details?: string[];
+}
+
 export interface MediaQAReport {
   is_valid_mp4: boolean;
   duration_sec: number;
@@ -193,10 +203,11 @@ export interface MediaQAReport {
   duration_delta?: number;
   is_corrupted: boolean;
   visual_qa_pass: boolean;
-  // Three-layer QA
+  // Four-layer QA Architecture
   technical_qa?: TechnicalQASummary;
   drawing_qa?: DrawingQASummary;
   semantic_qa?: SemanticQASummary;
+  visual_style_qa?: VisualStyleQASummary;
   overall_pass?: boolean;
 }
 

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Cat Sitting Pose -->
+  <g id="cat_sitting" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Tail (Curling gracefully around paws) -->
+    <g id="tail">
+      <path id="tail_curl" d="M 280 430 C 350 440 370 390 340 360 C 320 340 290 360 300 380" />
+    </g>
+
+    <!-- Body & Back Contour -->
+    <g id="body">
+      <path id="back_contour" d="M 200 170 C 160 210 150 330 180 420" />
+      <path id="chest_contour" d="M 250 190 C 270 240 270 300 250 360" />
+      <!-- Hind Thigh & Haunch -->
+      <path id="haunch" d="M 180 340 C 210 330 250 360 260 420" />
+    </g>
+
+    <!-- Front Legs & Paws -->
+    <g id="front_legs">
+      <!-- Left Front Leg -->
+      <path id="front_leg_left" d="M 220 250 L 210 420" />
+      <path id="front_paw_left" d="M 210 420 C 205 435 225 435 230 420" />
+      <!-- Right Front Leg -->
+      <path id="front_leg_right" d="M 245 250 L 240 420" />
+      <path id="front_paw_right" d="M 240 420 C 235 435 255 435 260 420" />
+      <!-- Ground line -->
+      <path id="ground_shadow" d="M 160 435 Q 240 440 320 435" stroke-width="3" stroke-dasharray="6 6" />
+    </g>
+
+    <!-- Head & Ears -->
+    <g id="head">
+      <circle id="head_circle" cx="215" cy="140" r="48" />
+      <!-- Left Ear -->
+      <path id="ear_l" d="M 175 115 L 160 65 L 200 95" />
+      <path id="ear_l_inner" d="M 175 105 L 168 78 L 192 98" stroke-width="4" />
+      <!-- Right Ear -->
+      <path id="ear_r" d="M 230 95 L 270 65 L 255 115" />
+      <path id="ear_r_inner" d="M 238 98 L 262 78 L 255 105" stroke-width="4" />
+    </g>
+
+    <!-- Facial Features -->
+    <g id="face">
+      <!-- Eyes -->
+      <ellipse id="eye_l" cx="195" cy="135" rx="6" ry="8" fill="#1A1A1A" />
+      <ellipse id="eye_r" cx="235" cy="135" rx="6" ry="8" fill="#1A1A1A" />
+      <circle id="glint_l" cx="193" cy="133" r="2" fill="#FFFFFF" />
+      <circle id="glint_r" cx="233" cy="133" r="2" fill="#FFFFFF" />
+      <!-- Nose & Mouth -->
+      <path id="cat_nose" d="M 212 148 L 218 148 L 215 153 Z" fill="#1A1A1A" />
+      <path id="cat_mouth" d="M 208 156 Q 215 160 215 153 Q 215 160 222 156" stroke-width="3" />
+      <!-- Whiskers -->
+      <path id="w_l1" d="M 195 152 L 140 145" stroke-width="3" />
+      <path id="w_l2" d="M 195 157 L 135 160" stroke-width="3" />
+      <path id="w_r1" d="M 235 152 L 290 145" stroke-width="3" />
+      <path id="w_r2" d="M 235 157 L 295 160" stroke-width="3" />
+    </g>
+  </g>
+</svg>

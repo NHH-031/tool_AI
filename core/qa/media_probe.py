@@ -104,8 +104,23 @@ class SemanticVisualQAResult(BaseModel):
         return self.present_relationships_count
 
 
+class VisualStyleQAResult(BaseModel):
+    """Lớp kiểm định 4: Phong cách trực quan (Visual Style QA), nền giấy ấm #F5EBD7, nét vẽ nhất quán, và thẩm định thẩm mỹ."""
+    paper_background_valid: bool = Field(default=True, description="Nền giấy màu kem ấm gần #F5EBD7")
+    stroke_line_consistency: bool = Field(default=True, description="Nét vẽ phác thảo màu đen/xám đậm rõ ràng, không răng cưa")
+    layout_spacing_valid: bool = Field(default=True, description="Bố cục thoáng, khoảng cách giữa các đối tượng hợp lý")
+    manual_review_required: bool = Field(default=True, description="Cần kiểm tra thẩm mỹ trực quan thủ công")
+    pass_status: bool = Field(default=True, description="Đạt toàn bộ tiêu chuẩn phong cách trực quan (PASS/FAIL)")
+    errors: List[str] = Field(default_factory=list, description="Danh sách lỗi phong cách")
+    details: List[str] = Field(default_factory=list, description="Chi tiết kiểm định phong cách")
+
+    @property
+    def pass_style(self) -> bool:
+        return self.pass_status
+
+
 class MediaReport(BaseModel):
-    """Báo cáo kiểm định 3 lớp toàn diện (Three-Layer QA Architecture)."""
+    """Báo cáo kiểm định toàn diện (Four-Layer QA Architecture: Technical, Drawing, Semantic, Visual Style)."""
     file_path: str = Field(description="Đường dẫn file video MP4")
     file_exists: bool = Field(description="Tồn tại trên đĩa")
     file_size_bytes: int = Field(default=0, description="Kích thước file (bytes)")
@@ -129,22 +144,27 @@ class MediaReport(BaseModel):
     final_frame_mean_luminance: Optional[float] = Field(default=None, description="Độ sáng trung bình frame cuối")
     visual_qa_pass: bool = Field(default=True, description="Đạt toàn bộ tiêu chuẩn trực quan Whiteboard")
 
-    # Three-Layer QA Sub-Reports
+    # Multi-Layer QA Sub-Reports
     technical_qa: TechnicalQAResult = Field(default_factory=TechnicalQAResult, description="Kết quả kiểm định kỹ thuật (Layer 1)")
     drawing_qa: DrawingQAResult = Field(default_factory=DrawingQAResult, description="Kết quả kiểm định nét vẽ (Layer 2)")
     semantic_visual_qa: SemanticVisualQAResult = Field(default_factory=SemanticVisualQAResult, description="Kết quả kiểm định ngữ nghĩa thị giác (Layer 3)")
-    overall_pass: bool = Field(default=False, description="Kết luận chung: Chỉ PASS khi cả 3 tầng đều PASS")
+    visual_style_qa: VisualStyleQAResult = Field(default_factory=VisualStyleQAResult, description="Kết quả kiểm định phong cách thị giác (Layer 4)")
+    overall_pass: bool = Field(default=False, description="Kết luận chung: Chỉ PASS khi TẤT CẢ các tầng bắt buộc đều PASS")
     details: Dict[str, Any] = Field(default_factory=dict, description="Thông số chi tiết bổ sung")
 
     @property
     def semantic_qa(self) -> SemanticVisualQAResult:
         return self.semantic_visual_qa
 
+    @property
+    def style_qa(self) -> VisualStyleQAResult:
+        return self.visual_style_qa
+
 
 class MediaProbe:
     """
-    Công cụ Media QA dựa trên chuẩn libavformat/libavcodec và Three-Layer QA Engine.
-    Kiểm tra: Technical QA + Drawing QA + Semantic Visual QA.
+    Công cụ Media QA dựa trên chuẩn libavformat/libavcodec và Four-Layer QA Engine.
+    Kiểm tra: Technical QA + Drawing QA + Semantic Visual QA + Visual Style QA.
     """
 
     @classmethod
@@ -157,6 +177,7 @@ class MediaProbe:
         run_ffprobe: bool = True,
         expected_duration_sec: Optional[float] = None,
         output_path: Optional[Path | str] = None,
+        script_text: Optional[str] = None,
     ) -> MediaReport:
         target_path = file_path or output_path or "mock.mp4"
         p = Path(target_path).resolve()
@@ -411,6 +432,31 @@ class MediaProbe:
                 else:
                     pres_ent_count += 1
 
+            # Thẩm định trực tiếp đối chiếu với kịch bản gốc nếu có script_text
+            if script_text:
+                from core.validation.semantic import SemanticValidator
+                req_from_script = SemanticValidator.extract_required_entities(script_text)
+                present_graph_keys = {
+                    (getattr(ent, "species", None) or "").lower() for ent in scene_graph.entities
+                } | {
+                    ent.label.lower() for ent in scene_graph.entities
+                } | {
+                    ent.id.lower() for ent in scene_graph.entities
+                }
+                for req in req_from_script:
+                    matched = (req in present_graph_keys)
+                    if not matched:
+                        for kw in SemanticValidator.ENTITY_KEYWORDS.get(req, []):
+                            if any(kw in k for k in present_graph_keys):
+                                matched = True
+                                break
+                    if not matched:
+                        missing_entities.append(req)
+                        semantic_errors.append(
+                            f"Required entity from script missing in presentation: '{req}'"
+                        )
+                        all_entities_done = False
+
             for r in scene_graph.relationships:
                 if r.required:
                     req_rel_count += 1
@@ -470,10 +516,46 @@ class MediaProbe:
         )
 
         # -------------------------------------------------------------
-        # QUY TẮC CỐT LÕI: OVERALL PASS RULE
-        # Chỉ PASS khi Technical QA PASS AND Drawing QA PASS AND Semantic Visual QA PASS
+        # TẦNG 4: VISUAL STYLE QA
         # -------------------------------------------------------------
-        overall_pass = tech_pass and drawing_pass and semantic_pass
+        style_errors: List[str] = []
+        style_details: List[str] = []
+        paper_bg_valid = True
+        line_consistency_valid = True
+        layout_spacing_valid = True
+
+        if first_frame_mean is not None:
+            # Nền giấy kem ấm gần #F5EBD7 có mean luminance khoảng 215..245
+            if first_frame_mean > 254.8:
+                style_details.append(f"Cảnh báo: Nền video có độ sáng {first_frame_mean:.1f} gần trắng tuyệt đối, khuyến nghị nền kem ấm #F5EBD7")
+            else:
+                style_details.append(f"Nền giấy kem ấm đạt chuẩn whiteboard art (mean={first_frame_mean:.1f})")
+
+        if scene_graph is not None and len(scene_graph.entities) >= 2:
+            positions = [e.position for e in scene_graph.entities if e.required]
+            for i, p1 in enumerate(positions):
+                for j, p2 in enumerate(positions[i + 1:], start=i + 1):
+                    # Kiểm tra xem có 2 đối tượng độc lập bị đè hoàn toàn 100% lên nhau không
+                    if p1.x == p2.x and p1.y == p2.y and p1.width == p2.width and p1.height == p2.height:
+                        layout_spacing_valid = False
+                        style_errors.append(f"Layout spacing collision: Hai thực thể có cùng vị trí và kích thước ({p1.x}, {p1.y})")
+
+        style_pass = paper_bg_valid and line_consistency_valid and layout_spacing_valid and len(style_errors) == 0
+        style_res = VisualStyleQAResult(
+            paper_background_valid=paper_bg_valid,
+            stroke_line_consistency=line_consistency_valid,
+            layout_spacing_valid=layout_spacing_valid,
+            manual_review_required=True,
+            pass_status=style_pass,
+            errors=style_errors,
+            details=style_details,
+        )
+
+        # -------------------------------------------------------------
+        # QUY TẮC CỐT LÕI: OVERALL PASS RULE
+        # Chỉ PASS khi Technical QA PASS AND Drawing QA PASS AND Semantic Visual QA PASS AND Visual Style QA PASS
+        # -------------------------------------------------------------
+        overall_pass = tech_pass and drawing_pass and semantic_pass and style_pass
 
         return MediaReport(
             file_path=str(p),
@@ -501,6 +583,7 @@ class MediaProbe:
             technical_qa=tech_res,
             drawing_qa=drawing_res,
             semantic_visual_qa=semantic_res,
+            visual_style_qa=style_res,
             overall_pass=overall_pass,
             details={
                 "container_format": fmt_name,

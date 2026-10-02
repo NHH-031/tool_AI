@@ -21,6 +21,7 @@ from core.schemas.tts import NarrationTiming, VoiceConfig
 from core.timeline.synchronizer import DrawingTimelineSynchronizer
 from core.tts.base import TTSProvider
 from core.tts.mock import MockTTSProvider
+from core.validation.illustration import SourceIllustrationValidator
 from core.validation.semantic import SemanticValidator
 from engines.whiteboard.adapter import WhiteboardEngineAdapter, WhiteboardRenderConfig
 
@@ -238,13 +239,33 @@ class WhiteboardPipeline:
         )
 
         # -------------------------------------------------------------
+        # Bước 5.5: Source Illustration & Annotation Validation Gate
+        # -------------------------------------------------------------
+        illustration_val = SourceIllustrationValidator.validate_pre_render(
+            script_text=script_text,
+            scene_graph=scene_graph,
+            timeline=timeline,
+            image_path=image_path,
+            annotation_path=annotation_path,
+        )
+        if not illustration_val.is_valid:
+            error_msg = f"Illustration validation failed before render: {'; '.join(illustration_val.errors)}"
+            logger.error(f"[ILLUSTRATION_VALIDATION_ERROR] jobId={ctx.job_id} errors={illustration_val.errors}")
+            raise RuntimeError(error_msg)
+
+        logger.info(
+            f"[ILLUSTRATION_VALIDATION_STAGE] jobId={ctx.job_id} status=PASS "
+            f"visionStatus={illustration_val.vision_qa_status}"
+        )
+
+        # -------------------------------------------------------------
         # Bước 6: Whiteboard Engine → Video Rendering
         # -------------------------------------------------------------
         raw_video_path = out_dir / f"{scene_graph.scene_id}_raw.mp4"
         cfg = render_config or WhiteboardRenderConfig(
             fps=24,
             cap_long_edge=640,
-            ink_path="grid",
+            ink_path="skeleton",
             color_fill="contour-wipe",
             total_ms=int(round(timeline.total_duration * 1000)),
         )
@@ -268,18 +289,20 @@ class WhiteboardPipeline:
         )
 
         # -------------------------------------------------------------
-        # Bước 8: Media QA & Three-Layer Visual QA
+        # Bước 8: Media QA & Four-Layer Visual QA
         # -------------------------------------------------------------
         report = MediaProbe.inspect_media(
             file_path=final_mp4_path,
             scene_graph=scene_graph,
             timeline=timeline,
+            script_text=script_text,
         )
         logger.info(
             f"[QA_STAGE] jobId={ctx.job_id} result={{'overall_pass': report.overall_pass, "
             f"'technical_qa': getattr(report.technical_qa, 'pass_technical', False), "
             f"'drawing_qa': getattr(report.drawing_qa, 'pass_drawing', False), "
-            f"'semantic_qa': getattr(report.semantic_qa, 'pass_semantic', False)}}"
+            f"'semantic_qa': getattr(report.semantic_qa, 'pass_semantic', False), "
+            f"'visual_style_qa': getattr(report.visual_style_qa, 'pass_style', False)}}"
         )
 
         total_exec_time = round(time.perf_counter() - start_time, 3)

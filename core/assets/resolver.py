@@ -101,7 +101,30 @@ class GenericAssetResolver:
   </g>
 </svg>"""
             source_type = "visual_metaphor"
-        elif category in ["character", "animal", "creature"] or visual_type in ["character"]:
+        elif category in ["animal", "creature"] or visual_type in ["animal", "creature"]:
+            content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="100%" height="100%">
+  <g id="gen_animal_{clean_name}" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Quadruped Torso -->
+    <path d="M 160 200 C 200 170 320 170 360 210 C 370 260 330 270 200 270 C 160 270 140 240 160 200 Z" />
+    <!-- Head & Ears -->
+    <circle cx="130" cy="170" r="40" />
+    <path d="M 105 145 L 95 105 L 125 135" />
+    <path d="M 140 135 L 155 105 L 155 145" />
+    <!-- Facial Features -->
+    <circle cx="118" cy="165" r="4" fill="#1A1A1A" />
+    <path d="M 90 175 Q 100 185 115 180" stroke-width="4" />
+    <!-- Front Legs -->
+    <path d="M 170 265 L 165 360" stroke-width="7" />
+    <path d="M 205 265 L 200 360" stroke-width="7" />
+    <!-- Hind Legs -->
+    <path d="M 320 265 L 325 360" stroke-width="7" />
+    <path d="M 355 260 L 360 360" stroke-width="7" />
+    <!-- Tail -->
+    <path d="M 365 210 C 410 200 440 230 430 260" stroke-width="6" />
+  </g>
+</svg>"""
+            source_type = "action_variant" if action else "generated_svg"
+        elif category in ["character", "human"] or visual_type in ["character"]:
             content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
   <g id="gen_char_{clean_name}" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <!-- Head -->

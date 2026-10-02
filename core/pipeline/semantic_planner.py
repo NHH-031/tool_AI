@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 from core.schemas.annotation import CanvasSchema
-from core.schemas.scene_graph import Position, SceneGraph, VisualEntity, VisualRelationship
+from core.schemas.scene_graph import Position, SceneGraph, VisualAction, VisualEntity, VisualRelationship
 from core.schemas.script import ScriptSegment
 from core.schemas.visual_plan import SceneVisualPlan, VisualPlanOutput
 from core.validation.semantic import SemanticValidator
@@ -224,52 +224,20 @@ class SemanticVisualPlanner:
             )
             return plan
 
-        # 2. Phân tích ngữ nghĩa động cho bất kỳ kịch bản nào khác (Dynamic Entity Extraction)
+        # 2. Phân tích ngữ nghĩa động cho kịch bản tổng quát (Dynamic Entity & Action/Pose Planning)
         found_keys = SemanticValidator.extract_required_entities(script_clean)
         if not found_keys:
-            # Diễn họa bảng trình bày đồ họa cho chủ đề người dùng (không dùng monkey!)
             found_keys = {"mathematics"}
 
-        entities: List[VisualEntity] = []
-        pos_x = 250
-        step_x = min(450, int(1400 / max(1, len(found_keys))))
-        for idx, k in enumerate(sorted(found_keys)):
-            ent_id = f"{k}_{idx+1}"
-            v_type = "character" if k in ["dog", "farmer", "teacher", "children"] else "object"
-            entities.append(
-                VisualEntity(
-                    id=ent_id,
-                    label=k,
-                    category=v_type,
-                    visual_type=v_type,
-                    importance="primary" if idx == 0 else "secondary",
-                    drawing_intent=f"Phác họa nét vẽ hình ảnh {k} cho kịch bản",
-                    actions=["presenting"],
-                    position=Position(x=pos_x, y=350, width=380, height=450),
-                    layer=idx,
-                )
-            )
-            pos_x += step_x
-
-        # Trích xuất quan hệ
         req_rels = SemanticValidator.extract_required_relationships(script_clean, found_keys)
-        relationships: List[VisualRelationship] = []
-        for r_idx, (src, act, tgt) in enumerate(req_rels):
-            src_ent = next((e for e in entities if e.label == src), None)
-            tgt_ent = next((e for e in entities if e.label == tgt), None)
-            if src_ent and tgt_ent:
-                relationships.append(
-                    VisualRelationship(
-                        id=f"rel_{r_idx+1}",
-                        source_id=src_ent.id,
-                        target_id=tgt_ent.id,
-                        relation_type=act,
-                        action=act,
-                        description=f"{src} {act} {tgt}",
-                    )
-                )
+        entities, actions, relationships = cls._plan_dynamic_entities_and_actions(
+            script_clean=script_clean,
+            found_keys=found_keys,
+            req_rels=req_rels,
+            canvas=cv,
+        )
 
-        sg = SceneGraph(entities=entities, relationships=relationships)
+        sg = SceneGraph(entities=entities, relationships=relationships, actions=actions)
         return VisualPlanOutput(
             project_title=title,
             scenes=[
@@ -283,3 +251,358 @@ class SemanticVisualPlanner:
                 )
             ],
         )
+
+    @classmethod
+    def _infer_semantic_types(cls, key: str) -> tuple[str, str, str]:
+        """Suy luận (semantic_type, category, visual_type) dựa trên bản chất thực thể."""
+        if key in ["cat", "dog", "monkey", "bird"]:
+            return "animal", "character", "character"
+        elif key in ["farmer", "teacher", "children", "hiker", "engineer"]:
+            return "human", "character", "character"
+        elif key in ["areca_palm", "tree", "plant", "seedling"]:
+            return "plant", "structure", "structure"
+        elif key in ["ground", "mountain", "bridge", "nest"]:
+            return "structure", "structure", "structure"
+        elif key in ["sun", "earth", "orbit", "molecules", "mathematics"]:
+            return "diagram", "diagram", "diagram"
+        elif key in ["inflation", "temperature", "vapor"]:
+            return "metaphor", "metaphor", "metaphor"
+        else:
+            return "object", "object", "object"
+
+    @classmethod
+    def _plan_dynamic_entities_and_actions(
+        cls,
+        script_clean: str,
+        found_keys: set[str],
+        req_rels: list[tuple[str, str, str]],
+        canvas: CanvasSchema,
+    ) -> tuple[list[VisualEntity], list[VisualAction], list[VisualRelationship]]:
+        """
+        Action & Pose Planner: Thiết lập không gian hình học, tư thế bám/tiếp xúc thực tế,
+        và liên kết hành động cho mọi kịch bản tổng quát.
+        """
+        entities: list[VisualEntity] = []
+        actions: list[VisualAction] = []
+        relationships: list[VisualRelationship] = []
+
+        handled_entities: set[str] = set()
+
+        # Kiểm tra các mẫu tương tác ngữ nghĩa (Semantic Interaction Patterns)
+        climb_rel = next((r for r in req_rels if r[1] in ["climbing", "climbing_on"]), None)
+        chase_rel = next((r for r in req_rels if r[1] in ["chasing"]), None)
+        orbit_rel = next((r for r in req_rels if r[1] in ["orbiting"]), None)
+        plant_rel = next((r for r in req_rels if r[1] in ["planting"]), None)
+        fly_rel = next((r for r in req_rels if r[1] in ["flying", "flying_from"]), None)
+        cross_rel = next((r for r in req_rels if r[1] in ["crossing"]), None)
+        repair_rel = next((r for r in req_rels if r[1] in ["repairing"]), None)
+        evap_rel = next((r for r in req_rels if r[1] in ["evaporating"]), None)
+
+        if climb_rel:
+            src, act, tgt = climb_rel
+            handled_entities.update([src, tgt])
+            src_sem, src_cat, src_vtype = cls._infer_semantic_types(src)
+            tgt_sem, tgt_cat, tgt_vtype = cls._infer_semantic_types(tgt)
+
+            # Giá bám leo (Structure): Thân cây / núi đặt ở trục thẳng đứng
+            struct_ent = VisualEntity(
+                id=f"{tgt}_1",
+                label=tgt,
+                species=tgt,
+                semantic_type=tgt_sem,
+                category=tgt_cat,  # type: ignore
+                visual_type=tgt_vtype,  # type: ignore
+                visual_role="climbing_structure",
+                importance="primary",
+                required=True,
+                drawing_intent=f"Cấu trúc {tgt} vươn cao vững chắc làm giá bám leo",
+                actions=["standing", "supporting"],
+                position=Position(x=920, y=100, width=540, height=880),
+                layer=0,
+                priority=1,
+            )
+            # Nhân vật leo (Actor): Đặt tiếp xúc trực tiếp trên thân cây, chân và móng vuốt bám thân
+            actor_ent = VisualEntity(
+                id=f"{src}_1",
+                label=src,
+                species=src,
+                semantic_type=src_sem,
+                category=src_cat,  # type: ignore
+                visual_type=src_vtype,  # type: ignore
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="climbing",
+                actions=["climbing"],
+                drawing_intent=f"Tư thế {src} đang bám chắc và leo lên thân {tgt}",
+                position=Position(x=820, y=380, width=360, height=360),
+                layer=1,
+                priority=2,
+            )
+            entities.extend([struct_ent, actor_ent])
+            actions.append(
+                VisualAction(
+                    id=f"act_{src}_climbing",
+                    entity_id=actor_ent.id,
+                    action_type="climbing",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id=f"rel_{src}_{tgt}_climbing",
+                    source_id=actor_ent.id,
+                    target_id=struct_ent.id,
+                    relation_type="climbing_on",
+                    action="climbing",
+                    description=f"{src} leo trên thân {tgt}",
+                    required=True,
+                )
+            )
+
+        elif chase_rel:
+            src, act, tgt = chase_rel
+            handled_entities.update([src, tgt])
+            src_sem, src_cat, src_vtype = cls._infer_semantic_types(src)
+            tgt_sem, tgt_cat, tgt_vtype = cls._infer_semantic_types(tgt)
+
+            tgt_ent = VisualEntity(
+                id=f"{tgt}_1",
+                label=tgt,
+                species=tgt,
+                semantic_type=tgt_sem,
+                category=tgt_cat,  # type: ignore
+                visual_type=tgt_vtype,  # type: ignore
+                visual_role="target",
+                importance="primary",
+                required=True,
+                drawing_intent=f"Mục tiêu {tgt} lăn chuyển động phía trước",
+                actions=["rolling", "bouncing"],
+                position=Position(x=1200, y=550, width=240, height=240),
+                layer=0,
+                priority=1,
+            )
+            actor_ent = VisualEntity(
+                id=f"{src}_1",
+                label=src,
+                species=src,
+                semantic_type=src_sem,
+                category=src_cat,  # type: ignore
+                visual_type=src_vtype,  # type: ignore
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="running",
+                actions=["running", "chasing"],
+                drawing_intent=f"{src} phi nước đại đuổi theo {tgt}",
+                position=Position(x=400, y=460, width=450, height=350),
+                layer=1,
+                priority=2,
+            )
+            entities.extend([tgt_ent, actor_ent])
+            actions.append(
+                VisualAction(
+                    id=f"act_{src}_chasing",
+                    entity_id=actor_ent.id,
+                    action_type="chasing",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id=f"rel_{src}_{tgt}_chasing",
+                    source_id=actor_ent.id,
+                    target_id=tgt_ent.id,
+                    relation_type="chasing",
+                    action="chasing",
+                    description=f"{src} đuổi theo {tgt}",
+                    required=True,
+                )
+            )
+
+        elif plant_rel:
+            src, act, tgt = plant_rel
+            handled_entities.update([src, tgt, "ground"])
+            src_sem, src_cat, src_vtype = cls._infer_semantic_types(src)
+            tgt_sem, tgt_cat, tgt_vtype = cls._infer_semantic_types(tgt)
+
+            ground_ent = VisualEntity(
+                id="ground_1",
+                label="ground",
+                species="ground",
+                semantic_type="structure",
+                category="structure",
+                visual_type="structure",
+                visual_role="environment",
+                importance="secondary",
+                drawing_intent="Mặt đất màu mỡ trải dài",
+                actions=["supporting"],
+                position=Position(x=200, y=750, width=1520, height=250),
+                layer=0,
+                priority=1,
+            )
+            plant_ent = VisualEntity(
+                id=f"{tgt}_1",
+                label=tgt,
+                species=tgt,
+                semantic_type=tgt_sem,
+                category=tgt_cat,  # type: ignore
+                visual_type=tgt_vtype,  # type: ignore
+                visual_role="cultivated_plant",
+                importance="primary",
+                required=True,
+                drawing_intent=f"Cây {tgt} xanh tốt đang được ươm trồng",
+                actions=["standing"],
+                position=Position(x=950, y=200, width=650, height=750),
+                layer=0,
+                priority=2,
+            )
+            farmer_ent = VisualEntity(
+                id=f"{src}_1",
+                label=src,
+                species=src,
+                semantic_type=src_sem,
+                category=src_cat,  # type: ignore
+                visual_type=src_vtype,  # type: ignore
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="planting",
+                actions=["planting"],
+                drawing_intent=f"{src} chăm chú chăm sóc và trồng cây",
+                position=Position(x=450, y=400, width=420, height=550),
+                layer=1,
+                priority=3,
+            )
+            entities.extend([ground_ent, plant_ent, farmer_ent])
+            actions.append(
+                VisualAction(
+                    id=f"act_{src}_planting",
+                    entity_id=farmer_ent.id,
+                    action_type="planting",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id=f"rel_{src}_{tgt}_planting",
+                    source_id=farmer_ent.id,
+                    target_id=plant_ent.id,
+                    relation_type="planting",
+                    action="planting",
+                    description=f"{src} trồng {tgt}",
+                    required=True,
+                )
+            )
+
+        elif fly_rel:
+            src, act, tgt = fly_rel
+            handled_entities.update([src, tgt])
+            src_sem, src_cat, src_vtype = cls._infer_semantic_types(src)
+            tgt_sem, tgt_cat, tgt_vtype = cls._infer_semantic_types(tgt)
+
+            nest_ent = VisualEntity(
+                id=f"{tgt}_1",
+                label=tgt,
+                species=tgt,
+                semantic_type=tgt_sem,
+                category=tgt_cat,  # type: ignore
+                visual_type=tgt_vtype,  # type: ignore
+                visual_role="origin_structure",
+                importance="secondary",
+                required=True,
+                drawing_intent=f"Tổ ấm {tgt}",
+                actions=["resting"],
+                position=Position(x=350, y=500, width=350, height=300),
+                layer=0,
+                priority=1,
+            )
+            bird_ent = VisualEntity(
+                id=f"{src}_1",
+                label=src,
+                species=src,
+                semantic_type=src_sem,
+                category=src_cat,  # type: ignore
+                visual_type=src_vtype,  # type: ignore
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="flying",
+                actions=["flying"],
+                drawing_intent=f"{src} sải cánh bay lượn trên bầu trời",
+                position=Position(x=850, y=250, width=350, height=300),
+                layer=1,
+                priority=2,
+            )
+            entities.extend([nest_ent, bird_ent])
+            actions.append(
+                VisualAction(
+                    id=f"act_{src}_flying",
+                    entity_id=bird_ent.id,
+                    action_type="flying",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id=f"rel_{src}_{tgt}_flying",
+                    source_id=bird_ent.id,
+                    target_id=nest_ent.id,
+                    relation_type="flying_from",
+                    action="flying",
+                    description=f"{src} bay khỏi {tgt}",
+                    required=True,
+                )
+            )
+
+        # Xử lý các entity còn lại chưa nằm trong pattern chính
+        remaining = sorted(found_keys - handled_entities)
+        if remaining:
+            pos_x = 250
+            step_x = min(450, int(1400 / max(1, len(remaining))))
+            for idx, k in enumerate(remaining):
+                sem, cat, vtype = cls._infer_semantic_types(k)
+                ent_id = f"{k}_{len(entities)+1}"
+                entities.append(
+                    VisualEntity(
+                        id=ent_id,
+                        label=k,
+                        species=k,
+                        semantic_type=sem,
+                        category=cat,  # type: ignore
+                        visual_type=vtype,  # type: ignore
+                        visual_role="supporting_element" if entities else "main_character",
+                        importance="primary" if not entities else "secondary",
+                        drawing_intent=f"Minh họa trực quan {k} cho kịch bản",
+                        actions=["presenting"],
+                        position=Position(x=pos_x, y=350, width=380, height=450),
+                        layer=len(entities),
+                        priority=len(entities) + 1,
+                    )
+                )
+                pos_x += step_x
+
+        # Bổ sung các relationship phụ nếu có
+        for r_idx, (r_src, r_act, r_tgt) in enumerate(req_rels):
+            src_ent = next((e for e in entities if e.label == r_src or getattr(e, "species", None) == r_src), None)
+            tgt_ent = next((e for e in entities if e.label == r_tgt or getattr(e, "species", None) == r_tgt), None)
+            if src_ent and tgt_ent:
+                already_has_rel = any(
+                    r.source_id == src_ent.id and r.target_id == tgt_ent.id
+                    for r in relationships
+                )
+                if not already_has_rel:
+                    rel_id = f"rel_{src_ent.id}_{tgt_ent.id}_{r_act}"
+                    relationships.append(
+                        VisualRelationship(
+                            id=rel_id,
+                            source_id=src_ent.id,
+                            target_id=tgt_ent.id,
+                            relation_type=r_act,
+                            action=r_act,
+                            description=f"{r_src} {r_act} {r_tgt}",
+                            required=True,
+                        )
+                    )
+
+        return entities, actions, relationships

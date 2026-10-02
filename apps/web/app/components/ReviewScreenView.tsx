@@ -438,13 +438,14 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
               );
             })()}
 
-            {/* Three-Layer QA Verification Card (Phase 10.1 Specification) */}
+            {/* Four-Layer QA Verification Card (Phase 10.3 Specification) */}
             {(() => {
               const qa = reviewData.qa_report;
               const techPass = qa?.technical_qa?.pass_technical ?? (qa?.is_valid_mp4 && !qa?.is_corrupted);
               const drawingPass = qa?.drawing_qa?.pass_drawing ?? true;
               const semanticPass = qa?.semantic_qa?.pass_semantic ?? (qa?.visual_qa_pass ?? true);
-              const overallPass = qa?.overall_pass ?? (techPass && drawingPass && semanticPass);
+              const stylePass = qa?.visual_style_qa?.pass_style ?? true;
+              const overallPass = qa?.overall_pass ?? (techPass && drawingPass && semanticPass && stylePass);
 
               const reqVisuals = qa?.semantic_qa?.required_entities ?? reviewData.visual_entities.length;
               const compVisuals = qa?.semantic_qa?.completed_entities ?? reviewData.visual_entities.length;
@@ -478,11 +479,11 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
                     </div>
                   </div>
 
-                  {/* 3 Pillars: Technical QA, Drawing QA, Semantic Visual QA */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
-                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-medium truncate">
-                        Technical QA
+                  {/* 4 Pillars: Technical QA, Drawing QA, Semantic Visual QA, Visual Style QA */}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                      <div className="text-[8px] uppercase tracking-wider text-slate-400 font-medium truncate">
+                        Technical
                       </div>
                       <div
                         id="qa-technical-status"
@@ -494,9 +495,9 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
-                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-medium truncate">
-                        Drawing QA
+                    <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                      <div className="text-[8px] uppercase tracking-wider text-slate-400 font-medium truncate">
+                        Drawing
                       </div>
                       <div
                         id="qa-drawing-status"
@@ -508,9 +509,9 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
-                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-medium truncate">
-                        Semantic Visual QA
+                    <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                      <div className="text-[8px] uppercase tracking-wider text-slate-400 font-medium truncate">
+                        Semantic
                       </div>
                       <div
                         id="qa-semantic-status"
@@ -519,6 +520,20 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
                         }`}
                       >
                         {semanticPass ? "PASS" : "FAIL"}
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                      <div className="text-[8px] uppercase tracking-wider text-slate-400 font-medium truncate">
+                        Style
+                      </div>
+                      <div
+                        id="qa-style-status"
+                        className={`text-xs font-extrabold mt-1 ${
+                          stylePass ? "text-emerald-400" : "text-amber-400"
+                        }`}
+                      >
+                        {stylePass ? "PASS" : "REVIEW"}
                       </div>
                     </div>
                   </div>

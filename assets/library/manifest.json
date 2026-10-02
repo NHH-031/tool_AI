@@ -668,6 +668,91 @@
       "metadata": {
         "author": "WhiteboardStudio"
       }
+    },
+    {
+      "id": "asset_cat",
+      "name": "cat",
+      "category": "character",
+      "tags": [
+        "mèo",
+        "con mèo",
+        "chú mèo",
+        "mèo con",
+        "cat",
+        "kitten",
+        "feline"
+      ],
+      "format": "svg",
+      "path": "svg/cat_climbing.svg",
+      "poses": {
+        "climbing": {
+          "name": "climbing",
+          "file_path": "svg/cat_climbing.svg",
+          "description": "Cat actively climbing tree trunk with paws gripping and claws extended",
+          "view_box": "0 0 500 500"
+        },
+        "sitting": {
+          "name": "sitting",
+          "file_path": "svg/cat_sitting.svg",
+          "description": "Cat sitting calmly with tail wrapped around paws",
+          "view_box": "0 0 500 500"
+        },
+        "default": {
+          "name": "default",
+          "file_path": "svg/cat_climbing.svg",
+          "description": "Cat whiteboard illustration",
+          "view_box": "0 0 500 500"
+        }
+      },
+      "actions": [
+        "climbing",
+        "sitting",
+        "running",
+        "chasing"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
+    },
+    {
+      "id": "asset_areca_palm",
+      "name": "areca_palm",
+      "category": "structure",
+      "tags": [
+        "cây cau",
+        "cau",
+        "areca palm",
+        "betel palm",
+        "areca_palm"
+      ],
+      "format": "svg",
+      "path": "svg/areca_palm.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/areca_palm.svg",
+          "description": "Slender tall areca palm tree with ringed trunk, nut cluster and feathery crown",
+          "view_box": "0 0 600 900"
+        },
+        "climbing_structure": {
+          "name": "climbing_structure",
+          "file_path": "svg/areca_palm.svg",
+          "description": "Vertical areca palm tree trunk serving as climbing structure",
+          "view_box": "0 0 600 900"
+        }
+      },
+      "actions": [
+        "standing",
+        "supporting",
+        "bearing_fruit"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
     }
   ]
 }

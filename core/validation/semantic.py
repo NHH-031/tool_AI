@@ -31,135 +31,229 @@ class SemanticValidator:
 
     # Từ điển ánh xạ từ vựng tiếng Việt và tiếng Anh sang entity canonical key
     ENTITY_KEYWORDS: Dict[str, List[str]] = {
-        # Case 5 & General
-        "monkey": ["khỉ", "con khỉ", "chú khỉ", "con khi", "chu khi", "monkey", "ape"],
-        "tree": ["cây", "cái cây", "thân cây", "cay", "cai cay", "than cay", "tree"],
-        "banana": ["chuối", "quả chuối", "trái chuối", "chuoi", "qua chuoi", "trai chuoi", "banana"],
-        "mountain": ["núi", "núi giả", "hòn non bộ", "nui", "nui gia", "mountain", "rockery"],
-        "children": ["trẻ em", "em bé", "bọn trẻ", "khán giả", "tre em", "em be", "bon tre", "children", "kids", "crowd"],
-        "car": ["xe", "ô tô", "xe hơi", "xe hoi", "o to", "car"],
-        # Case 1: Dog running after ball
-        "dog": ["chó", "con chó", "chú chó", "cho", "con cho", "chu cho", "dog", "puppy", "canine"],
-        "ball": ["bóng", "quả bóng", "trái bóng", "bong", "qua bong", "trai bong", "ball"],
-        # Case 2: Teacher explaining mathematics
+        # Characters & Animals
+        "cat": ["con mèo", "chú mèo", "mèo con", "mèo", "meo", "con meo", "chu meo", "cat", "kitten", "feline"],
+        "monkey": ["chú khỉ", "con khỉ", "khỉ", "con khi", "chu khi", "monkey", "ape"],
+        "dog": ["con chó", "chú chó", "chó con", "chó", "cho", "con cho", "chu cho", "dog", "puppy", "canine"],
+        "bird": ["con chim", "chú chim", "chim", "con chim", "chu chim", "bird", "avian"],
         "teacher": ["giáo viên", "thầy giáo", "cô giáo", "giao vien", "thay giao", "co giao", "teacher", "instructor", "professor"],
-        "mathematics": ["toán", "toán học", "công thức", "bảng đen", "toan", "toan hoc", "cong thuc", "bang den", "mathematics", "math", "formula", "blackboard", "equations"],
-        # Case 3: Temperature makes molecules move faster
+        "farmer": ["người nông dân", "bác nông dân", "nông dân", "nong dan", "nguoi nong dan", "bac nong dan", "farmer", "grower", "planter"],
+        "children": ["trẻ em", "em bé", "bọn trẻ", "khán giả", "tre em", "em be", "bon tre", "children", "kids", "crowd"],
+        "hiker": ["người leo núi", "vận động viên leo núi", "nguoi leo nui", "hiker", "climber", "mountaineer"],
+        "engineer": ["kỹ sư", "kỹ thuật viên", "thợ sửa máy", "ky su", "engineer", "technician", "mechanic"],
+        # Flora & Structures
+        "areca_palm": ["cây cau", "cau", "cay cau", "areca palm", "areca", "betel palm", "areca_palm"],
+        "tree": ["cái cây", "thân cây", "cây cối", "cây", "cay", "cai cay", "than cay", "tree"],
+        "nest": ["tổ chim", "tổ", "to chim", "nest", "bird nest"],
+        "bridge": ["cây cầu", "chiếc cầu", "cầu", "cay cau", "chiec cau", "cau", "bridge"],
+        "ground": ["mặt đất", "mảnh đất", "đồng ruộng", "cánh đồng", "đất", "mat dat", "manh dat", "dong ruong", "canh dong", "ground", "soil"],
+        "mountain": ["núi giả", "hòn non bộ", "núi", "nui", "nui gia", "mountain", "rockery"],
+        # Objects & Transport
+        "banana": ["quả chuối", "trái chuối", "nải chuối", "chuối", "chuoi", "qua chuoi", "trai chuoi", "banana"],
+        "ball": ["quả bóng", "trái bóng", "bóng", "bong", "qua bong", "trai bong", "ball"],
+        "car": ["xe hơi", "ô tô", "chiếc xe", "xe", "xe hoi", "o to", "car", "automobile", "vehicle"],
+        "machine": ["máy móc", "cỗ máy", "thiết bị", "may moc", "co may", "machine", "machinery", "equipment"],
+        # Physical & Abstract Concepts
+        "water": ["nước nóng", "nước sôi", "nước", "nuoc nong", "nuoc", "water", "hot water", "liquid"],
+        "vapor": ["hơi nước", "bốc hơi", "hoi nuoc", "boc hoi", "vapor", "steam", "evaporation"],
         "temperature": ["nhiệt độ", "nguồn nhiệt", "lửa", "độ nóng", "nhiet do", "nguon nhiet", "lua", "do nong", "temperature", "heat", "heat_source", "burner"],
         "molecules": ["phân tử", "nguyên tử", "hạt", "phan tu", "nguyen tu", "hat", "molecules", "atoms", "particles"],
-        # Case 4: Inflation
         "inflation": ["lạm phát", "mức giá", "giá cả", "lam phat", "muc gia", "gia ca", "inflation", "price", "price_tag", "prices"],
         "goods_basket": ["giỏ hàng", "hàng hóa", "gio hang", "hang hoa", "shopping cart", "goods", "basket"],
-        # Astronomy: Earth around Sun
+        "mathematics": ["toán học", "công thức", "bảng đen", "toán", "toan", "toan hoc", "cong thuc", "bang den", "mathematics", "math", "formula", "blackboard", "equations"],
+        # Astronomy
         "earth": ["trái đất", "quả đất", "địa cầu", "trai dat", "qua dat", "dia cau", "earth", "globe", "planet"],
         "sun": ["mặt trời", "thái dương", "mat troi", "thai duong", "sun", "sunlight"],
         "orbit": ["quỹ đạo", "vòng quay", "quy dao", "vong quay", "orbit", "orbiting", "ellipse"],
-        # Agriculture: Farmer planting tree
-        "farmer": ["nông dân", "người nông dân", "bác nông dân", "nong dan", "nguoi nong dan", "bac nong dan", "farmer", "grower"],
-        "ground": ["mặt đất", "mảnh đất", "đồng ruộng", "cánh đồng", "mat dat", "manh dat", "dong ruong", "canh dong", "ground", "soil"],
     }
 
-    # Từ điển ánh xạ hành động / quan hệ: (action_key, source, target, keywords)
+    # Từ điển ánh xạ hành động / quan hệ tổng quát: (action, sources, targets, keywords, relation_type)
     RELATIONSHIP_RULES: List[Dict] = [
-        # Case 5
+        # Climbing interaction (cat/monkey/hiker on palm/tree/mountain)
         {
             "action": "climbing",
-            "source": "monkey",
-            "target": "tree",
-            "keywords": ["trèo", "leo", "climb", "climbing"],
+            "sources": ["cat", "monkey", "hiker", "animal", "character"],
+            "targets": ["areca_palm", "tree", "mountain", "climbing_structure"],
+            "keywords": ["trèo", "leo", "climb", "climbing", "bám", "treo"],
+            "relation_type": "climbing_on",
         },
+        # Chasing interaction (dog chasing ball/prey)
+        {
+            "action": "chasing",
+            "sources": ["dog", "cat", "predator", "character"],
+            "targets": ["ball", "prey", "target"],
+            "keywords": ["đuổi theo", "chạy theo", "vồ", "chasing", "running after", "runs after", "pursuing"],
+            "relation_type": "chasing",
+        },
+        # Grabbing / Reaching
         {
             "action": "reaching",
-            "source": "monkey",
-            "target": "banana",
+            "sources": ["monkey", "cat", "character"],
+            "targets": ["banana", "ball", "fruit"],
             "keywords": ["với", "với tới", "reach", "reaching"],
-        },
-        {
-            "action": "located_on",
-            "source": "banana",
-            "target": "tree",
-            "keywords": ["trên cây", "ở trên cây", "located on", "located_on", "mọc trên cây"],
+            "relation_type": "reaching",
         },
         {
             "action": "grabbing",
-            "source": "monkey",
-            "target": "banana",
+            "sources": ["monkey", "cat", "character"],
+            "targets": ["banana", "ball", "fruit"],
             "keywords": ["cướp", "giật", "chộp", "grab", "snatch", "grabbing"],
+            "relation_type": "grabbing",
         },
-        # Case 1: Dog running after ball
         {
-            "action": "chasing",
-            "source": "dog",
-            "target": "ball",
-            "keywords": ["đuổi theo", "chạy theo", "vồ", "chasing", "running after", "runs after", "pursuing"],
+            "action": "located_on",
+            "sources": ["banana", "fruit"],
+            "targets": ["tree", "areca_palm"],
+            "keywords": ["trên cây", "ở trên cây", "located on", "located_on", "mọc trên cây"],
+            "relation_type": "located_on",
         },
-        # Case 2: Teacher explaining mathematics
+        # Education / Explanation
         {
             "action": "explaining",
-            "source": "teacher",
-            "target": "mathematics",
+            "sources": ["teacher", "character"],
+            "targets": ["mathematics", "formula", "diagram"],
             "keywords": ["giảng", "giảng giải", "giải thích", "dạy", "chỉ vào", "explaining", "teaching", "pointing to"],
+            "relation_type": "explaining",
         },
-        # Case 3: Temperature makes molecules move faster
+        # Physical phenomena
         {
             "action": "accelerating",
-            "source": "temperature",
-            "target": "molecules",
+            "sources": ["temperature", "heat"],
+            "targets": ["molecules", "particles"],
             "keywords": ["làm chuyển động nhanh hơn", "tăng tốc", "khiến chuyển động", "accelerating", "speeding up", "vibrating", "makes move faster", "heating"],
+            "relation_type": "accelerating",
         },
-        # Case 4: Inflation
         {
             "action": "eroding",
-            "source": "inflation",
-            "target": "money",
+            "sources": ["inflation"],
+            "targets": ["money", "currency"],
             "keywords": ["làm giảm sức mua", "bào mòn", "tăng cao", "eroding", "devaluing", "shrinking", "inflating"],
+            "relation_type": "eroding",
         },
-        # Astronomy: Earth orbiting Sun
+        # Astronomy: Orbiting
         {
             "action": "orbiting",
-            "source": "earth",
-            "target": "sun",
+            "sources": ["earth", "planet"],
+            "targets": ["sun", "star"],
             "keywords": ["quay quanh", "quay xung quanh", "orbit", "orbits", "orbiting", "revolve", "revolves"],
+            "relation_type": "orbiting",
         },
-        # Agriculture: Farmer planting tree
+        # Agriculture: Planting
         {
             "action": "planting",
-            "source": "farmer",
-            "target": "tree",
+            "sources": ["farmer", "character"],
+            "targets": ["tree", "areca_palm", "seedling", "ground"],
             "keywords": ["trồng", "chăm sóc", "gieo", "plant", "planting", "tưới"],
+            "relation_type": "planting",
+        },
+        # Movement: Flying
+        {
+            "action": "flying",
+            "sources": ["bird"],
+            "targets": ["nest", "tree", "sky"],
+            "keywords": ["bay", "bay khỏi", "bay ra", "flying", "flies"],
+            "relation_type": "flying_from",
+        },
+        # Transportation: Crossing bridge
+        {
+            "action": "crossing",
+            "sources": ["car", "vehicle"],
+            "targets": ["bridge", "road"],
+            "keywords": ["chạy qua", "đi qua", "vượt qua", "crossing", "driving across"],
+            "relation_type": "crossing",
+        },
+        # Engineering: Repairing machine
+        {
+            "action": "repairing",
+            "sources": ["engineer", "mechanic"],
+            "targets": ["machine", "equipment"],
+            "keywords": ["sửa chữa", "sửa", "khắc phục", "repairing", "fixing"],
+            "relation_type": "repairing",
+        },
+        # Physics: Evaporating
+        {
+            "action": "evaporating",
+            "sources": ["water"],
+            "targets": ["vapor"],
+            "keywords": ["bốc hơi", "bay hơi", "evaporating", "evaporates"],
+            "relation_type": "evaporating",
         },
     ]
 
     @classmethod
     def extract_required_entities(cls, text: str) -> Set[str]:
-        """Trích xuất các thực thể bắt buộc phải xuất hiện từ văn bản thoại."""
+        """
+        Trích xuất các thực thể bắt buộc phải xuất hiện từ văn bản thoại.
+        Sử dụng thuật toán Longest-Match-First và Span-Exclusion để tránh việc
+        từ ngữ ngắn hơn (vd: 'cây') nuốt mất thực thể chuyên biệt (vd: 'cây cau' hay 'cây cầu').
+        """
         text_lower = text.lower()
-        found: Set[str] = set()
+        candidates: List[Tuple[int, int, str, str]] = []
+
         for entity_key, keywords in cls.ENTITY_KEYWORDS.items():
             for kw in keywords:
-                # Tìm từ nguyên vẹn với regex word boundary hoặc substring cho tiếng Việt
                 pattern = r"(?:\b|^)" + re.escape(kw) + r"(?:\b|$)"
-                if re.search(pattern, text_lower) or kw in text_lower:
-                    found.add(entity_key)
+                for m in re.finditer(pattern, text_lower):
+                    candidates.append((m.start(), m.end(), entity_key, kw))
+                if kw in text_lower:
+                    idx = 0
+                    while True:
+                        idx = text_lower.find(kw, idx)
+                        if idx == -1:
+                            break
+                        candidates.append((idx, idx + len(kw), entity_key, kw))
+                        idx += len(kw)
+
+        # Sắp xếp ưu tiên chuỗi dài nhất trước
+        candidates.sort(key=lambda c: (len(c[3]), c[1] - c[0]), reverse=True)
+
+        occupied_spans: List[Tuple[int, int]] = []
+        found: Set[str] = set()
+
+        for start, end, entity_key, kw in candidates:
+            # Kiểm tra xem span này có bị bao phủ bởi span dài hơn đã chấp nhận không
+            is_subsumed = False
+            for o_start, o_end in occupied_spans:
+                # Nếu phần lớn span bị trùng lặp với span dài hơn
+                overlap_len = max(0, min(end, o_end) - max(start, o_start))
+                if overlap_len >= (end - start) * 0.7:
+                    is_subsumed = True
                     break
+            if not is_subsumed:
+                occupied_spans.append((start, end))
+                found.add(entity_key)
+
         return found
 
     @classmethod
     def extract_required_relationships(cls, text: str, present_entities: Set[str]) -> List[Tuple[str, str, str]]:
         """
-        Trích xuất các mối quan hệ ngữ nghĩa bắt buộc từ câu thoại.
+        Trích xuất các mối quan hệ ngữ nghĩa bắt buộc từ câu thoại theo quy tắc tổng quát.
         Trả về danh sách (source_entity, action, target_entity).
         """
         text_lower = text.lower()
         required_rels: List[Tuple[str, str, str]] = []
+
         for rule in cls.RELATIONSHIP_RULES:
-            src, tgt, act = rule["source"], rule["target"], rule["action"]
-            # Chỉ yêu cầu quan hệ nếu cả 2 đối tượng đều xuất hiện trong câu
-            if src in present_entities and tgt in present_entities:
-                for kw in rule["keywords"]:
-                    if kw in text_lower:
-                        required_rels.append((src, act, tgt))
+            sources = rule.get("sources", [rule.get("source")])
+            targets = rule.get("targets", [rule.get("target")])
+            act = rule["action"]
+
+            # Tìm xem có cặp (src, tgt) nào trong present_entities khớp với rule không
+            for src in sources:
+                if src not in present_entities:
+                    continue
+                for tgt in targets:
+                    if tgt not in present_entities:
+                        continue
+                    # Cả source và target đều xuất hiện trong câu thoại
+                    matched_kw = any(kw in text_lower for kw in rule["keywords"])
+                    if matched_kw:
+                        rel_tuple = (src, act, tgt)
+                        if rel_tuple not in required_rels:
+                            required_rels.append(rel_tuple)
                         break
+
         return required_rels
 
     @classmethod
@@ -196,15 +290,21 @@ class SemanticValidator:
         }
 
         def has_entity(req_key: str) -> bool:
-            # Kiểm tra khớp ID hoặc nhãn hoặc từ đồng nghĩa
+            # Kiểm tra khớp ID, nhãn, species hoặc từ đồng nghĩa
             if req_key in available_entity_ids or req_key in available_entity_labels:
                 return True
+            for ent in scene_graph.entities:
+                if getattr(ent, "species", None) and ent.species and ent.species.lower() == req_key:
+                    return True
             for kw in cls.ENTITY_KEYWORDS.get(req_key, []):
                 if kw in available_entity_ids or kw in available_entity_labels:
                     return True
                 # Kiểm tra substring trong nhãn (ví dụ: 'chú khỉ con' chứa 'khỉ')
                 if any(kw in label for label in available_entity_labels):
                     return True
+                for ent in scene_graph.entities:
+                    if getattr(ent, "species", None) and ent.species and kw in ent.species.lower():
+                        return True
             return False
 
         # Kiểm tra missing entities
@@ -231,13 +331,15 @@ class SemanticValidator:
                     src_ent = scene_graph.get_entity(rel.source_id)
                     tgt_ent = scene_graph.get_entity(rel.target_id)
                     if src_ent and tgt_ent:
+                        src_species = (getattr(src_ent, "species", None) or "").lower()
+                        tgt_species = (getattr(tgt_ent, "species", None) or "").lower()
                         src_match = (
-                            src_req in src_ent.id.lower() or src_req in src_ent.label.lower()
-                            or any(kw in src_ent.label.lower() for kw in cls.ENTITY_KEYWORDS.get(src_req, []))
+                            src_req in src_ent.id.lower() or src_req in src_ent.label.lower() or src_req == src_species
+                            or any(kw in src_ent.label.lower() or kw in src_species for kw in cls.ENTITY_KEYWORDS.get(src_req, []))
                         )
                         tgt_match = (
-                            tgt_req in tgt_ent.id.lower() or tgt_req in tgt_ent.label.lower()
-                            or any(kw in tgt_ent.label.lower() for kw in cls.ENTITY_KEYWORDS.get(tgt_req, []))
+                            tgt_req in tgt_ent.id.lower() or tgt_req in tgt_ent.label.lower() or tgt_req == tgt_species
+                            or any(kw in tgt_ent.label.lower() or kw in tgt_species for kw in cls.ENTITY_KEYWORDS.get(tgt_req, []))
                         )
                         if src_match and tgt_match:
                             matched = True

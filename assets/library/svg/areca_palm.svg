@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Authentic Vietnamese Areca Palm Tree (Cây cau) -->
+  <g id="areca_palm" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Ground Contour Mound -->
+    <g id="ground" stroke-width="5">
+      <path id="ground_line" d="M 120 860 Q 300 840 480 860" />
+      <path id="soil_clod_1" d="M 220 868 Q 240 860 260 868" stroke-width="3" />
+      <path id="soil_clod_2" d="M 340 868 Q 360 860 380 868" stroke-width="3" />
+    </g>
+
+    <!-- Slender Straight Trunk (Thân cau thẳng và mảnh khảnh) -->
+    <g id="trunk">
+      <!-- Left Bark Edge (Tall, slender, straight) -->
+      <path id="trunk_left_base" d="M 265 850 L 275 600" />
+      <path id="trunk_left_mid" d="M 275 600 L 282 350" />
+      <path id="trunk_left_top" d="M 282 350 L 288 200" />
+
+      <!-- Right Bark Edge (Tall, slender, parallel) -->
+      <path id="trunk_right_base" d="M 335 850 L 325 600" />
+      <path id="trunk_right_mid" d="M 325 600 L 318 350" />
+      <path id="trunk_right_top" d="M 318 350 L 312 200" />
+
+      <!-- Root Base Texture -->
+      <path id="root_detail_1" d="M 270 855 Q 260 870 245 875" stroke-width="4" />
+      <path id="root_detail_2" d="M 330 855 Q 340 870 355 875" stroke-width="4" />
+    </g>
+
+    <!-- Annular Node Rings (Các ngấn thân cau đặc trưng) -->
+    <g id="trunk_rings" stroke-width="4">
+      <path id="ring_1" d="M 268 810 Q 300 802 332 810" />
+      <path id="ring_2" d="M 270 760 Q 300 752 330 760" />
+      <path id="ring_3" d="M 272 710 Q 300 702 328 710" />
+      <path id="ring_4" d="M 274 660 Q 300 652 326 660" />
+      <path id="ring_5" d="M 276 610 Q 300 602 324 610" />
+      <path id="ring_6" d="M 278 560 Q 300 552 322 560" />
+      <path id="ring_7" d="M 280 510 Q 300 502 320 510" />
+      <path id="ring_8" d="M 281 460 Q 300 452 319 460" />
+      <path id="ring_9" d="M 282 410 Q 300 402 318 410" />
+      <path id="ring_10" d="M 283 360 Q 300 352 317 360" />
+      <path id="ring_11" d="M 284 310 Q 300 302 316 310" />
+      <path id="ring_12" d="M 286 260 Q 300 252 314 260" />
+      <path id="ring_13" d="M 287 210 Q 300 202 313 210" />
+    </g>
+
+    <!-- Areca Nut Bunches (Buồng cau trĩu quả dưới ngọn) -->
+    <g id="nut_cluster">
+      <!-- Stalk of Nut Cluster -->
+      <path id="stalk_left" d="M 288 200 Q 240 220 220 250" stroke-width="5" />
+      <path id="stalk_right" d="M 312 200 Q 360 220 380 250" stroke-width="5" />
+      <!-- Left Bunch of Areca Nuts (Quả cau) -->
+      <circle id="nut_l1" cx="230" cy="245" r="9" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_l2" cx="245" cy="255" r="9" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_l3" cx="225" cy="265" r="9" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_l4" cx="210" cy="255" r="8" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_l5" cx="235" cy="275" r="8" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <!-- Right Bunch of Areca Nuts (Quả cau) -->
+      <circle id="nut_r1" cx="370" cy="245" r="9" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_r2" cx="355" cy="255" r="9" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_r3" cx="375" cy="265" r="9" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_r4" cx="390" cy="255" r="8" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+      <circle id="nut_r5" cx="365" cy="275" r="8" fill="#F5EBD7" stroke="#1A1A1A" stroke-width="4" />
+    </g>
+
+    <!-- Crown Fronds (Tán lá cau thanh thoát vươn trên đỉnh ngọn) -->
+    <g id="crown_fronds">
+      <!-- Frond 1 (Far Left Arching Downward) -->
+      <path id="frond_left_low" d="M 300 180 Q 180 160 80 230" stroke-width="7" />
+      <path id="f_l_pinna_1" d="M 230 170 L 210 205" stroke-width="4" />
+      <path id="f_l_pinna_2" d="M 190 170 L 170 210" stroke-width="4" />
+      <path id="f_l_pinna_3" d="M 150 180 L 130 220" stroke-width="4" />
+      <path id="f_l_pinna_4" d="M 110 200 L 95 235" stroke-width="4" />
+
+      <!-- Frond 2 (Left Upward Arch) -->
+      <path id="frond_left_high" d="M 300 180 Q 220 80 130 90" stroke-width="7" />
+      <path id="f_lh_pinna_1" d="M 260 140 L 230 165" stroke-width="4" />
+      <path id="f_lh_pinna_2" d="M 225 110 L 195 135" stroke-width="4" />
+      <path id="f_lh_pinna_3" d="M 190 90 L 165 118" stroke-width="4" />
+      <path id="f_lh_pinna_4" d="M 155 85 L 135 110" stroke-width="4" />
+
+      <!-- Frond 3 (Center Top Vertical Spear Frond) -->
+      <path id="frond_center_top" d="M 300 180 Q 295 80 300 30" stroke-width="7" />
+      <path id="f_c_pinna_1" d="M 298 130 L 275 110 M 300 130 L 325 110" stroke-width="4" />
+      <path id="f_c_pinna_2" d="M 298 90 L 278 70 M 300 90 L 322 70" stroke-width="4" />
+      <path id="f_c_pinna_3" d="M 299 55 L 285 40 M 300 55 L 315 40" stroke-width="4" />
+
+      <!-- Frond 4 (Right Upward Arch) -->
+      <path id="frond_right_high" d="M 300 180 Q 380 80 470 90" stroke-width="7" />
+      <path id="f_rh_pinna_1" d="M 340 140 L 370 165" stroke-width="4" />
+      <path id="f_rh_pinna_2" d="M 375 110 L 405 135" stroke-width="4" />
+      <path id="f_rh_pinna_3" d="M 410 90 L 435 118" stroke-width="4" />
+      <path id="f_rh_pinna_4" d="M 445 85 L 465 110" stroke-width="4" />
+
+      <!-- Frond 5 (Far Right Arching Downward) -->
+      <path id="frond_right_low" d="M 300 180 Q 420 160 520 230" stroke-width="7" />
+      <path id="f_r_pinna_1" d="M 370 170 L 390 205" stroke-width="4" />
+      <path id="f_r_pinna_2" d="M 410 170 L 430 210" stroke-width="4" />
+      <path id="f_r_pinna_3" d="M 450 180 L 470 220" stroke-width="4" />
+      <path id="f_r_pinna_4" d="M 490 200 L 505 235" stroke-width="4" />
+    </g>
+  </g>
+</svg>

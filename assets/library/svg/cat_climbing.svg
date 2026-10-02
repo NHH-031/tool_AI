@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <!-- Whiteboard Line Art: Cat Climbing Pose (Con mèo leo cây) -->
+  <g id="cat_climbing" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Tail (Long, elegant feline tail curling for balance) -->
+    <g id="tail">
+      <path id="tail_curve" d="M 175 350 C 110 370 85 430 120 465 C 150 490 195 470 190 435 C 185 405 150 415 155 435" />
+    </g>
+
+    <!-- Hind Legs (Bracing and pushing up against trunk) -->
+    <g id="hind_legs">
+      <!-- Upper Hind Leg (Bent, muscular thigh driving upward) -->
+      <path id="hind_thigh_upper" d="M 190 310 C 215 315 260 295 310 295" />
+      <path id="hind_leg_upper" d="M 310 295 Q 360 290 415 305" />
+      <path id="hind_paw_upper" d="M 415 305 C 430 300 445 305 448 315 C 450 325 435 330 420 322" />
+      <path id="hind_claws_upper" d="M 435 308 L 448 312 M 438 318 L 446 322" stroke-width="4" />
+
+      <!-- Lower Hind Leg (Bracing support against tree bark) -->
+      <path id="hind_thigh_lower" d="M 180 345 C 210 360 255 355 305 365" />
+      <path id="hind_leg_lower" d="M 305 365 Q 360 375 410 380" />
+      <path id="hind_paw_lower" d="M 410 380 C 425 375 440 380 442 390 C 445 400 430 405 415 398" />
+      <path id="hind_claws_lower" d="M 430 383 L 442 388 M 432 393 L 440 398" stroke-width="4" />
+    </g>
+
+    <!-- Torso Body (Sleek arched feline body stretched vertically) -->
+    <g id="body">
+      <!-- Back Spine Curve -->
+      <path id="back_spine" d="M 220 180 C 175 200 160 280 185 340" />
+      <!-- Belly & Chest Contour -->
+      <path id="belly_contour" d="M 285 220 C 265 260 260 305 285 335" />
+      <!-- Chest Fur Tufts -->
+      <path id="chest_fur_1" d="M 260 230 Q 245 245 265 255" stroke-width="4" />
+      <path id="chest_fur_2" d="M 255 265 Q 240 280 260 290" stroke-width="4" />
+    </g>
+
+    <!-- Forelegs / Front Paws (Reaching high and firmly gripping trunk) -->
+    <g id="forelegs">
+      <!-- Upper Front Leg (Reaching high up the trunk) -->
+      <path id="foreleg_upper" d="M 245 195 Q 320 150 415 130" />
+      <path id="front_paw_upper" d="M 415 130 C 430 120 450 125 452 135 C 455 145 438 152 420 145" />
+      <path id="front_claws_upper" d="M 435 125 L 450 128 M 438 135 L 448 140" stroke-width="4" />
+
+      <!-- Lower Front Leg (Clasping firmly onto trunk) -->
+      <path id="foreleg_lower" d="M 260 225 Q 340 220 420 225" />
+      <path id="front_paw_lower" d="M 420 225 C 435 218 452 222 455 232 C 458 242 440 248 422 240" />
+      <path id="front_claws_lower" d="M 438 222 L 452 226 M 440 232 L 450 236" stroke-width="4" />
+    </g>
+
+    <!-- Head & Pointed Feline Ears (Tilted up in focused determination) -->
+    <g id="head">
+      <!-- Head Contour -->
+      <path id="head_outline" d="M 255 85 C 215 85 185 115 185 155 C 185 195 215 220 255 220 C 295 220 325 195 325 155 C 325 115 295 85 255 85 Z" />
+      <!-- Left Pointed Ear -->
+      <path id="ear_left" d="M 195 120 L 175 60 L 225 90" />
+      <path id="ear_left_inner" d="M 195 105 L 185 75 L 215 95" stroke-width="4" />
+      <!-- Right Pointed Ear -->
+      <path id="ear_right" d="M 285 90 L 335 60 L 315 120" />
+      <path id="ear_right_inner" d="M 295 95 L 325 75 L 312 105" stroke-width="4" />
+    </g>
+
+    <!-- Facial Features (Expressive cat eyes, nose, whiskers) -->
+    <g id="face">
+      <!-- Almond Eyes with Pupils -->
+      <ellipse id="eye_left" cx="230" cy="140" rx="8" ry="11" fill="#1A1A1A" />
+      <ellipse id="eye_right" cx="275" cy="138" rx="8" ry="11" fill="#1A1A1A" />
+      <circle id="eye_glint_left" cx="228" cy="136" r="3" fill="#FFFFFF" />
+      <circle id="eye_glint_right" cx="273" cy="134" r="3" fill="#FFFFFF" />
+
+      <!-- Cute Nose & Mouth -->
+      <path id="nose" d="M 248 158 L 256 158 L 252 165 Z" fill="#1A1A1A" />
+      <path id="mouth" d="M 245 168 Q 252 174 252 165 Q 252 174 259 168" stroke-width="4" />
+
+      <!-- Whiskers (Distinctive feline feature) -->
+      <!-- Left Whiskers -->
+      <path id="whisker_l1" d="M 230 162 L 165 152" stroke-width="4" />
+      <path id="whisker_l2" d="M 228 168 L 160 172" stroke-width="4" />
+      <path id="whisker_l3" d="M 230 174 L 170 190" stroke-width="4" />
+      <!-- Right Whiskers -->
+      <path id="whisker_r1" d="M 274 160 L 340 148" stroke-width="4" />
+      <path id="whisker_r2" d="M 276 166 L 345 168" stroke-width="4" />
+      <path id="whisker_r3" d="M 274 172 L 335 186" stroke-width="4" />
+    </g>
+  </g>
+</svg>

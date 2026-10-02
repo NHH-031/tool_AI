@@ -25,7 +25,7 @@ from core.schemas.timeline import DrawingTimeline
 
 @dataclass
 class WhiteboardRenderConfig:
-    ink_path: str = "grid"  # "grid" | "skeleton"
+    ink_path: str = "skeleton"  # "skeleton" (fine lineart tracing) | "grid"
     color_fill: str = "contour-wipe"  # "contour-wipe" | "brush"
     fps: int = 60
     cap_long_edge: int = 1080
@@ -68,7 +68,7 @@ class WhiteboardEngineAdapter:
     ) -> Tuple[Path, Path]:
         """
         Chuyển đổi SceneGraph và DrawingTimeline của AI Studio thành dữ liệu đầu vào cho Whiteboard Engine:
-        1. scene_composition.png: Line-art tổng thể với tất cả nét vẽ trên canvas 1920x1080.
+        1. scene_composition.png: Line-art tổng thể với tất cả nét vẽ trên nền giấy màu kem ấm (#F5EBD7).
         2. scene_annotation.json: File đặc tả vùng vẽ (regions), thứ tự (sequence), mốc thời gian (reveal),
            và các vùng bảo vệ (protectedRegions) nhằm ngăn ngừa tình trạng lộ nét vẽ sớm (no early reveal).
         """
@@ -77,8 +77,8 @@ class WhiteboardEngineAdapter:
         image_path = output_dir / f"{scene_id}.png"
         annotation_path = output_dir / f"{scene_id}.annotation.json"
 
-        # 1. Vẽ composite line-art image lên nền trắng
-        canvas = np.full((timeline.canvas_height, timeline.canvas_width, 3), 255, dtype=np.uint8)
+        # 1. Khởi tạo nền giấy màu kem ấm #F5EBD7 (BGR: 215, 235, 245) theo chuẩn whiteboard skill
+        canvas = np.full((timeline.canvas_height, timeline.canvas_width, 3), (215, 235, 245), dtype=np.uint8)
         for ev in timeline.events:
             if ev.action == "draw" and ev.points and len(ev.points) >= 2:
                 pts = np.array(ev.points, dtype=np.int32).reshape((-1, 1, 2))
@@ -273,10 +273,30 @@ class WhiteboardEngineAdapter:
                 out.mux(packet)
 
         # Decode audio và encode sang AAC
+        total_samples_written = 0
         for frame in a_in.decode(audio=0):
             for r in resampler.resample(frame):
+                total_samples_written += r.samples
                 for packet in out_a.encode(r):
                     out.mux(packet)
+
+        # Tính toán thời lượng video để bù silence nếu video dài hơn audio (tránh audio/video duration drift)
+        v_dur = float(v_in.duration) / av.time_base if v_in.duration else 0.0
+        if v_dur <= 0 and v_in.streams.video and v_in.streams.video[0].duration and v_in.streams.video[0].time_base:
+            v_dur = float(v_in.streams.video[0].duration * v_in.streams.video[0].time_base)
+
+        target_samples = int(v_dur * sample_rate)
+        if target_samples > total_samples_written:
+            remaining = target_samples - total_samples_written
+            while remaining > 0:
+                chunk = min(1024, remaining)
+                silence_frame = av.AudioFrame(format="fltp", layout=out_layout, samples=chunk)
+                silence_frame.rate = sample_rate
+                for p in silence_frame.planes:
+                    p.update(b"\x00" * p.buffer_size)
+                for packet in out_a.encode(silence_frame):
+                    out.mux(packet)
+                remaining -= chunk
 
         for packet in out_a.encode():
             out.mux(packet)
