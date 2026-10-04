@@ -98,6 +98,20 @@ class CharacterPoseSystem:
             head_expression_guidance="Đầu vươn thẳng theo luồng bay",
             contact_notes="Không chạm đất, có nét lượn sóng biểu thị khí động học",
         ),
+        "giving": PoseGuidance(
+            pose_name="giving",
+            silhouette_notes="Thân người đứng thẳng hoặc hơi nghiêng về phía trước, tay vươn trao vật phẩm",
+            limbs_guidance="Cánh tay vươn ra phía trước cầm bó hoa hoặc quà tặng đưa cho người đối diện",
+            head_expression_guidance="Ánh mắt hướng về phía người nhận, nụ cười tươi tắn biểu cảm ấm áp",
+            contact_notes="Bàn tay cầm cuống hoa/hộp quà đưa sang cho người nhận",
+        ),
+        "receiving": PoseGuidance(
+            pose_name="receiving",
+            silhouette_notes="Thân người đứng hướng về phía người tặng, hai tay mở đón lấy món quà",
+            limbs_guidance="Hai tay đưa về phía trước khum nhẹ đón nhận bó hoa hoặc món quà",
+            head_expression_guidance="Khuôn mặt rạng rỡ, ngạc nhiên vui mừng, ánh mắt nhìn vào món quà",
+            contact_notes="Các đầu ngón tay chạm nhẹ vào bó hoa/quà tặng được trao",
+        ),
     }
 
     @classmethod
@@ -133,6 +147,15 @@ class CharacterPoseSystem:
             "cầm": "holding",
             "nắm": "holding",
             "hold": "holding",
+            "tặng": "giving",
+            "give": "giving",
+            "giving": "giving",
+            "trao": "giving",
+            "đưa": "giving",
+            "nhận": "receiving",
+            "receive": "receiving",
+            "receiving": "receiving",
+            "đón": "receiving",
             "ngồi": "sitting",
             "sit": "sitting",
             "đứng": "standing",

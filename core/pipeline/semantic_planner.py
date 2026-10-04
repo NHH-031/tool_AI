@@ -350,6 +350,8 @@ class SemanticVisualPlanner:
             return "diagram", "diagram", "diagram"
         elif key in ["inflation", "temperature", "vapor"]:
             return "metaphor", "metaphor", "metaphor"
+        elif key in ["flower", "rose", "bouquet", "gift", "banana", "ball", "car", "machine"]:
+            return "object", "object", "object"
         else:
             return "object", "object", "object"
 
@@ -383,6 +385,7 @@ class SemanticVisualPlanner:
         repair_rel = next((r for r in req_rels if r[1] in ["repairing"]), None)
         evap_rel = next((r for r in req_rels if r[1] in ["evaporating"]), None)
         step_rel = next((r for r in req_rels if r[1] in ["stepping", "stepping_on"]), None)
+        give_rel = next((r for r in req_rels if r[1] in ["giving", "giving_to"]), None)
 
         is_talking = talk_rel is not None or any(
             w in script_clean.lower()
@@ -395,6 +398,14 @@ class SemanticVisualPlanner:
         is_fighting = fight_rel is not None or any(
             w in script_clean.lower()
             for w in ["đấu võ", "đấu boxing", "so tài", "quyết đấu", "đánh nhau", "mma", "sparring"]
+        )
+        is_giving = give_rel is not None or any(
+            w in script_clean.lower()
+            for w in [
+                "tặng hoa", "tặng quà", "đưa hoa", "đưa quà", "dâng hoa",
+                "giving flowers", "offering flowers", "handing flowers",
+                "giving gift", "offering gift",
+            ]
         )
 
         # Xử lý môi trường nền nếu có (Forest / Background Environment)
@@ -418,7 +429,121 @@ class SemanticVisualPlanner:
             )
             entities.append(forest_ent)
 
-        if is_talking and (
+        if is_giving and (
+            any(k in found_keys for k in ["man", "woman", "person", "character", "flower"])
+            or any(
+                w in script_clean.lower()
+                for w in ["người", "đàn ông", "phụ nữ", "chàng trai", "cô gái", "con trai", "con gái", "man", "woman", "boy", "girl"]
+            )
+        ):
+            handled_entities.update(["man", "woman", "person", "character", "flower"])
+            scr_l = script_clean.lower()
+
+            # Xác định người tặng (giver) và người nhận (receiver) từ kịch bản
+            has_man = "man" in found_keys or any(w in scr_l for w in ["đàn ông", "con trai", "người con trai", "chàng trai", "nam", "man", "boy"])
+            has_woman = "woman" in found_keys or any(w in scr_l for w in ["phụ nữ", "con gái", "người con gái", "cô gái", "nữ", "woman", "girl"])
+
+            if has_man and has_woman:
+                k1, k2 = "man", "woman"
+                lbl1, lbl2 = "man", "woman"
+                intent1 = "Chàng trai đứng bên trái quay mặt sang phải, tay cầm bó hoa đưa tặng cho cô gái"
+                intent2 = "Cô gái đứng bên phải quay mặt sang trái, hai tay đón nhận bó hoa với biểu cảm vui mừng"
+            elif has_woman:
+                k1, k2 = "woman", "woman"
+                lbl1, lbl2 = "woman", "woman"
+                intent1 = "Người phụ nữ thứ nhất đứng bên trái tay cầm bó hoa tặng cho người phụ nữ thứ hai"
+                intent2 = "Người phụ nữ thứ hai đứng bên phải đón nhận bó hoa với niềm vui"
+            elif has_man:
+                k1, k2 = "man", "man"
+                lbl1, lbl2 = "man", "man"
+                intent1 = "Người đàn ông thứ nhất đứng bên trái tay cầm bó hoa tặng"
+                intent2 = "Người đàn ông thứ hai đứng bên phải nhận bó hoa"
+            else:
+                k1, k2 = "person", "person"
+                lbl1, lbl2 = "person", "person"
+                intent1 = "Nhân vật thứ nhất đứng bên trái tay cầm bó hoa đưa tặng"
+                intent2 = "Nhân vật thứ hai đứng bên phải đón nhận bó hoa với niềm hạnh phúc"
+
+            giver = VisualEntity(
+                id=f"{k1}_1",
+                label=lbl1,
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="giving",
+                actions=["giving"],
+                drawing_intent=intent1,
+                position=Position(x=250, y=200, width=500, height=750),
+                layer=1,
+                priority=1,
+            )
+            flower = VisualEntity(
+                id="flower_1",
+                label="flower",
+                species="flower",
+                semantic_type="object",
+                category="object",
+                visual_type="object",
+                visual_role="gift_item",
+                importance="primary",
+                required=True,
+                drawing_intent="Bó hoa tươi đẹp nằm giữa hai nhân vật, được trao từ tay người tặng sang người nhận",
+                actions=["being_given"],
+                position=Position(x=750, y=350, width=300, height=350),
+                layer=2,
+                priority=2,
+            )
+            receiver = VisualEntity(
+                id=f"{k2}_2",
+                label=lbl2,
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="receiving",
+                actions=["receiving"],
+                drawing_intent=intent2,
+                position=Position(x=1120, y=200, width=500, height=750),
+                layer=1,
+                priority=3,
+            )
+            entities.extend([giver, flower, receiver])
+            actions.append(
+                VisualAction(
+                    id=f"act_{giver.id}_giving",
+                    entity_id=giver.id,
+                    action_type="giving",
+                    required=True,
+                )
+            )
+            actions.append(
+                VisualAction(
+                    id=f"act_{receiver.id}_receiving",
+                    entity_id=receiver.id,
+                    action_type="receiving",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id=f"rel_{giver.id}_{receiver.id}_giving",
+                    source_id=giver.id,
+                    target_id=receiver.id,
+                    relation_type="giving_to",
+                    action="giving",
+                    description=f"{lbl1} tặng hoa cho {lbl2}, cảnh lãng mạn ấm áp",
+                    required=True,
+                )
+            )
+
+        elif is_talking and (
             any(k in found_keys for k in ["man", "woman", "person", "character", "fighter"])
             or any(
                 w in script_clean.lower()
@@ -1121,6 +1246,8 @@ class SemanticVisualPlanner:
                 detected_action = "sleeping"
             elif any(w in scr_low for w in ["leo", "trèo", "climbing", "climbs"]):
                 detected_action = "climbing"
+            elif any(w in scr_low for w in ["tặng", "đưa", "dâng", "biếu", "trao", "giving", "presents", "offering"]):
+                detected_action = "giving"
 
             def _detect_count(text_raw: str, key_str: str) -> int:
                 t_l = text_raw.lower()

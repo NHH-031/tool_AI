@@ -33,8 +33,8 @@ class SemanticValidator:
     ENTITY_KEYWORDS: Dict[str, List[str]] = {
         # Characters & Animals
         "fighter": ["hai võ sĩ", "võ sĩ", "đấu thủ", "võ sỹ", "fighter", "boxer", "martial artist", "fighters"],
-        "man": ["người đàn ông", "hai người đàn ông", "hai người nam", "người nam", "đàn ông", "chàng trai", "nam giới", "man", "men", "gentleman", "gentlemen"],
-        "woman": ["người phụ nữ", "hai người phụ nữ", "phụ nữ", "cô gái", "nữ giới", "woman", "women", "lady", "ladies"],
+        "man": ["người đàn ông", "hai người đàn ông", "hai người nam", "người nam", "đàn ông", "chàng trai", "con trai", "người con trai", "nam giới", "man", "men", "gentleman", "gentlemen", "boy"],
+        "woman": ["người phụ nữ", "hai người phụ nữ", "phụ nữ", "cô gái", "con gái", "người con gái", "nữ giới", "woman", "women", "lady", "ladies", "girl"],
         "person": ["hai người", "con người", "mọi người", "người", "nhân vật", "bạn bè", "person", "people", "human", "character"],
         "octagon": ["sàn đấu bát giác", "sàn bát giác", "lồng bát giác", "sàn đấu", "võ đài", "octagon", "fighting ring", "cage"],
         "cat": ["con mèo", "chú mèo", "mèo con", "mèo", "con meo", "chu meo", "cat", "kitten", "feline"],
@@ -75,6 +75,7 @@ class SemanticValidator:
         # Objects & Transport
         "banana": ["quả chuối", "trái chuối", "nải chuối", "chuối", "chuoi", "qua chuoi", "trai chuoi", "banana"],
         "ball": ["quả bóng", "trái bóng", "bóng", "bong", "qua bong", "trai bong", "ball"],
+        "flower": ["bó hoa", "bông hoa", "đóa hoa", "hoa", "bo hoa", "bong hoa", "doa hoa", "flower", "flowers", "bouquet", "rose", "roses"],
         "car": ["xe hơi", "ô tô", "chiếc xe", "xe", "xe hoi", "o to", "car", "automobile", "vehicle"],
         "machine": ["máy móc", "cỗ máy", "thiết bị", "may moc", "co may", "machine", "machinery", "equipment"],
         # Physical & Abstract Concepts
@@ -254,6 +255,17 @@ class SemanticValidator:
             "targets": ["mars", "spacecraft", "ground"],
             "keywords": ["bước ra", "bước xuống", "đặt chân", "bước", "stepping", "steps out", "landing"],
             "relation_type": "stepping_on",
+        },
+        # Giving / Offering interaction (tặng hoa, tặng quà)
+        {
+            "action": "giving",
+            "sources": ["man", "woman", "person", "character", "human"],
+            "targets": ["man", "woman", "person", "character", "human", "flower", "gift"],
+            "keywords": [
+                "tặng hoa", "tặng quà", "tặng", "cho", "đưa hoa", "đưa quà", "đưa",
+                "dâng hoa", "biếu", "hiến tặng", "giving", "offering", "presenting", "handing"
+            ],
+            "relation_type": "giving_to",
         },
     ]
 

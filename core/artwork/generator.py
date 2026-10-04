@@ -235,6 +235,10 @@ class HighFidelityArtProvider(ImageGeneratorProvider):
         matched_file: Optional[Path] = None
         if kw_match("hai người đàn ông", "người đàn ông", "đàn ông", "men", "man", "hai người") and kw_match("nói chuyện", "trò chuyện", "thảo luận", "đối thoại", "tâm sự", "talking", "conversing", "chatting", "conversation"):
             matched_file = self.art_dir / "two_men_talking.png"
+        elif kw_match("hoa", "flower", "flowers", "bó hoa", "đóa hoa") and kw_match("tặng", "cho", "con trai", "chàng trai", "cô gái", "con gái", "đàn ông", "phụ nữ", "người", "boy", "girl", "man", "woman", "giving", "receiving", "gift"):
+            matched_file = self.art_dir / "giving_flowers.png"
+        elif kw_match("tặng hoa", "đưa hoa", "bó hoa", "đóa hoa", "giving flowers"):
+            matched_file = self.art_dir / "giving_flowers.png"
         elif kw_match("astronaut", "phi hành gia", "mars", "sao hỏa", "spacecraft"):
             matched_file = self.art_dir / "astronaut_mars.png"
         elif kw_match("teacher", "giáo viên", "thầy giáo", "cô giáo", "bảng đen", "classroom", "lớp học", "học sinh"):
@@ -272,26 +276,11 @@ class HighFidelityArtProvider(ImageGeneratorProvider):
                 logger.info(f"[HighFidelityArtProvider] Deployed curated masterpiece from {matched_file} to {output_path}")
                 return output_path
 
-        # Nếu không có file mẫu sẵn, sử dụng tác phẩm chuẩn đẹp nhất trong kho thay vì vẽ hình học rỗng
-        fallback_candidates = [
-            self.art_dir / "astronaut_mars.png",
-            self.art_dir / "teacher_classroom.png",
-            self.art_dir / "engineer_workspace.png",
-            self.art_dir / "doctor_medical.png",
-            self.art_dir / "fish_ocean.png",
-            self.art_dir / "tiger_rabbit_forest.png",
-            self.art_dir / "dog_ball.png",
-        ]
-        for candidate in fallback_candidates:
-            if candidate.exists():
-                import cv2
-                img = cv2.imread(str(candidate))
-                if img is not None:
-                    img_resized = cv2.resize(img, (width, height), interpolation=cv2.INTER_LANCZOS4)
-                    cv2.imwrite(str(output_path), img_resized)
-                    logger.info(f"[HighFidelityArtProvider] Deployed fallback masterpiece from {candidate} to {output_path}")
-                    return output_path
-
+        # Nếu không có file mẫu khớp theo ngữ nghĩa, vẽ canvas trắng chuẩn nền kem ấm #F5EBD7 thay vì tự tiện gán hình phi hành gia
+        logger.warning(
+            f"[HighFidelityArtProvider] No matching curated artwork found for prompt: '{prompt_text[:80]}'. "
+            f"Generating clean warm-cream whiteboard canvas."
+        )
         import numpy as np
         import cv2
         canvas = np.full((height, width, 3), (215, 235, 245), dtype=np.uint8)
@@ -362,6 +351,31 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             ("đối thoại", "having a dialogue face to face"),
             ("tâm sự", "talking intimately in conversation"),
             ("trao đổi", "conversing and exchanging ideas"),
+
+            # 1.1. Tặng hoa / Tặng quà (Giving Flowers / Gifts)
+            ("một người con trai tặng hoa cho người con gái", "a young man standing on the left giving a beautiful bouquet of flowers to a young woman standing on the right, romantic and sweet expression, friendly interaction"),
+            ("người con trai tặng hoa cho người con gái", "a young man giving a bouquet of flowers to a young woman, sweet expressive scene"),
+            ("con trai tặng hoa cho người con gái", "a young man giving a bouquet of flowers to a young woman, sweet expressive scene"),
+            ("con trai tặng hoa cho con gái", "a young man giving a bouquet of flowers to a young woman, sweet expressive scene"),
+            ("chàng trai tặng hoa cho cô gái", "a handsome young man giving a bouquet of flowers to a beautiful young woman, romantic scene"),
+            ("người con trai tặng hoa", "a young man holding and giving a bouquet of flowers"),
+            ("con trai tặng hoa", "a young man holding and giving a bouquet of flowers"),
+            ("chàng trai tặng hoa", "a young man holding and giving a bouquet of flowers"),
+            ("tặng hoa cho người con gái", "giving a beautiful bouquet of flowers to a young woman"),
+            ("tặng hoa cho cô gái", "giving a beautiful bouquet of flowers to a young woman"),
+            ("tặng hoa cho", "giving a bouquet of flowers to"),
+            ("tặng hoa", "giving a bouquet of flowers"),
+            ("đưa hoa", "handing a bouquet of flowers"),
+            ("dâng hoa", "offering flowers"),
+            ("bó hoa", "a bouquet of flowers"),
+            ("đóa hoa", "blooming flowers"),
+            ("người con trai", "a young man"),
+            ("người con gái", "a young woman"),
+            ("chàng trai", "a young man"),
+            ("cô gái", "a young woman"),
+            ("con trai", "a young man"),
+            ("con gái", "a young woman"),
+            ("hoa", "flowers"),
 
             # 2. Võ thuật / Sàn đấu (Martial Arts / Combat)
             ("trong một sàn đấu bát giác hai người đàn ông đấu võ", "inside an MMA octagon fighting cage, two athletic men martial arts sparring MMA fighting"),
