@@ -233,7 +233,9 @@ class HighFidelityArtProvider(ImageGeneratorProvider):
             return False
 
         matched_file: Optional[Path] = None
-        if kw_match("astronaut", "phi hành gia", "mars", "sao hỏa", "spacecraft"):
+        if kw_match("hai người đàn ông", "người đàn ông", "đàn ông", "men", "man", "hai người") and kw_match("nói chuyện", "trò chuyện", "thảo luận", "đối thoại", "tâm sự", "talking", "conversing", "chatting", "conversation"):
+            matched_file = self.art_dir / "two_men_talking.png"
+        elif kw_match("astronaut", "phi hành gia", "mars", "sao hỏa", "spacecraft"):
             matched_file = self.art_dir / "astronaut_mars.png"
         elif kw_match("teacher", "giáo viên", "thầy giáo", "cô giáo", "bảng đen", "classroom", "lớp học", "học sinh"):
             matched_file = self.art_dir / "teacher_classroom.png"
@@ -241,6 +243,8 @@ class HighFidelityArtProvider(ImageGeneratorProvider):
             matched_file = self.art_dir / "engineer_workspace.png"
         elif kw_match("doctor", "bác sĩ", "bệnh nhân", "y tế", "khám bệnh", "phòng khám", "clinic", "hospital"):
             matched_file = self.art_dir / "doctor_medical.png"
+        elif kw_match("octagon", "bát giác", "sàn đấu", "võ sĩ", "đấu võ", "mma", "boxing", "fighter", "đấu vật", "võ thuật"):
+            matched_file = self.art_dir / "mma_octagon_fight.png"
         elif kw_match("chicken", "gà", "con gà", "gà con", "gà trống", "gà mái", "rooster", "hen"):
             matched_file = self.art_dir / "chicken_running.png"
         elif kw_match("cat", "mèo", "mèo con") and kw_match("palm", "cau", "cây cau", "tree", "cây"):
@@ -325,19 +329,68 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
         import cv2
         import numpy as np
 
+        # Ưu tiên bối cảnh kịch bản thoại gốc của người dùng để hiểu đúng 100% ngữ nghĩa
+        scene_ctx = getattr(prompt, "scene_context", "").strip()
         subject_action = f"{prompt.subject}. {prompt.action}".strip(". ")
-        
+
         # Ánh xạ từ khóa tiếng Việt sang tiếng Anh nếu có để FLUX hiểu chính xác 100% ngữ nghĩa
         vn_map = [
+            # 1. Hội thoại / Giao tiếp (Conversation / Talking)
+            ("hai người đàn ông nói chuyện với nhau", "two adult men standing facing each other having an engaging conversation, speaking and gesturing, friendly expressive interaction"),
+            ("hai người đàn ông trò chuyện với nhau", "two adult men standing facing each other having an engaging conversation, speaking and gesturing, friendly expressive interaction"),
+            ("hai người đàn ông nói chuyện", "two adult men standing facing each other having an engaging conversation, speaking and gesturing"),
+            ("hai người đàn ông trò chuyện", "two adult men standing facing each other having a conversation, chatting and gesturing"),
+            ("hai người đàn ông thảo luận", "two adult men standing facing each other discussing in conversation, natural gestures"),
+            ("hai người đàn ông đối thoại", "two adult men standing facing each other having a dialogue"),
+            ("hai người đàn ông", "two adult men"),
+            ("người đàn ông nói chuyện với nhau", "two adult men standing facing each other talking, having an engaging conversation"),
+            ("người đàn ông nói chuyện", "an adult man talking in conversation"),
+            ("hai người phụ nữ nói chuyện với nhau", "two women standing facing each other having a conversation, chatting and gesturing"),
+            ("hai người phụ nữ trò chuyện với nhau", "two women standing facing each other having a conversation, chatting and gesturing"),
+            ("hai người phụ nữ nói chuyện", "two women standing facing each other having a conversation"),
+            ("hai người phụ nữ", "two women"),
+            ("người phụ nữ", "an adult woman"),
+            ("hai người nói chuyện với nhau", "two people standing facing each other having an engaging conversation, chatting and gesturing"),
+            ("hai người trò chuyện với nhau", "two people standing facing each other having an engaging conversation, chatting and gesturing"),
+            ("hai người nói chuyện", "two people standing facing each other having a conversation"),
+            ("nói chuyện với nhau", "standing facing each other having an engaging conversation, talking and gesturing"),
+            ("trò chuyện với nhau", "standing facing each other having a friendly conversation, chatting and gesturing"),
+            ("thảo luận với nhau", "standing facing each other discussing in conversation"),
+            ("nói chuyện", "having an engaging conversation, talking and gesturing"),
+            ("trò chuyện", "chatting and conversing with friendly gestures"),
+            ("thảo luận", "discussing and conversing"),
+            ("đối thoại", "having a dialogue face to face"),
+            ("tâm sự", "talking intimately in conversation"),
+            ("trao đổi", "conversing and exchanging ideas"),
+
+            # 2. Võ thuật / Sàn đấu (Martial Arts / Combat)
+            ("trong một sàn đấu bát giác hai người đàn ông đấu võ", "inside an MMA octagon fighting cage, two athletic men martial arts sparring MMA fighting"),
+            ("sàn đấu bát giác hai người đàn ông đấu võ", "inside an MMA octagon cage, two athletic men martial arts sparring"),
+            ("hai người đàn ông đấu võ", "two athletic male martial arts fighters sparring MMA fighting"),
+            ("hai võ sĩ đấu võ", "two athletic male martial arts fighters sparring MMA fighting"),
+            ("trong một sàn đấu bát giác", "inside an MMA octagon fighting cage"),
+            ("sàn đấu bát giác", "an MMA octagon fighting cage"),
+            ("sàn bát giác", "an MMA octagon cage"),
+            ("lồng bát giác", "an MMA octagon cage"),
+            ("người đàn ông đấu võ", "athletic male martial arts fighting"),
+            ("đấu võ", "martial arts MMA sparring fight"),
+            ("đấu quyền anh", "boxing fight"),
+            ("võ sĩ", "MMA fighter"),
+
+            # 3. Động vật & chuyển động (Animals & Motion)
+            ("con gà trống đang chạy", "a rooster chicken running fast with wings spread"),
+            ("con gà đang chạy", "a chicken running fast with wings spread"),
+            ("chú gà đang chạy", "a chicken running fast with wings spread"),
             ("con gà trống", "rooster chicken"),
             ("con gà mái", "hen chicken"),
             ("con gà con", "little chick"),
-            ("con gà", "running rooster chicken"),
+            ("con gà", "rooster chicken"),
             ("chú gà", "rooster chicken"),
             ("gà trống", "rooster chicken"),
             ("gà mái", "hen chicken"),
             ("gà con", "little chick"),
             ("gà", "rooster chicken"),
+            ("đang chạy nhanh", "sprinting fast"),
             ("đang chạy", "running actively"),
             ("chạy nhanh", "sprinting fast"),
             ("chạy", "running"),
@@ -366,15 +419,33 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             ("cô giáo", "teacher teaching at blackboard"),
             ("giáo viên", "teacher teaching at blackboard"),
             ("bác sĩ", "doctor consulting medical patient"),
+            ("người đàn ông", "an adult man"),
+            ("người", "person"),
         ]
+
+        # Áp dụng dịch cho scene_context nếu có
+        translated_ctx = scene_ctx.lower() if scene_ctx else ""
+        if translated_ctx:
+            for vn, en in vn_map:
+                if vn in translated_ctx:
+                    translated_ctx = translated_ctx.replace(vn, en)
+
         translated_action = subject_action.lower()
         for vn, en in vn_map:
             if vn in translated_action:
                 translated_action = translated_action.replace(vn, en)
 
+        # Kết hợp mô tả cảnh tối ưu cho FLUX
+        if translated_ctx and any(c in translated_ctx for c in ["men", "man", "women", "people", "fighters", "conversation", "talking"]):
+            scene_desc = f"{translated_ctx}. {translated_action}".strip(". ")
+        elif translated_ctx:
+            scene_desc = translated_ctx
+        else:
+            scene_desc = translated_action
+
         flux_prompt = (
             f"Minimalist comic doodle line art in the Notion vector illustration style. "
-            f"{translated_action}. Bold clean black ink outline, solid line-art, pure white background, "
+            f"{scene_desc}. Bold clean black ink outline, solid line-art, pure white background, "
             f"high contrast, zero colors, zero gradients, no shading, storybook coloring page style, masterpiece, 1080p"
         )
 

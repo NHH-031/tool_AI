@@ -32,6 +32,11 @@ class SemanticValidator:
     # Từ điển ánh xạ từ vựng tiếng Việt và tiếng Anh sang entity canonical key
     ENTITY_KEYWORDS: Dict[str, List[str]] = {
         # Characters & Animals
+        "fighter": ["hai võ sĩ", "võ sĩ", "đấu thủ", "võ sỹ", "fighter", "boxer", "martial artist", "fighters"],
+        "man": ["người đàn ông", "hai người đàn ông", "hai người nam", "người nam", "đàn ông", "chàng trai", "nam giới", "man", "men", "gentleman", "gentlemen"],
+        "woman": ["người phụ nữ", "hai người phụ nữ", "phụ nữ", "cô gái", "nữ giới", "woman", "women", "lady", "ladies"],
+        "person": ["hai người", "con người", "mọi người", "người", "nhân vật", "bạn bè", "person", "people", "human", "character"],
+        "octagon": ["sàn đấu bát giác", "sàn bát giác", "lồng bát giác", "sàn đấu", "võ đài", "octagon", "fighting ring", "cage"],
         "cat": ["con mèo", "chú mèo", "mèo con", "mèo", "con meo", "chu meo", "cat", "kitten", "feline"],
         "chicken": ["con gà", "chú gà", "gà con", "gà trống", "gà mái", "gà", "con ga", "chu ga", "ga", "chicken", "rooster", "hen", "chick"],
         "duck": ["con vịt", "chú vịt", "vịt con", "vịt", "con vit", "duck"],
@@ -91,6 +96,29 @@ class SemanticValidator:
 
     # Từ điển ánh xạ hành động / quan hệ tổng quát: (action, sources, targets, keywords, relation_type)
     RELATIONSHIP_RULES: List[Dict] = [
+        # Conversation / Social interaction
+        {
+            "action": "talking",
+            "sources": ["man", "woman", "person", "fighter", "character", "human", "teacher", "doctor", "farmer", "engineer", "patient"],
+            "targets": ["man", "woman", "person", "fighter", "character", "human", "teacher", "doctor", "farmer", "engineer", "patient"],
+            "keywords": [
+                "nói chuyện với nhau", "nói chuyện", "trò chuyện", "thảo luận", "đối thoại",
+                "tâm sự", "trao đổi", "bàn bạc", "giao tiếp", "hàn huyên",
+                "talking", "conversing", "chatting", "discussing", "speaking"
+            ],
+            "relation_type": "talking_with",
+        },
+        # Fighting / Martial Arts interaction
+        {
+            "action": "fighting",
+            "sources": ["fighter", "man", "character", "human"],
+            "targets": ["octagon", "fighter", "man", "ground"],
+            "keywords": [
+                "đấu võ", "đấu", "quyết đấu", "so tài", "giao đấu", "đánh nhau",
+                "fighting", "fights", "martial arts", "sparring"
+            ],
+            "relation_type": "fighting_in",
+        },
         # Running interaction (running animal / character)
         {
             "action": "running",
@@ -343,7 +371,15 @@ class SemanticValidator:
             if req_key in available_entity_ids or req_key in available_entity_labels:
                 return True
             for ent in scene_graph.entities:
-                if getattr(ent, "species", None) and ent.species and ent.species.lower() == req_key:
+                e_id = ent.id.lower()
+                e_label = ent.label.lower()
+                if (
+                    e_id == req_key
+                    or e_label == req_key
+                    or e_id.startswith(f"{req_key}_")
+                    or e_label.startswith(f"{req_key}_")
+                    or (getattr(ent, "species", None) and ent.species and ent.species.lower() == req_key)
+                ):
                     return True
             for kw in cls.ENTITY_KEYWORDS.get(req_key, []):
                 if kw in available_entity_ids or kw in available_entity_labels:

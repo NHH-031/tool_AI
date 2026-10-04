@@ -246,7 +246,13 @@ class SemanticVisualPlanner:
             canvas=cv,
         )
 
-        sg = SceneGraph(entities=entities, relationships=relationships, actions=actions)
+        sg = SceneGraph(
+            entities=entities,
+            relationships=relationships,
+            actions=actions,
+            narration=script_clean,
+            description=script_clean,
+        )
         plan = VisualPlanOutput(
             project_title=title,
             scenes=[
@@ -284,6 +290,14 @@ class SemanticVisualPlanner:
         for req in sorted(req_entities):
             matched = False
             if req in existing_labels or req in existing_ids or req in existing_species:
+                matched = True
+            elif any(
+                e.id.lower() == req
+                or e.label.lower() == req
+                or e.id.lower().startswith(f"{req}_")
+                or e.label.lower().startswith(f"{req}_")
+                for e in sg.entities
+            ):
                 matched = True
             else:
                 kws = SemanticValidator.ENTITY_KEYWORDS.get(req, [])
@@ -326,11 +340,11 @@ class SemanticVisualPlanner:
         """Suy luận (semantic_type, category, visual_type) dựa trên bản chất thực thể."""
         if key in ["cat", "dog", "monkey", "bird", "tiger", "rabbit", "fish", "chicken", "duck", "horse", "cow", "pig"]:
             return "animal", "character", "character"
-        elif key in ["farmer", "teacher", "children", "hiker", "engineer", "astronaut", "diver", "robot"]:
+        elif key in ["farmer", "teacher", "children", "hiker", "engineer", "astronaut", "diver", "robot", "fighter", "boxer", "man", "woman", "person"]:
             return "human", "character", "character"
         elif key in ["areca_palm", "tree", "plant", "seedling"]:
             return "plant", "structure", "structure"
-        elif key in ["ground", "mountain", "bridge", "nest", "spacecraft", "mars", "forest", "sea"]:
+        elif key in ["ground", "mountain", "bridge", "nest", "spacecraft", "mars", "forest", "sea", "octagon", "ring", "cage"]:
             return "structure", "structure", "structure"
         elif key in ["sun", "earth", "orbit", "molecules", "mathematics"]:
             return "diagram", "diagram", "diagram"
@@ -358,6 +372,8 @@ class SemanticVisualPlanner:
         handled_entities: set[str] = set()
 
         # Kiểm tra các mẫu tương tác ngữ nghĩa (Semantic Interaction Patterns)
+        talk_rel = next((r for r in req_rels if r[1] in ["talking", "talking_with"]), None)
+        fight_rel = next((r for r in req_rels if r[1] in ["fighting", "fighting_in"]), None)
         climb_rel = next((r for r in req_rels if r[1] in ["climbing", "climbing_on"]), None)
         chase_rel = next((r for r in req_rels if r[1] in ["chasing"]), None)
         orbit_rel = next((r for r in req_rels if r[1] in ["orbiting"]), None)
@@ -367,6 +383,19 @@ class SemanticVisualPlanner:
         repair_rel = next((r for r in req_rels if r[1] in ["repairing"]), None)
         evap_rel = next((r for r in req_rels if r[1] in ["evaporating"]), None)
         step_rel = next((r for r in req_rels if r[1] in ["stepping", "stepping_on"]), None)
+
+        is_talking = talk_rel is not None or any(
+            w in script_clean.lower()
+            for w in [
+                "nói chuyện với nhau", "nói chuyện", "trò chuyện", "thảo luận", "đối thoại",
+                "tâm sự", "trao đổi", "bàn bạc", "giao tiếp", "hàn huyên",
+                "talking", "chatting", "conversing", "speaking"
+            ]
+        )
+        is_fighting = fight_rel is not None or any(
+            w in script_clean.lower()
+            for w in ["đấu võ", "đấu boxing", "so tài", "quyết đấu", "đánh nhau", "mma", "sparring"]
+        )
 
         # Xử lý môi trường nền nếu có (Forest / Background Environment)
         if "forest" in found_keys:
@@ -389,7 +418,188 @@ class SemanticVisualPlanner:
             )
             entities.append(forest_ent)
 
-        if climb_rel:
+        if is_talking and (
+            any(k in found_keys for k in ["man", "woman", "person", "character", "fighter"])
+            or any(
+                w in script_clean.lower()
+                for w in ["người", "đàn ông", "phụ nữ", "chàng trai", "cô gái", "bạn", "men", "man", "person", "people"]
+            )
+        ):
+            handled_entities.update(["man", "woman", "person", "character", "fighter"])
+            scr_l = script_clean.lower()
+            if "woman" in found_keys and "man" in found_keys:
+                k1, k2 = "man", "woman"
+                lbl1, lbl2 = "man", "woman"
+                intent1 = "Người đàn ông đứng bên trái quay mặt sang phải, cử chỉ tay tự nhiên khi nói chuyện"
+                intent2 = "Người phụ nữ đứng bên phải quay mặt sang trái đối thoại, chăm chú lắng nghe"
+            elif "woman" in found_keys or any(w in scr_l for w in ["phụ nữ", "cô gái", "nữ giới", "woman", "women"]):
+                k1, k2 = "woman", "woman"
+                lbl1, lbl2 = "woman", "woman"
+                intent1 = "Người phụ nữ thứ nhất đứng bên trái quay mặt sang phải trò chuyện vui vẻ"
+                intent2 = "Người phụ nữ thứ hai đứng bên phải quay mặt sang trái đối thoại tự nhiên"
+            elif "man" in found_keys or any(w in scr_l for w in ["đàn ông", "nam giới", "chàng trai", "men", "man"]):
+                k1, k2 = "man", "man"
+                lbl1, lbl2 = "man", "man"
+                intent1 = "Người đàn ông thứ nhất đứng bên trái quay mặt sang phải, cử chỉ tay tự nhiên khi nói chuyện"
+                intent2 = "Người đàn ông thứ hai đứng bên phải quay mặt sang trái đối thoại, thân thiện và tự nhiên"
+            else:
+                k1, k2 = "person", "person"
+                lbl1, lbl2 = "person", "person"
+                intent1 = "Nhân vật thứ nhất đứng bên trái quay mặt sang phải trò chuyện vui vẻ"
+                intent2 = "Nhân vật thứ hai đứng bên phải quay mặt sang trái đối thoại tương tác"
+
+            char1 = VisualEntity(
+                id=f"{k1}_1",
+                label=lbl1,
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="standing_talking",
+                actions=["talking"],
+                drawing_intent=intent1,
+                position=Position(x=250, y=200, width=550, height=750),
+                layer=1,
+                priority=1,
+            )
+            char2 = VisualEntity(
+                id=f"{k2}_2",
+                label=lbl2,
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="standing_listening",
+                actions=["talking", "listening"],
+                drawing_intent=intent2,
+                position=Position(x=1120, y=200, width=550, height=750),
+                layer=1,
+                priority=2,
+            )
+            entities.extend([char1, char2])
+            actions.append(
+                VisualAction(
+                    id=f"act_{char1.id}_talking",
+                    entity_id=char1.id,
+                    action_type="talking",
+                    required=True,
+                )
+            )
+            actions.append(
+                VisualAction(
+                    id=f"act_{char2.id}_talking",
+                    entity_id=char2.id,
+                    action_type="talking",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id=f"rel_{char1.id}_{char2.id}_talking",
+                    source_id=char1.id,
+                    target_id=char2.id,
+                    relation_type="talking_with",
+                    action="talking",
+                    description=f"{char1.label} và {char2.label} đứng đối diện trò chuyện sôi nổi",
+                    required=True,
+                )
+            )
+
+        elif is_fighting and (
+            any(k in found_keys for k in ["fighter", "man", "character"])
+            or any(w in script_clean.lower() for w in ["võ sĩ", "đấu thủ", "đàn ông", "người", "fighter", "boxer"])
+        ):
+            handled_entities.update(["fighter", "man", "character", "octagon"])
+            has_octagon = "octagon" in found_keys or any(
+                w in script_clean.lower() for w in ["bát giác", "sàn đấu", "võ đài", "lồng", "ring", "cage"]
+            )
+            if has_octagon:
+                oct_ent = VisualEntity(
+                    id="octagon_1",
+                    label="octagon",
+                    species="octagon",
+                    semantic_type="structure",
+                    category="structure",
+                    visual_type="structure",
+                    visual_role="environment",
+                    importance="secondary",
+                    required=True,
+                    drawing_intent="Sàn đấu lồng bát giác MMA tiêu chuẩn với khung lưới và võ đài",
+                    actions=["supporting"],
+                    position=Position(x=100, y=100, width=1720, height=880),
+                    layer=0,
+                    priority=1,
+                )
+                entities.append(oct_ent)
+
+            f1 = VisualEntity(
+                id="fighter_1",
+                label="fighter",
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="fighting",
+                actions=["fighting"],
+                drawing_intent="Võ sĩ thứ nhất trong tư thế thủ tấn đấu quyền dũng mãnh bên trái",
+                position=Position(x=350, y=250, width=500, height=700),
+                layer=1,
+                priority=2,
+            )
+            f2 = VisualEntity(
+                id="fighter_2",
+                label="fighter",
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                pose="fighting",
+                actions=["fighting"],
+                drawing_intent="Võ sĩ thứ hai trong tư thế áp sát ra đòn đối mặt bên phải",
+                position=Position(x=1070, y=250, width=500, height=700),
+                layer=1,
+                priority=3,
+            )
+            entities.extend([f1, f2])
+            actions.append(VisualAction(id="act_fighter_1_fighting", entity_id=f1.id, action_type="fighting", required=True))
+            actions.append(VisualAction(id="act_fighter_2_fighting", entity_id=f2.id, action_type="fighting", required=True))
+            relationships.append(
+                VisualRelationship(
+                    id="rel_fighter1_fighter2_fighting",
+                    source_id=f1.id,
+                    target_id=f2.id,
+                    relation_type="fighting_with",
+                    action="fighting",
+                    description="Hai võ sĩ giao đấu quyết liệt trên sàn đấu",
+                    required=True,
+                )
+            )
+            if has_octagon:
+                relationships.append(
+                    VisualRelationship(
+                        id="rel_fighter1_octagon",
+                        source_id=f1.id,
+                        target_id=oct_ent.id,
+                        relation_type="fighting_in",
+                        action="fighting",
+                        description="Võ sĩ 1 thi đấu trong sàn bát giác",
+                        required=True,
+                    )
+                )
+
+        elif climb_rel:
             src, act, tgt = climb_rel
             handled_entities.update([src, tgt])
             src_sem, src_cat, src_vtype = cls._infer_semantic_types(src)
@@ -893,7 +1103,11 @@ class SemanticVisualPlanner:
             # Tự động trích xuất hành động phù hợp từ kịch bản
             detected_action = "presenting"
             scr_low = script_clean.lower()
-            if any(w in scr_low for w in ["chạy", "đang chạy", "running", "runs", "sprint"]):
+            if any(w in scr_low for w in ["nói chuyện", "trò chuyện", "thảo luận", "đối thoại", "tâm sự", "trao đổi", "bàn bạc", "talking", "chatting", "conversing", "speaking"]):
+                detected_action = "talking"
+            elif any(w in scr_low for w in ["đấu võ", "đấu", "đánh nhau", "quyết đấu", "so tài", "fighting", "fights", "martial arts", "sparring"]):
+                detected_action = "fighting"
+            elif any(w in scr_low for w in ["chạy", "đang chạy", "running", "runs", "sprint"]):
                 detected_action = "running"
             elif any(w in scr_low for w in ["bơi", "đang bơi", "lặn", "swimming", "swims", "diving"]):
                 detected_action = "swimming"
@@ -908,39 +1122,53 @@ class SemanticVisualPlanner:
             elif any(w in scr_low for w in ["leo", "trèo", "climbing", "climbs"]):
                 detected_action = "climbing"
 
+            def _detect_count(text_raw: str, key_str: str) -> int:
+                t_l = text_raw.lower()
+                k_list = SemanticValidator.ENTITY_KEYWORDS.get(key_str, [key_str])
+                for kw in k_list:
+                    for prefix, cnt in [("hai ", 2), ("2 ", 2), ("đôi ", 2), ("cặp ", 2), ("two ", 2), ("ba ", 3), ("3 ", 3), ("three ", 3)]:
+                        if f"{prefix}{kw}" in t_l:
+                            return cnt
+                if any(p in t_l for p in ["hai con", "2 con", "hai chú", "2 chú", "hai con gà", "hai con chó", "hai người", "2 người"]):
+                    return 2
+                return 1
+
             pos_x = 250
-            step_x = min(450, int(1400 / max(1, len(remaining))))
+            total_items = sum(_detect_count(script_clean, k) for k in remaining)
+            step_x = min(450, int(1400 / max(1, total_items)))
             for idx, k in enumerate(remaining):
                 sem, cat, vtype = cls._infer_semantic_types(k)
-                ent_id = f"{k}_{len(entities)+1}"
-                ent_role = "main_character" if not entities else "supporting_element"
-                ent_importance = "primary" if not entities else "secondary"
-                entities.append(
-                    VisualEntity(
-                        id=ent_id,
-                        label=k,
-                        species=k,
-                        semantic_type=sem,
-                        category=cat,  # type: ignore
-                        visual_type=vtype,  # type: ignore
-                        visual_role=ent_role,
-                        importance=ent_importance,
-                        drawing_intent=f"Minh họa trực quan {k} {detected_action} cho kịch bản",
-                        actions=[detected_action],
-                        position=Position(x=pos_x, y=350, width=380, height=450),
-                        layer=len(entities),
-                        priority=len(entities) + 1,
+                ent_cnt = _detect_count(script_clean, k)
+                for c_i in range(ent_cnt):
+                    ent_id = f"{k}_{len(entities)+1}"
+                    ent_role = "main_character" if len(entities) < 2 else "supporting_element"
+                    ent_importance = "primary" if len(entities) < 2 else "secondary"
+                    entities.append(
+                        VisualEntity(
+                            id=ent_id,
+                            label=k,
+                            species=k,
+                            semantic_type=sem,
+                            category=cat,  # type: ignore
+                            visual_type=vtype,  # type: ignore
+                            visual_role=ent_role,
+                            importance=ent_importance,
+                            drawing_intent=f"Minh họa trực quan {k} {detected_action} cho kịch bản",
+                            actions=[detected_action],
+                            position=Position(x=pos_x, y=350, width=380, height=450),
+                            layer=len(entities),
+                            priority=len(entities) + 1,
+                        )
                     )
-                )
-                actions.append(
-                    VisualAction(
-                        id=f"act_{ent_id}_{detected_action}",
-                        entity_id=ent_id,
-                        action_type=detected_action,
-                        required=True,
+                    actions.append(
+                        VisualAction(
+                            id=f"act_{ent_id}_{detected_action}",
+                            entity_id=ent_id,
+                            action_type=detected_action,
+                            required=True,
+                        )
                     )
-                )
-                pos_x += step_x
+                    pos_x += step_x
 
         # Bổ sung các relationship phụ nếu có
         for r_idx, (r_src, r_act, r_tgt) in enumerate(req_rels):

@@ -134,14 +134,13 @@ class WhiteboardEngineAdapter:
         for idx, entity in enumerate(ordered_entities):
             st, et = sched[entity.id]
             ent_key = (entity.label or entity.name or entity.species or "").lower()
+            ent_id = entity.id.lower()
 
             # Lấy cấu hình tọa độ tối ưu từ Masterpiece Artwork nếu có
-            matched_cfg = None
-            if ent_key in art_configs:
-                matched_cfg = art_configs[ent_key]
-            else:
+            matched_cfg = art_configs.get(ent_id) or art_configs.get(ent_key)
+            if not matched_cfg:
                 for k, cfg_data in art_configs.items():
-                    if k in ent_key or ent_key in k:
+                    if k in [ent_id, ent_key] or ent_key in k:
                         matched_cfg = cfg_data
                         break
 
@@ -635,6 +634,36 @@ class WhiteboardEngineAdapter:
                     },
                 }
 
+        # 11.5. Two men talking / Social Conversation
+        if (
+            kw_match("hai người đàn ông", "người đàn ông", "đàn ông", "men", "man", "hai người", "person", "people")
+            and kw_match("nói chuyện", "trò chuyện", "thảo luận", "đối thoại", "tâm sự", "talking", "chatting", "conversation")
+        ):
+            art = self.assets_dir / "artwork" / "generated" / "two_men_talking.png"
+            if art.exists():
+                return art, {
+                    "man_1": {
+                        "region": {"x": 500, "y": 50, "width": 420, "height": 1000},
+                        "hand_start": (650, 100),
+                        "hand_end": (700, 950),
+                    },
+                    "man_2": {
+                        "region": {"x": 950, "y": 50, "width": 350, "height": 1000},
+                        "hand_start": (1100, 100),
+                        "hand_end": (1100, 950),
+                    },
+                    "man": {
+                        "region": {"x": 480, "y": 50, "width": 850, "height": 1000},
+                        "hand_start": (650, 100),
+                        "hand_end": (1100, 950),
+                    },
+                    "person": {
+                        "region": {"x": 480, "y": 50, "width": 850, "height": 1000},
+                        "hand_start": (650, 100),
+                        "hand_end": (1100, 950),
+                    },
+                }
+
         # 12. Dynamic Generative AI Artwork Provider (FLUX.1-schnell / Imagen 3 / DALL-E 3)
         provider_mode = os.getenv("IMAGE_GENERATOR_PROVIDER", "").strip().lower()
         if provider_mode not in ["high_fidelity", "masterpiece", "curated", "local"] and output_dir is not None:
@@ -685,10 +714,11 @@ class WhiteboardEngineAdapter:
                     else:
                         for i, e in enumerate(scene_graph.entities):
                             e_key = (e.label or e.name or e.species or f"entity_{i}").lower()
+                            e_id = e.id.lower()
                             x_start = int(i * c_w / num_ents)
                             x_end = int((i + 1) * c_w / num_ents)
                             rw = x_end - x_start
-                            dynamic_configs[e_key] = {
+                            cfg_item = {
                                 "region": {
                                     "x": x_start,
                                     "y": 0,
@@ -698,6 +728,10 @@ class WhiteboardEngineAdapter:
                                 "hand_start": (x_start + 150, 200),
                                 "hand_end": (x_start + max(10, rw - 150), c_h - 200),
                             }
+                            dynamic_configs[e_id] = cfg_item
+                            dynamic_configs[f"{e_key}_{i+1}"] = cfg_item
+                            if e_key not in dynamic_configs:
+                                dynamic_configs[e_key] = cfg_item
                     adapt_logger.info(f"[DynamicAIArtwork] Successfully deployed AI generated artwork: {res_path}")
                     return res_path, dynamic_configs
             except Exception as e:

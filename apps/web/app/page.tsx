@@ -85,8 +85,12 @@ export default function Home() {
 
       if (jbs.length > 0) {
         setActiveJob(jbs[0]);
-        const rev = await fetchJobReview(jbs[0].id);
-        setReviewData(rev);
+        try {
+          const rev = await fetchJobReview(jbs[0].id);
+          setReviewData(rev);
+        } catch (e) {
+          console.warn("Failed to init job review:", e);
+        }
       }
     }
 

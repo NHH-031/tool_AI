@@ -20,6 +20,7 @@ class StructuredIllustrationPrompt(BaseModel):
     background: str = Field(description="Đặc tả nền giấy kem ấm cũ (#F5EBD7)")
     negative_constraints: str = Field(description="Danh sách các điều cấm kỵ tuyệt đối")
     full_prompt: str = Field(description="Toàn văn prompt hoàn chỉnh ghép nối từ 9 thành phần")
+    scene_context: str = Field(default="", description="Bối cảnh kịch bản thoại gốc")
 
 
 class IllustrationPromptBuilder:
@@ -44,7 +45,7 @@ class IllustrationPromptBuilder:
         main_entities: List[VisualEntity] = []
         secondary_entities: List[VisualEntity] = []
         for ent in scene_graph.entities:
-            if ent.visual_role == "main_character" or getattr(ent, "semantic_type", "") == "animal" or getattr(ent, "semantic_type", "") == "person":
+            if ent.visual_role in ["main_character", "actor", "primary"] or getattr(ent, "semantic_type", "") in ["animal", "person", "human", "character"]:
                 main_entities.append(ent)
             else:
                 secondary_entities.append(ent)
@@ -54,10 +55,22 @@ class IllustrationPromptBuilder:
             secondary_entities = scene_graph.entities[1:]
 
         subject_parts = []
-        for me in main_entities:
-            name = me.label.replace("_", " ")
-            role = f" ({me.visual_role})" if me.visual_role else ""
-            subject_parts.append(f"A clear, recognizable {name}{role}")
+        if len(main_entities) == 2 and main_entities[0].label == main_entities[1].label:
+            base_lbl = main_entities[0].label
+            if base_lbl in ["man", "fighter"]:
+                noun = "adult men" if base_lbl == "man" else "athletic male fighters"
+            elif base_lbl == "woman":
+                noun = "women"
+            elif base_lbl in ["person", "character"]:
+                noun = "people"
+            else:
+                noun = f"{base_lbl}s"
+            subject_parts.append(f"Two {noun} standing facing each other (main characters)")
+        else:
+            for me in main_entities:
+                name = me.label.replace("_", " ")
+                role = f" ({me.visual_role})" if me.visual_role else ""
+                subject_parts.append(f"A clear, recognizable {name}{role}")
         for se in secondary_entities:
             name = se.label.replace("_", " ")
             role = f" as {se.visual_role}" if se.visual_role else ""
@@ -162,6 +175,13 @@ class IllustrationPromptBuilder:
             f"[Negative Constraints]: {neg_desc}"
         )
 
+        scene_ctx = (
+            getattr(scene_graph, "narration", "")
+            or getattr(scene_graph, "description", "")
+            or getattr(scene_graph, "title", "")
+            or ""
+        )
+
         return StructuredIllustrationPrompt(
             subject=subject_desc,
             action=action_desc,
@@ -173,4 +193,5 @@ class IllustrationPromptBuilder:
             background=bg_desc,
             negative_constraints=neg_desc,
             full_prompt=full_prompt,
+            scene_context=scene_ctx,
         )
