@@ -33,6 +33,15 @@ class SemanticValidator:
     ENTITY_KEYWORDS: Dict[str, List[str]] = {
         # Characters & Animals
         "cat": ["con mèo", "chú mèo", "mèo con", "mèo", "con meo", "chu meo", "cat", "kitten", "feline"],
+        "chicken": ["con gà", "chú gà", "gà con", "gà trống", "gà mái", "gà", "con ga", "chu ga", "ga", "chicken", "rooster", "hen", "chick"],
+        "duck": ["con vịt", "chú vịt", "vịt con", "vịt", "con vit", "duck"],
+        "horse": ["con ngựa", "chú ngựa", "ngựa", "con ngua", "horse"],
+        "cow": ["con bò", "chú bò", "bò", "con bo", "cow"],
+        "pig": ["con heo", "con lợn", "chú heo", "heo", "lợn", "pig"],
+        "diver": ["thợ lặn", "người thợ lặn", "lặn biển", "nguoi tho lan", "scuba diver", "diver"],
+        "robot": ["người máy", "rô bốt", "robot", "cyborg"],
+        "plane": ["máy bay", "phi cơ", "may bay", "airplane", "plane"],
+        "bicycle": ["xe đạp", "xe dap", "bicycle", "bike"],
         "monkey": ["chú khỉ", "con khỉ", "khỉ", "con khi", "chu khi", "monkey", "ape"],
         "dog": ["con chó", "chú chó", "chó con", "chó", "con cho", "chu cho", "dog", "puppy", "canine"],
         "tiger": ["con hổ", "chú hổ", "hổ", "con cọp", "chú cọp", "cọp", "con ho", "tiger", "tigers"],
@@ -82,6 +91,22 @@ class SemanticValidator:
 
     # Từ điển ánh xạ hành động / quan hệ tổng quát: (action, sources, targets, keywords, relation_type)
     RELATIONSHIP_RULES: List[Dict] = [
+        # Running interaction (running animal / character)
+        {
+            "action": "running",
+            "sources": ["chicken", "dog", "cat", "tiger", "rabbit", "horse", "character", "animal", "human"],
+            "targets": ["ground", "path", "field", "road"],
+            "keywords": ["chạy", "đang chạy", "chạy nhanh", "chạy nhảy", "chạy bộ", "running", "runs", "sprint", "sprinting"],
+            "relation_type": "running_on",
+        },
+        # Swimming interaction
+        {
+            "action": "swimming",
+            "sources": ["fish", "diver", "character", "animal"],
+            "targets": ["sea", "water", "ocean", "river"],
+            "keywords": ["bơi", "đang bơi", "lặn", "swimming", "swims", "diving"],
+            "relation_type": "swimming_in",
+        },
         # Climbing interaction (cat/monkey/hiker on palm/tree/mountain)
         {
             "action": "climbing",

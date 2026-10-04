@@ -241,6 +241,8 @@ class HighFidelityArtProvider(ImageGeneratorProvider):
             matched_file = self.art_dir / "engineer_workspace.png"
         elif kw_match("doctor", "bác sĩ", "bệnh nhân", "y tế", "khám bệnh", "phòng khám", "clinic", "hospital"):
             matched_file = self.art_dir / "doctor_medical.png"
+        elif kw_match("chicken", "gà", "con gà", "gà con", "gà trống", "gà mái", "rooster", "hen"):
+            matched_file = self.art_dir / "chicken_running.png"
         elif kw_match("cat", "mèo", "mèo con") and kw_match("palm", "cau", "cây cau", "tree", "cây"):
             matched_file = self.art_dir / "cat_palm.png"
         elif kw_match("dog", "chó", "chó con", "puppy") and kw_match("ball", "bóng", "quả bóng"):
@@ -324,18 +326,88 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
         import numpy as np
 
         subject_action = f"{prompt.subject}. {prompt.action}".strip(". ")
+        
+        # Ánh xạ từ khóa tiếng Việt sang tiếng Anh nếu có để FLUX hiểu chính xác 100% ngữ nghĩa
+        vn_map = [
+            ("con gà trống", "rooster chicken"),
+            ("con gà mái", "hen chicken"),
+            ("con gà con", "little chick"),
+            ("con gà", "running rooster chicken"),
+            ("chú gà", "rooster chicken"),
+            ("gà trống", "rooster chicken"),
+            ("gà mái", "hen chicken"),
+            ("gà con", "little chick"),
+            ("gà", "rooster chicken"),
+            ("đang chạy", "running actively"),
+            ("chạy nhanh", "sprinting fast"),
+            ("chạy", "running"),
+            ("chú chó", "dog puppy"),
+            ("con chó", "dog puppy"),
+            ("chó", "dog"),
+            ("chú mèo", "playful cat"),
+            ("con mèo", "cat"),
+            ("mèo", "cat"),
+            ("con thỏ", "rabbit"),
+            ("thỏ", "rabbit"),
+            ("con hổ", "tiger"),
+            ("hổ", "tiger"),
+            ("cọp", "tiger"),
+            ("con cá", "swimming fish"),
+            ("cá", "fish"),
+            ("con chim", "flying bird"),
+            ("chim", "bird"),
+            ("người thợ lặn", "scuba diver underwater"),
+            ("thợ lặn", "scuba diver underwater"),
+            ("máy bay", "airplane flying"),
+            ("xe đạp", "bicycle"),
+            ("bác nông dân", "farmer planting trees"),
+            ("nông dân", "farmer planting trees"),
+            ("thầy giáo", "teacher teaching at blackboard"),
+            ("cô giáo", "teacher teaching at blackboard"),
+            ("giáo viên", "teacher teaching at blackboard"),
+            ("bác sĩ", "doctor consulting medical patient"),
+        ]
+        translated_action = subject_action.lower()
+        for vn, en in vn_map:
+            if vn in translated_action:
+                translated_action = translated_action.replace(vn, en)
+
         flux_prompt = (
             f"Minimalist comic doodle line art in the Notion vector illustration style. "
-            f"{subject_action}. Bold clean black ink outline, solid line-art, pure white background, "
+            f"{translated_action}. Bold clean black ink outline, solid line-art, pure white background, "
             f"high contrast, zero colors, zero gradients, no shading, storybook coloring page style, masterpiece, 1080p"
         )
 
-        logger.info(f"[FluxCloudArtProvider] Requesting FLUX.1-schnell line-art for: '{subject_action[:80]}...'")
+        logger.info(f"[FluxCloudArtProvider] Requesting AI line-art for: '{translated_action[:80]}...'")
 
         def _call_gradio() -> str:
             from gradio_client import Client
+            import random
             hf_token = os.getenv("HF_TOKEN", "").strip() or None
-            client = Client(self.space_id, hf_token=hf_token)
+
+            # 1. Primary: ByteDance/Hyper-FLUX-8Steps-LoRA (Dedicated high-speed space, no ZeroGPU quota restrictions)
+            try:
+                logger.info(f"[FluxCloudArtProvider] Attempting ByteDance Hyper-FLUX LoRA (8 steps) for '{translated_action[:60]}'...")
+                client = Client("ByteDance/Hyper-FLUX-8Steps-LoRA", token=hf_token)
+                res = client.predict(
+                    height=720,
+                    width=1152,
+                    steps=8,
+                    scales=3.5,
+                    prompt=flux_prompt,
+                    seed=random.randint(1000, 999999),
+                    api_name="/process_image",
+                )
+                if isinstance(res, (tuple, list)):
+                    return str(res[0])
+                elif isinstance(res, dict) and "path" in res:
+                    return str(res["path"])
+                return str(res)
+            except Exception as e_bd:
+                logger.warning(f"[FluxCloudArtProvider] ByteDance space error: {e_bd}. Trying FLUX.1-schnell...")
+
+            # 2. Secondary: black-forest-labs/FLUX.1-schnell
+            client = Client(self.space_id, token=hf_token)
             result = client.predict(
                 prompt=flux_prompt,
                 seed=42,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
@@ -155,6 +155,9 @@ class GenerateLineArtRequest(BaseModel):
     prompt: str
     subject: Optional[str] = None
     action: Optional[str] = None
+
+
+GenerateLineArtRequest.model_rebuild()
 
 
 @router.get("/provider")

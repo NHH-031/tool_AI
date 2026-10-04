@@ -324,9 +324,9 @@ class SemanticVisualPlanner:
     @classmethod
     def _infer_semantic_types(cls, key: str) -> tuple[str, str, str]:
         """Suy luận (semantic_type, category, visual_type) dựa trên bản chất thực thể."""
-        if key in ["cat", "dog", "monkey", "bird", "tiger", "rabbit", "fish"]:
+        if key in ["cat", "dog", "monkey", "bird", "tiger", "rabbit", "fish", "chicken", "duck", "horse", "cow", "pig"]:
             return "animal", "character", "character"
-        elif key in ["farmer", "teacher", "children", "hiker", "engineer", "astronaut"]:
+        elif key in ["farmer", "teacher", "children", "hiker", "engineer", "astronaut", "diver", "robot"]:
             return "human", "character", "character"
         elif key in ["areca_palm", "tree", "plant", "seedling"]:
             return "plant", "structure", "structure"
@@ -890,11 +890,31 @@ class SemanticVisualPlanner:
         # Xử lý các entity còn lại chưa nằm trong pattern chính
         remaining = sorted(found_keys - handled_entities)
         if remaining:
+            # Tự động trích xuất hành động phù hợp từ kịch bản
+            detected_action = "presenting"
+            scr_low = script_clean.lower()
+            if any(w in scr_low for w in ["chạy", "đang chạy", "running", "runs", "sprint"]):
+                detected_action = "running"
+            elif any(w in scr_low for w in ["bơi", "đang bơi", "lặn", "swimming", "swims", "diving"]):
+                detected_action = "swimming"
+            elif any(w in scr_low for w in ["bay", "đang bay", "flying", "flies"]):
+                detected_action = "flying"
+            elif any(w in scr_low for w in ["nhảy", "đang nhảy", "jumping", "jumps"]):
+                detected_action = "jumping"
+            elif any(w in scr_low for w in ["ăn", "đang ăn", "mổ", "eating", "eats"]):
+                detected_action = "eating"
+            elif any(w in scr_low for w in ["ngủ", "đang ngủ", "sleeping", "sleeps"]):
+                detected_action = "sleeping"
+            elif any(w in scr_low for w in ["leo", "trèo", "climbing", "climbs"]):
+                detected_action = "climbing"
+
             pos_x = 250
             step_x = min(450, int(1400 / max(1, len(remaining))))
             for idx, k in enumerate(remaining):
                 sem, cat, vtype = cls._infer_semantic_types(k)
                 ent_id = f"{k}_{len(entities)+1}"
+                ent_role = "main_character" if not entities else "supporting_element"
+                ent_importance = "primary" if not entities else "secondary"
                 entities.append(
                     VisualEntity(
                         id=ent_id,
@@ -903,13 +923,21 @@ class SemanticVisualPlanner:
                         semantic_type=sem,
                         category=cat,  # type: ignore
                         visual_type=vtype,  # type: ignore
-                        visual_role="supporting_element" if entities else "main_character",
-                        importance="primary" if not entities else "secondary",
-                        drawing_intent=f"Minh họa trực quan {k} cho kịch bản",
-                        actions=["presenting"],
+                        visual_role=ent_role,
+                        importance=ent_importance,
+                        drawing_intent=f"Minh họa trực quan {k} {detected_action} cho kịch bản",
+                        actions=[detected_action],
                         position=Position(x=pos_x, y=350, width=380, height=450),
                         layer=len(entities),
                         priority=len(entities) + 1,
+                    )
+                )
+                actions.append(
+                    VisualAction(
+                        id=f"act_{ent_id}_{detected_action}",
+                        entity_id=ent_id,
+                        action_type=detected_action,
+                        required=True,
                     )
                 )
                 pos_x += step_x

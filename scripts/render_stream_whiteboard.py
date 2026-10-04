@@ -438,6 +438,11 @@ class RegionStreamRenderer:
                 revealed_elem = self.ink_pixels & allowed
                 self.drawn[revealed_elem] = self.ink_paint[revealed_elem]
 
+            # Hoàn thiện 100% toàn bộ nét vẽ của bức tranh mỹ thuật trên toàn canvas
+            # Đảm bảo kết thúc video bức tranh được vẽ hoàn tất trọn vẹn, không bị dang dở
+            all_ink = self.ink_pixels
+            self.drawn[all_ink] = self.ink_paint[all_ink]
+
             # 凝视：补到 total_ms，并确保结尾至少停留 0.5s
             gaze_until = max(total_ms, cur_ms + 500)
             # Lưu ý: Tuyệt đối KHÔNG gán đè self.drawn = self.color_img (No instant reveal)

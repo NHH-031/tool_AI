@@ -154,6 +154,20 @@ class WhiteboardEngineAdapter:
                 )
                 first_pt = matched_cfg.get("hand_start", (int(region_schema.x + 50), int(region_schema.y + 50)))
                 last_pt = matched_cfg.get("hand_end", (int(region_schema.x + region_schema.width - 50), int(region_schema.y + region_schema.height - 50)))
+            elif art_file is not None:
+                # Nếu đang dùng Artwork toàn màn hình (16:9 1080p), partition toàn bộ canvas cho các thực thể
+                n_ents = max(1, len(ordered_entities))
+                x_start = int(idx * timeline.canvas_width / n_ents)
+                x_end = int((idx + 1) * timeline.canvas_width / n_ents)
+                rw = x_end - x_start
+                region_schema = RegionSchema(
+                    x=x_start,
+                    y=0,
+                    width=rw,
+                    height=timeline.canvas_height,
+                )
+                first_pt = (x_start + 150, 200)
+                last_pt = (x_start + max(10, rw - 150), timeline.canvas_height - 200)
             else:
                 pos = entity.position
                 region_schema = RegionSchema(
@@ -661,53 +675,28 @@ class WhiteboardEngineAdapter:
                     c_w = timeline.canvas_width
                     c_h = timeline.canvas_height
 
-                    if num_ents == 0:
-                        dynamic_configs["scene"] = {
-                            "region": {"x": 50, "y": 50, "width": c_w - 100, "height": c_h - 100},
-                            "hand_start": (150, 150),
-                            "hand_end": (c_w - 150, c_h - 150),
+                    if num_ents <= 1:
+                        key_name = (scene_graph.entities[0].label or scene_graph.entities[0].name or "character").lower() if num_ents == 1 else "scene"
+                        dynamic_configs[key_name] = {
+                            "region": {"x": 0, "y": 0, "width": c_w, "height": c_h},
+                            "hand_start": (250, 200),
+                            "hand_end": (c_w - 250, c_h - 200),
                         }
                     else:
                         for i, e in enumerate(scene_graph.entities):
-                            e_key = (e.label or e.name or e.species or "").lower()
-                            has_custom_pos = (
-                                e.position
-                                and e.position.width > 0
-                                and (e.position.x > 0 or e.position.width >= 600)
-                            )
-                            if has_custom_pos:
-                                rx = int(e.position.x)
-                                ry = int(e.position.y)
-                                rw = int(e.position.width)
-                                rh = int(e.position.height)
-                            else:
-                                if num_ents == 1:
-                                    rx, ry, rw, rh = 50, 50, c_w - 100, c_h - 100
-                                elif num_ents == 2:
-                                    w_slot = (c_w - 150) // 2
-                                    rx = 50 + i * (w_slot + 50)
-                                    ry = 50
-                                    rw = w_slot
-                                    rh = c_h - 100
-                                else:
-                                    w_slot = (c_w - 50 * (num_ents + 1)) // num_ents
-                                    rx = 50 + i * (w_slot + 50)
-                                    ry = 100
-                                    rw = w_slot
-                                    rh = c_h - 200
-
+                            e_key = (e.label or e.name or e.species or f"entity_{i}").lower()
+                            x_start = int(i * c_w / num_ents)
+                            x_end = int((i + 1) * c_w / num_ents)
+                            rw = x_end - x_start
                             dynamic_configs[e_key] = {
                                 "region": {
-                                    "x": rx,
-                                    "y": ry,
+                                    "x": x_start,
+                                    "y": 0,
                                     "width": rw,
-                                    "height": rh,
+                                    "height": c_h,
                                 },
-                                "hand_start": (rx + 100, ry + 100),
-                                "hand_end": (
-                                    rx + max(10, rw - 100),
-                                    ry + max(10, rh - 100),
-                                ),
+                                "hand_start": (x_start + 150, 200),
+                                "hand_end": (x_start + max(10, rw - 150), c_h - 200),
                             }
                     adapt_logger.info(f"[DynamicAIArtwork] Successfully deployed AI generated artwork: {res_path}")
                     return res_path, dynamic_configs
@@ -718,6 +707,7 @@ class WhiteboardEngineAdapter:
         # 13. Universal Masterpiece Fallback (Phương án 2):
         # Đảm bảo BẤT KỲ kịch bản nào của người dùng cũng nhận được tác phẩm vẽ tay 1080p chuẩn mực
         fallback_order = [
+            self.assets_dir / "artwork" / "generated" / "chicken_running.png",
             self.assets_dir / "artwork" / "generated" / "teacher_classroom.png",
             self.assets_dir / "artwork" / "generated" / "astronaut_mars.png",
             self.assets_dir / "artwork" / "generated" / "engineer_workspace.png",
@@ -728,21 +718,32 @@ class WhiteboardEngineAdapter:
         for fb_art in fallback_order:
             if fb_art.exists():
                 dynamic_configs = {}
-                for e in scene_graph.entities:
-                    e_key = (e.label or e.name or e.species or "").lower()
-                    dynamic_configs[e_key] = {
-                        "region": {
-                            "x": int(e.position.x),
-                            "y": int(e.position.y),
-                            "width": int(e.position.width),
-                            "height": int(e.position.height),
-                        },
-                        "hand_start": (int(e.position.x + 50), int(e.position.y + 50)),
-                        "hand_end": (
-                            int(e.position.x + max(10, e.position.width - 50)),
-                            int(e.position.y + max(10, e.position.height - 50)),
-                        ),
+                c_w = timeline.canvas_width
+                c_h = timeline.canvas_height
+                num_ents = len(scene_graph.entities)
+                if num_ents <= 1:
+                    key_name = (scene_graph.entities[0].label or scene_graph.entities[0].name or "character").lower() if num_ents == 1 else "scene"
+                    dynamic_configs[key_name] = {
+                        "region": {"x": 0, "y": 0, "width": c_w, "height": c_h},
+                        "hand_start": (250, 200),
+                        "hand_end": (c_w - 250, c_h - 200),
                     }
+                else:
+                    for i, e in enumerate(scene_graph.entities):
+                        e_key = (e.label or e.name or e.species or f"entity_{i}").lower()
+                        x_start = int(i * c_w / num_ents)
+                        x_end = int((i + 1) * c_w / num_ents)
+                        rw = x_end - x_start
+                        dynamic_configs[e_key] = {
+                            "region": {
+                                "x": x_start,
+                                "y": 0,
+                                "width": rw,
+                                "height": c_h,
+                            },
+                            "hand_start": (x_start + 150, 200),
+                            "hand_end": (x_start + max(10, rw - 150), c_h - 200),
+                        }
                 return fb_art, dynamic_configs
 
         return None
