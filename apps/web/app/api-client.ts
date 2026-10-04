@@ -500,39 +500,7 @@ export async function fetchJobReview(jobId: string): Promise<ReviewData> {
     console.warn(`[fetchJobReview] Error fetching review for ${jobId}:`, err);
   }
   return {
-    job_id: jobId,
-    title: "Whiteboard Studio",
-    video_url: "/media/monkey_banana_e2e/scene_default_final.mp4",
-    stages: [
-      { name: "1. Script Gen", status: "pass" },
-      { name: "2. Visual Planner", status: "pass" },
-      { name: "3. Asset Match", status: "pass" },
-      { name: "4. TTS Audio", status: "pass" },
-      { name: "5. Timeline Sync", status: "pass" },
-      { name: "6. Whiteboard Render", status: "pass" },
-      { name: "7. Audio Mux", status: "pass" },
-      { name: "8. Media QA", status: "pass" },
-    ],
-    script: {
-      title: "Whiteboard Scene",
-      full_text: "Whiteboard Animation Stream",
-      segments: [],
-    },
-    visual_entities: [],
-    narration: {
-      voice_id: "vi-VN-Standard-B",
-      speed: 1.0,
-      duration_sec: 5.0,
-      word_timings: [],
-    },
-    timeline_events: [],
-    qa_report: {
-      overall_status: "PASS",
-      technical_qa: { status: "PASS" },
-      drawing_qa: { status: "PASS" },
-      semantic_qa: { status: "PASS" },
-      style_compliance: { status: "PASS" },
-    },
+    ...DEFAULT_REVIEW_DATA,
   };
 }
 
