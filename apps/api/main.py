@@ -49,6 +49,16 @@ def create_app() -> FastAPI:
     assets_dir = PROJECT_ROOT / "assets"
     if assets_dir.exists():
         app.mount("/assets-static", StaticFiles(directory=str(assets_dir)), name="assets-static")
+        artwork_dir = assets_dir / "artwork"
+        if artwork_dir.exists():
+            app.mount("/assets/artwork", StaticFiles(directory=str(artwork_dir)), name="assets-artwork")
+        library_dir = assets_dir / "library"
+        if library_dir.exists():
+            app.mount("/assets/library", StaticFiles(directory=str(library_dir)), name="assets-library")
+
+    examples_dir = PROJECT_ROOT / "examples"
+    if examples_dir.exists():
+        app.mount("/examples", StaticFiles(directory=str(examples_dir)), name="examples-static")
 
     # Register Routers
     app.include_router(health_router)

@@ -48,7 +48,7 @@ class SemanticVisualPlanner:
             plan.project_title = title
             if plan.scenes:
                 plan.scenes[0].narration_text = script_clean
-            return plan
+            return cls._ensure_all_required_entities_present(plan, script_clean)
 
         # Case 2: Thầy giáo và toán học (Teacher and Math)
         if any(w in script_lower for w in ["thầy giáo", "cô giáo", "giáo viên", "teacher"]) and any(
@@ -59,7 +59,7 @@ class SemanticVisualPlanner:
             plan.project_title = title
             if plan.scenes:
                 plan.scenes[0].narration_text = script_clean
-            return plan
+            return cls._ensure_all_required_entities_present(plan, script_clean)
 
         # Case 3: Nhiệt độ và phân tử (Temperature and Molecules)
         if any(w in script_lower for w in ["nhiệt độ", "nhiệt", "temperature", "heat"]) and any(
@@ -70,7 +70,7 @@ class SemanticVisualPlanner:
             plan.project_title = title
             if plan.scenes:
                 plan.scenes[0].narration_text = script_clean
-            return plan
+            return cls._ensure_all_required_entities_present(plan, script_clean)
 
         # Case 4: Lạm phát và đồng tiền (Inflation and Money)
         if any(w in script_lower for w in ["lạm phát", "inflation"]) or (
@@ -83,7 +83,7 @@ class SemanticVisualPlanner:
             plan.project_title = title
             if plan.scenes:
                 plan.scenes[0].narration_text = script_clean
-            return plan
+            return cls._ensure_all_required_entities_present(plan, script_clean)
 
         # Case 5: Khỉ trèo cây hái chuối (Chỉ khi kịch bản THỰC SỰ chứa khỉ!)
         if any(w in script_lower for w in ["khỉ", "con khỉ", "monkey", "ape"]):
@@ -92,7 +92,7 @@ class SemanticVisualPlanner:
             plan.project_title = title
             if plan.scenes:
                 plan.scenes[0].narration_text = script_clean
-            return plan
+            return cls._ensure_all_required_entities_present(plan, script_clean)
 
         # Case A: Trái Đất và Mặt Trời (Astronomy: Earth orbiting Sun)
         if any(w in script_lower for w in ["trái đất", "quả đất", "earth", "globe"]) and any(
@@ -157,7 +157,7 @@ class SemanticVisualPlanner:
                     )
                 ],
             )
-            return plan
+            return cls._ensure_all_required_entities_present(plan, script_clean)
 
         # Case B: Người nông dân trồng cây (Agriculture: Farmer planting tree)
         if any(w in script_lower for w in ["nông dân", "người nông dân", "farmer"]) and any(
@@ -222,12 +222,21 @@ class SemanticVisualPlanner:
                     )
                 ],
             )
-            return plan
+            return cls._ensure_all_required_entities_present(plan, script_clean)
 
         # 2. Phân tích ngữ nghĩa động cho kịch bản tổng quát (Dynamic Entity & Action/Pose Planning)
         found_keys = SemanticValidator.extract_required_entities(script_clean)
         if not found_keys:
-            found_keys = {"mathematics"}
+            if any(k in script_clean.lower() for k in ["toán", "công thức", "math", "bảng đen"]):
+                found_keys = {"mathematics"}
+            elif any(k in script_clean.lower() for k in ["chó", "chú chó", "dog"]):
+                found_keys = {"dog"}
+            elif any(k in script_clean.lower() for k in ["hổ", "cọp", "tiger"]):
+                found_keys = {"tiger"}
+            elif any(k in script_clean.lower() for k in ["thỏ", "rabbit"]):
+                found_keys = {"rabbit"}
+            else:
+                found_keys = {"character"}
 
         req_rels = SemanticValidator.extract_required_relationships(script_clean, found_keys)
         entities, actions, relationships = cls._plan_dynamic_entities_and_actions(
@@ -238,7 +247,7 @@ class SemanticVisualPlanner:
         )
 
         sg = SceneGraph(entities=entities, relationships=relationships, actions=actions)
-        return VisualPlanOutput(
+        plan = VisualPlanOutput(
             project_title=title,
             scenes=[
                 SceneVisualPlan(
@@ -251,17 +260,77 @@ class SemanticVisualPlanner:
                 )
             ],
         )
+        return cls._ensure_all_required_entities_present(plan, script_clean)
+
+    @classmethod
+    def _ensure_all_required_entities_present(
+        cls, plan: VisualPlanOutput, script_text: str
+    ) -> VisualPlanOutput:
+        """
+        Đảm bảo mọi thực thể bắt buộc trích xuất từ kịch bản đều có mặt trong SceneGraph,
+        ngăn ngừa lỗi PRE-RENDER VALIDATION FAILED khi kịch bản chứa thêm thực thể phụ
+        (ví dụ: kịch bản giáo viên có thêm 'học sinh' / 'children').
+        """
+        if not plan.scenes:
+            return plan
+        scene = plan.scenes[0]
+        sg = scene.scene_graph
+
+        req_entities = SemanticValidator.extract_required_entities(script_text)
+        existing_labels = {e.label.lower() for e in sg.entities}
+        existing_ids = {e.id.lower() for e in sg.entities}
+        existing_species = {(getattr(e, "species", None) or "").lower() for e in sg.entities}
+
+        for req in sorted(req_entities):
+            matched = False
+            if req in existing_labels or req in existing_ids or req in existing_species:
+                matched = True
+            else:
+                kws = SemanticValidator.ENTITY_KEYWORDS.get(req, [])
+                for kw in kws:
+                    if (
+                        kw in existing_labels
+                        or kw in existing_ids
+                        or any(kw in e.label.lower() for e in sg.entities)
+                        or any(kw in (getattr(e, "species", None) or "").lower() for e in sg.entities)
+                    ):
+                        matched = True
+                        break
+            if not matched:
+                sem, cat, vtype = cls._infer_semantic_types(req)
+                ent_idx = len(sg.entities) + 1
+                pos_x = min(1500, 300 + (ent_idx * 250))
+                new_ent = VisualEntity(
+                    id=f"{req}_{ent_idx}",
+                    label=req,
+                    species=req,
+                    semantic_type=sem,
+                    category=cat,  # type: ignore
+                    visual_type=vtype,  # type: ignore
+                    visual_role="supporting_element",
+                    importance="secondary",
+                    drawing_intent=f"Minh họa trực quan bổ trợ cho {req}",
+                    actions=["presenting"],
+                    position=Position(x=pos_x, y=400, width=400, height=450),
+                    layer=ent_idx,
+                    priority=ent_idx,
+                )
+                sg.entities.append(new_ent)
+                existing_labels.add(req)
+                logger.info(f"[SemanticVisualPlanner] Đã tự động bổ sung thực thể '{req}' vào SceneGraph.")
+
+        return plan
 
     @classmethod
     def _infer_semantic_types(cls, key: str) -> tuple[str, str, str]:
         """Suy luận (semantic_type, category, visual_type) dựa trên bản chất thực thể."""
-        if key in ["cat", "dog", "monkey", "bird"]:
+        if key in ["cat", "dog", "monkey", "bird", "tiger", "rabbit", "fish"]:
             return "animal", "character", "character"
         elif key in ["farmer", "teacher", "children", "hiker", "engineer", "astronaut"]:
             return "human", "character", "character"
         elif key in ["areca_palm", "tree", "plant", "seedling"]:
             return "plant", "structure", "structure"
-        elif key in ["ground", "mountain", "bridge", "nest", "spacecraft", "mars"]:
+        elif key in ["ground", "mountain", "bridge", "nest", "spacecraft", "mars", "forest", "sea"]:
             return "structure", "structure", "structure"
         elif key in ["sun", "earth", "orbit", "molecules", "mathematics"]:
             return "diagram", "diagram", "diagram"
@@ -298,6 +367,27 @@ class SemanticVisualPlanner:
         repair_rel = next((r for r in req_rels if r[1] in ["repairing"]), None)
         evap_rel = next((r for r in req_rels if r[1] in ["evaporating"]), None)
         step_rel = next((r for r in req_rels if r[1] in ["stepping", "stepping_on"]), None)
+
+        # Xử lý môi trường nền nếu có (Forest / Background Environment)
+        if "forest" in found_keys:
+            handled_entities.add("forest")
+            forest_ent = VisualEntity(
+                id="forest_1",
+                label="forest",
+                species="forest",
+                semantic_type="structure",
+                category="structure",
+                visual_type="structure",
+                visual_role="environment",
+                importance="secondary",
+                required=True,
+                drawing_intent="Cảnh quan khu rừng bạt ngàn với các cây cổ thụ và thảm cỏ xanh",
+                actions=["standing", "surrounding"],
+                position=Position(x=100, y=80, width=1720, height=920),
+                layer=0,
+                priority=0,
+            )
+            entities.append(forest_ent)
 
         if climb_rel:
             src, act, tgt = climb_rel
@@ -367,6 +457,15 @@ class SemanticVisualPlanner:
             src_sem, src_cat, src_vtype = cls._infer_semantic_types(src)
             tgt_sem, tgt_cat, tgt_vtype = cls._infer_semantic_types(tgt)
 
+            has_bg = any(e.label == "forest" for e in entities)
+            tgt_pos = (
+                Position(x=1200, y=500, width=380, height=300)
+                if tgt == "rabbit"
+                else Position(x=1200, y=550, width=240, height=240)
+            )
+            tgt_actions = ["running", "leaping", "fleeing"] if tgt == "rabbit" else ["rolling", "bouncing"]
+            tgt_pose = "running" if tgt == "rabbit" else "default"
+
             tgt_ent = VisualEntity(
                 id=f"{tgt}_1",
                 label=tgt,
@@ -377,11 +476,22 @@ class SemanticVisualPlanner:
                 visual_role="target",
                 importance="primary",
                 required=True,
-                drawing_intent=f"Mục tiêu {tgt} lăn chuyển động phía trước",
-                actions=["rolling", "bouncing"],
-                position=Position(x=1200, y=550, width=240, height=240),
-                layer=0,
+                pose=tgt_pose,
+                drawing_intent=f"Mục tiêu {tgt} đang tháo chạy phía trước" if tgt == "rabbit" else f"Mục tiêu {tgt} lăn chuyển động phía trước",
+                actions=tgt_actions,
+                position=tgt_pos,
+                layer=1 if has_bg else 0,
                 priority=1,
+            )
+            actor_pos = (
+                Position(x=450, y=400, width=540, height=420)
+                if src == "tiger"
+                else Position(x=400, y=460, width=450, height=350)
+            )
+            actor_intent = (
+                f"Chúa sơn lâm {src} dũng mãnh phi nước đại săn đuổi {tgt}"
+                if src == "tiger"
+                else f"{src} phi nước đại đuổi theo {tgt}"
             )
             actor_ent = VisualEntity(
                 id=f"{src}_1",
@@ -395,9 +505,9 @@ class SemanticVisualPlanner:
                 required=True,
                 pose="running",
                 actions=["running", "chasing"],
-                drawing_intent=f"{src} phi nước đại đuổi theo {tgt}",
-                position=Position(x=400, y=460, width=450, height=350),
-                layer=1,
+                drawing_intent=actor_intent,
+                position=actor_pos,
+                layer=2 if has_bg else 1,
                 priority=2,
             )
             entities.extend([tgt_ent, actor_ent])
@@ -631,6 +741,148 @@ class SemanticVisualPlanner:
                     relation_type="stepping_on",
                     action="stepping",
                     description=f"{src} đặt chân lên {tgt}",
+                    required=True,
+                )
+            )
+
+        elif any(k in found_keys for k in ["engineer", "developer", "programmer", "kỹ sư", "lập trình"]):
+            handled_entities.update(["engineer", "developer", "laptop", "computer", "chart", "analytics_monitor"])
+            dev_ent = VisualEntity(
+                id="developer_1",
+                label="developer",
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                drawing_intent="Kỹ sư phần mềm tập trung tại bàn làm việc",
+                actions=["coding", "analyzing"],
+                position=Position(x=150, y=150, width=750, height=850),
+                layer=1,
+                priority=1,
+            )
+            laptop_ent = VisualEntity(
+                id="laptop_1",
+                label="laptop",
+                species="laptop",
+                semantic_type="structure",
+                category="structure",
+                visual_type="structure",
+                visual_role="working_tool",
+                importance="primary",
+                required=True,
+                drawing_intent="Máy tính xách tay với bàn phím và màn hình mở",
+                actions=["operating"],
+                position=Position(x=800, y=400, width=450, height=400),
+                layer=0,
+                priority=2,
+            )
+            monitor_ent = VisualEntity(
+                id="analytics_monitor_1",
+                label="analytics_monitor",
+                species="chart",
+                semantic_type="diagram",
+                category="diagram",
+                visual_type="diagram",
+                visual_role="analytics_display",
+                importance="secondary",
+                required=True,
+                drawing_intent="Màn hình phân tích đồ thị số liệu tăng trưởng",
+                actions=["displaying"],
+                position=Position(x=1150, y=180, width=700, height=650),
+                layer=0,
+                priority=3,
+            )
+            entities.extend([dev_ent, laptop_ent, monitor_ent])
+            actions.append(
+                VisualAction(
+                    id="act_developer_coding",
+                    entity_id=dev_ent.id,
+                    action_type="coding",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id="rel_developer_laptop_coding",
+                    source_id=dev_ent.id,
+                    target_id=laptop_ent.id,
+                    relation_type="working_with",
+                    action="coding",
+                    description="Kỹ sư lập trình trên máy tính",
+                    required=True,
+                )
+            )
+
+        elif any(k in found_keys for k in ["doctor", "physician", "bác sĩ", "y tế", "clinic"]):
+            handled_entities.update(["doctor", "patient", "clinic", "desk_records"])
+            doc_ent = VisualEntity(
+                id="doctor_1",
+                label="doctor",
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="main_character",
+                importance="primary",
+                required=True,
+                drawing_intent="Bác sĩ tận tâm tư vấn và chẩn đoán",
+                actions=["consulting"],
+                position=Position(x=150, y=150, width=750, height=850),
+                layer=1,
+                priority=1,
+            )
+            desk_ent = VisualEntity(
+                id="desk_records_1",
+                label="desk_records",
+                species="desk",
+                semantic_type="structure",
+                category="structure",
+                visual_type="structure",
+                visual_role="consultation_desk",
+                importance="secondary",
+                required=True,
+                drawing_intent="Bàn làm việc với hồ sơ bệnh án và ống nghe",
+                actions=["supporting"],
+                position=Position(x=700, y=450, width=550, height=550),
+                layer=0,
+                priority=2,
+            )
+            pat_ent = VisualEntity(
+                id="patient_1",
+                label="patient",
+                species="human",
+                semantic_type="human",
+                category="character",
+                visual_type="character",
+                visual_role="consulted_patient",
+                importance="primary",
+                required=True,
+                drawing_intent="Bệnh nhân chăm chú trao đổi với bác sĩ",
+                actions=["listening"],
+                position=Position(x=1100, y=150, width=750, height=850),
+                layer=1,
+                priority=3,
+            )
+            entities.extend([doc_ent, desk_ent, pat_ent])
+            actions.append(
+                VisualAction(
+                    id="act_doctor_consulting",
+                    entity_id=doc_ent.id,
+                    action_type="consulting",
+                    required=True,
+                )
+            )
+            relationships.append(
+                VisualRelationship(
+                    id="rel_doctor_patient_consulting",
+                    source_id=doc_ent.id,
+                    target_id=pat_ent.id,
+                    relation_type="consulting",
+                    action="consulting",
+                    description="Bác sĩ tư vấn cho bệnh nhân",
                     required=True,
                 )
             )

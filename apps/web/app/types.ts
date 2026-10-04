@@ -58,6 +58,18 @@ export interface AssetCatalogItem {
   metadata: Record<string, any>;
 }
 
+export interface MasterpieceItem {
+  id: string;
+  title: string;
+  description: string;
+  theme: string;
+  keywords: string[];
+  image_url: string;
+  resolution: string;
+  style: string;
+}
+
+
 export interface VoiceItem {
   id: string;
   name: string;

@@ -46,6 +46,12 @@ class SVGStrokeExtractor:
             domain_priority = ["trunk", "branches", "leaves", "fruits"]
         elif "monkey" in asset_lower:
             domain_priority = ["body", "head", "face", "arms", "legs", "tail"]
+        elif "tiger" in asset_lower:
+            domain_priority = ["body", "head", "face", "legs", "tail"]
+        elif "rabbit" in asset_lower:
+            domain_priority = ["body", "head", "face", "legs", "tail"]
+        elif "forest" in asset_lower:
+            domain_priority = ["trunk", "branches", "leaves"]
         elif "banana" in asset_lower:
             domain_priority = ["banana_body", "stem", "tip"]
 
@@ -67,9 +73,9 @@ class SVGStrokeExtractor:
                 return purpose
 
         # 3. Heuristics fallback theo tên asset
-        if "tree" in asset_lower:
+        if "tree" in asset_lower or "forest" in asset_lower:
             return "leaves"
-        elif "monkey" in asset_lower:
+        elif "monkey" in asset_lower or "tiger" in asset_lower or "rabbit" in asset_lower or "dog" in asset_lower:
             return "body"
         elif "banana" in asset_lower:
             return "banana_body"

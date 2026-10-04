@@ -94,6 +94,9 @@ class DrawingTimelineSynchronizer:
             "banana": ["quả chuối", "trái chuối", "nải chuối", "chuối", "lấy một quả chuối", "lấy chuối"],
             "dog": ["con chó", "chú chó", "chó", "chạy"],
             "ball": ["quả bóng", "trái bóng", "bóng"],
+            "tiger": ["con hổ", "chú hổ", "hổ", "con cọp", "chú cọp", "cọp"],
+            "rabbit": ["con thỏ", "chú thỏ", "thỏ"],
+            "forest": ["khu rừng", "rừng già", "rừng rậm", "rừng"],
             "sun": ["mặt trời", "thái dương"],
             "earth": ["trái đất", "địa cầu"],
             "water": ["nước", "nước nóng", "ấm nước"],
@@ -214,7 +217,13 @@ class DrawingTimelineSynchronizer:
         cat = (entity.category or "").lower()
 
         # Bố cục dựa trên cấu trúc ngữ nghĩa
-        if role in ["environment", "structure"] or cat in ["structure", "background"]:
+        if label == "forest":
+            return (100.0, 80.0, 1720.0, 920.0)
+        elif label == "tiger":
+            return (450.0, 400.0, 540.0, 420.0)
+        elif label == "rabbit":
+            return (1200.0, 500.0, 380.0, 300.0)
+        elif role in ["environment", "structure"] or cat in ["structure", "background"]:
             # Khung cảnh nền hoặc cấu trúc đứng bên phải
             return (750.0, 80.0, 850.0, 920.0)
         elif role in ["actor", "character", "agent"] or cat in ["character"]:
@@ -478,6 +487,8 @@ class DrawingTimelineSynchronizer:
             total_duration=total_duration,
             canvas_width=self.canvas_width,
             canvas_height=self.canvas_height,
+            narration_text=narration_timing.text,
+            narration_timing=narration_timing,
             entities_schedule=entities_schedule,
             metadata={
                 "audio_duration": narration_timing.duration,

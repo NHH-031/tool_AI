@@ -124,6 +124,28 @@ class GenericAssetResolver:
   </g>
 </svg>"""
             source_type = "action_variant" if action else "generated_svg"
+        elif any(k in clean_name for k in ["fish", "ca_", "cá", "swim", "boi", "bơi"]):
+            content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="100%" height="100%">
+  <g id="gen_fish_{clean_name}" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Fish Oval Body -->
+    <path d="M 120 200 C 180 120 320 120 380 200 C 320 280 180 280 120 200 Z" />
+    <!-- Fish Tail Fin -->
+    <path d="M 380 200 L 440 140 L 420 200 L 440 260 Z" />
+    <!-- Dorsal Top Fin -->
+    <path d="M 220 145 C 250 100 290 100 320 145" />
+    <!-- Pectoral Side Fin -->
+    <path d="M 220 210 C 250 210 270 240 250 250 C 230 250 215 230 220 210 Z" />
+    <!-- Big Cute Eye -->
+    <circle cx="170" cy="180" r="14" fill="#1A1A1A" />
+    <circle cx="166" cy="176" r="4" fill="#FFFFFF" />
+    <!-- Smiling Mouth -->
+    <path d="M 135 210 Q 150 225 165 210" stroke-width="5" />
+    <!-- Air Bubbles -->
+    <circle cx="100" cy="150" r="10" stroke-width="4" />
+    <circle cx="80" cy="110" r="16" stroke-width="4" />
+  </g>
+</svg>"""
+            source_type = "action_variant" if action else "generated_svg"
         elif category in ["character", "human"] or visual_type in ["character"]:
             content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
   <g id="gen_char_{clean_name}" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
@@ -145,15 +167,14 @@ class GenericAssetResolver:
 </svg>"""
             source_type = "action_variant" if action else "generated_svg"
         else:
-            # Đối tượng tổng quát (Generic Object / Symbol)
+            # Đối tượng tổng quát (Generic Story Motif / Emblem)
             content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
   <g id="gen_obj_{clean_name}" stroke="#1A1A1A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Distinctive Silhouette Outline -->
-    <rect x="90" y="90" width="220" height="220" rx="35" />
-    <!-- Inner Cross Structure -->
-    <circle cx="200" cy="200" r="60" stroke-width="5" />
-    <path d="M 200 90 L 200 140 M 200 260 L 200 310" stroke-width="5" />
-    <path d="M 90 200 L 140 200 M 260 200 L 310 200" stroke-width="5" />
+    <!-- Storyboard Vignette Frame -->
+    <rect x="80" y="80" width="240" height="240" rx="28" stroke-width="5" />
+    <!-- Radiant Star / Sparkle of Inspiration -->
+    <path d="M 200 110 Q 200 200 290 200 Q 200 200 200 290 Q 200 200 110 200 Q 200 200 200 110 Z" stroke-width="6" fill="#FFFBEB" />
+    <circle cx="200" cy="200" r="14" fill="#1A1A1A" />
   </g>
 </svg>"""
             source_type = "symbol"

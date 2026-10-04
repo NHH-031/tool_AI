@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="100%" height="100%">
+  <!-- High-Aesthetic Whiteboard Art: Majestic Forest Framing with Wide Open Running Clearing -->
+  <g id="forest_trees" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    
+    <!-- Rolling Forest Ground & Running Trail Contour -->
+    <path d="M 0 570 Q 300 550, 600 565 T 1200 550" stroke-width="7" />
+    <path d="M 20 595 Q 400 575, 800 600 T 1180 575" stroke-width="3.5" stroke-dasharray="16 12" />
+
+    <!-- Lush Grass Tufts on the Ground Line -->
+    <path d="M 120 565 L 115 532 M 120 565 L 126 535 M 120 565 L 134 540" stroke-width="4.5" stroke="#059669" />
+    <path d="M 240 560 L 234 528 M 240 560 L 244 530 M 240 560 L 252 536" stroke-width="4.5" stroke="#059669" />
+    <path d="M 450 562 L 444 535 M 450 562 L 454 536 M 450 562 L 462 542" stroke-width="4" stroke="#059669" />
+    <path d="M 720 565 L 714 536 M 720 565 L 724 538 M 720 565 L 732 544" stroke-width="4" stroke="#059669" />
+    <path d="M 980 558 L 974 526 M 980 558 L 984 530 M 980 558 L 994 536" stroke-width="4.5" stroke="#059669" />
+    <path d="M 1100 554 L 1094 524 M 1100 554 L 1105 526 M 1100 554 L 1114 532" stroke-width="4.5" stroke="#059669" />
+
+    <!-- Cute Woodland Pebbles along Trail -->
+    <ellipse cx="180" cy="580" rx="10" ry="5" stroke-width="3" />
+    <ellipse cx="380" cy="578" rx="8" ry="4" stroke-width="3" />
+    <ellipse cx="650" cy="585" rx="12" ry="6" stroke-width="3.5" />
+    <ellipse cx="880" cy="576" rx="9" ry="4" stroke-width="3" />
+    <ellipse cx="1040" cy="572" rx="11" ry="5" stroke-width="3" />
+
+    <!-- FAR LEFT ANCIENT MIGHTY OAK TREE (Frames Left Canvas Margin) -->
+    <!-- Trunk Base & Gnarled Roots -->
+    <path d="M 60 570 C 80 510, 95 400, 85 290 C 80 220, 70 170, 60 110" stroke-width="9" />
+    <path d="M 170 570 C 150 500, 140 390, 148 290 C 155 230, 170 180, 190 120" stroke-width="9" />
+    <path d="M 60 570 C 40 575, 15 580, -10 582" stroke-width="7" />
+    <path d="M 170 570 C 190 576, 215 580, 235 582" stroke-width="7" />
+    <!-- Tree Trunk Bark Furrows -->
+    <path d="M 105 520 C 112 450, 108 360, 114 290" stroke-width="4" stroke-dasharray="18 14" />
+    <path d="M 130 480 C 134 410, 128 330, 132 260" stroke-width="4" stroke-dasharray="20 16" />
+    <!-- Overarching Left Branches -->
+    <path d="M 85 290 C 50 250, 20 230, -15 220" stroke-width="7" />
+    <path d="M 148 270 C 190 230, 240 210, 280 200" stroke-width="7" />
+    <path d="M 170 235 C 205 200, 235 160, 248 115" stroke-width="5.5" />
+    <!-- Left Tree Cloud Canopy -->
+    <path d="M 60 110 C 25 110, -5 85, 0 50 C 5 15, 45 5, 75 18 C 100 -12, 150 -15, 185 10 C 220 -8, 270 2, 280 45 C 290 85, 260 120, 225 130 C 205 155, 165 160, 135 145 C 105 155, 75 145, 60 110 Z" stroke-width="7" fill="#F0FDF4" />
+    <!-- Inner Leaf Foliage Arcs -->
+    <path d="M 35 60 C 60 85, 95 90, 115 65" stroke-width="4.5" stroke="#059669" />
+    <path d="M 130 38 C 160 62, 195 55, 215 32" stroke-width="4.5" stroke="#059669" />
+    <path d="M 160 90 C 185 115, 220 108, 235 85" stroke-width="4.5" stroke="#059669" />
+
+    <!-- FAR RIGHT WOODLAND PINE & BIRCH TREE (Frames Right Canvas Margin) -->
+    <!-- Trunk Base & Roots -->
+    <path d="M 1030 555 C 1040 480, 1045 380, 1040 260 C 1035 180, 1030 120, 1025 50" stroke-width="8" />
+    <path d="M 1120 550 C 1110 480, 1100 380, 1105 260 C 1110 180, 1118 120, 1125 50" stroke-width="8" />
+    <path d="M 1030 555 C 1010 562, 990 568, 970 572" stroke-width="6" />
+    <path d="M 1120 550 C 1145 556, 1175 560, 1205 562" stroke-width="6" />
+    <!-- Birch Texture Rings -->
+    <path d="M 1050 480 L 1075 482 M 1085 440 L 1102 442" stroke-width="4" />
+    <path d="M 1052 380 L 1078 382 M 1072 330 L 1095 332" stroke-width="4" />
+    <path d="M 1048 260 L 1072 262 M 1080 200 L 1102 202" stroke-width="4" />
+    <!-- Right Canopy Branches -->
+    <path d="M 1040 260 C 995 225, 955 210, 915 205" stroke-width="6" />
+    <path d="M 1105 240 C 1148 215, 1190 200, 1225 195" stroke-width="6" />
+    <!-- Right Tree Canopy -->
+    <path d="M 1025 50 C 990 50, 955 20, 970 -12 C 988 -45, 1035 -48, 1065 -20 C 1092 -48, 1140 -40, 1158 -8 C 1175 25, 1145 60, 1110 70 C 1085 95, 1045 92, 1025 50 Z" stroke-width="7" fill="#F0FDF4" />
+    <path d="M 995 15 C 1022 40, 1055 35, 1078 12" stroke-width="4.5" stroke="#059669" />
+
+    <!-- DISTANT BACKGROUND HILLS & HORIZON (Low & Subtle in Distance) -->
+    <path d="M 230 560 Q 420 480, 620 510 T 1000 550" stroke-width="4" stroke-dasharray="14 10" />
+    <path d="M 380 500 Q 520 440, 680 470 T 880 520" stroke-width="3.5" stroke-dasharray="12 8" />
+
+    <!-- FOREGROUND CORNER FERNS (Nestled Safely at Margins, Keeping Center Clear) -->
+    <path d="M 180 568 C 165 525, 195 490, 230 505 C 260 480, 298 505, 290 545 C 305 562, 275 578, 240 572 Z" stroke-width="5" fill="#ECFDF5" />
+    <path d="M 920 562 C 905 515, 942 482, 980 495 C 1008 472, 1045 495, 1040 535 C 1056 554, 1025 572, 988 566 Z" stroke-width="5" fill="#ECFDF5" />
+
+    <!-- Whimsical Wind-Blown Leaves Floating High Above Running Lane -->
+    <path d="M 340 180 C 358 168, 376 186, 364 198 C 352 198, 334 192, 340 180 Z" stroke-width="3" fill="#10B981" />
+    <path d="M 580 140 C 598 128, 616 146, 604 158 C 592 158, 574 152, 580 140 Z" stroke-width="3" fill="#10B981" />
+    <path d="M 820 170 C 838 158, 856 176, 844 188 C 832 188, 814 182, 820 170 Z" stroke-width="3" fill="#10B981" />
+  </g>
+</svg>

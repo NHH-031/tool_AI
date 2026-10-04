@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 360" width="100%" height="100%">
+  <!-- High-Aesthetic Whiteboard Art: Agile Running Rabbit in Mid-Air Flight (Expressive & Full of Life) -->
+  <g id="rabbit_running" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    
+    <!-- Fluffy Round Cottontail (Bouncing with High Energy) -->
+    <path d="M 60 170 C 40 160, 25 180, 35 195 C 42 205, 58 205, 65 190 Z" stroke-width="6" fill="#FFFFFF" />
+
+    <!-- Streamlined Curved Back (Stretched out in Full Flight Leap) -->
+    <path d="M 65 175 C 105 145, 175 140, 245 150 C 285 158, 320 148, 350 120" stroke-width="6" />
+
+    <!-- Soft Tucked Belly & Flank Line -->
+    <path d="M 120 220 C 160 215, 210 210, 255 220 C 290 230, 320 210, 340 180" stroke-width="5.5" />
+
+    <!-- HIND LEFT LEG (Extended Far Backward in Powerful Mid-Air Kick) -->
+    <path d="M 90 170 C 65 200, 45 235, 25 265 C 15 280, 5 290, -5 295" stroke-width="6" />
+    <path d="M 105 185 C 80 215, 60 250, 40 280 L 8 298" stroke-width="5" />
+    <!-- Hind Left Paw -->
+    <path d="M -5 295 C -10 298, 2 305, 15 300" stroke-width="6.5" />
+
+    <!-- HIND RIGHT LEG (Trailing Sprint Stride) -->
+    <path d="M 110 180 C 90 210, 75 245, 55 280 C 48 292, 40 302, 30 308" stroke-width="6" />
+    <path d="M 125 195 C 105 225, 90 260, 70 295 L 45 312" stroke-width="5" />
+    <!-- Hind Right Paw -->
+    <path d="M 30 308 C 26 312, 38 318, 50 314" stroke-width="6.5" />
+
+    <!-- FORE LEFT LEG (Reaching Far Forward in High Agility Sprint) -->
+    <path d="M 315 175 C 345 200, 385 228, 425 250 C 445 260, 465 268, 482 270" stroke-width="6" />
+    <path d="M 328 188 C 358 212, 395 238, 432 258 L 478 274" stroke-width="5" />
+    <!-- Fore Left Paw -->
+    <path d="M 482 270 C 490 272, 492 268, 485 264" stroke-width="7" />
+
+    <!-- FORE RIGHT LEG (Mid-Step Forward Reach) -->
+    <path d="M 295 185 C 325 212, 360 240, 395 268 C 410 280, 425 288, 440 292" stroke-width="6" />
+    <path d="M 308 198 C 335 222, 370 250, 405 276 L 436 295" stroke-width="5" />
+    <!-- Fore Right Paw -->
+    <path d="M 440 292 C 448 294, 450 288, 442 286" stroke-width="7" />
+
+    <!-- Slender Neck & Throat -->
+    <path d="M 350 120 C 362 105, 375 92, 390 80" stroke-width="6" />
+    <path d="M 340 180 C 360 162, 375 142, 385 120" stroke-width="6" />
+
+    <!-- CUTE & ALERT HEAD (Aerodynamic Leaping Profile) -->
+    <path d="M 390 80 C 410 65, 435 62, 458 75 C 475 85, 485 95, 495 102" stroke-width="6" />
+    <!-- Twitching Nose & Upper Lip -->
+    <path d="M 495 102 C 500 106, 498 112, 492 116 C 482 122, 468 126, 450 124" stroke-width="5.5" />
+    <!-- Cute Pink Nose -->
+    <circle cx="496" cy="106" r="3.5" fill="#F472B6" />
+
+    <!-- Open Panting Mouth (Expressive Vitality) -->
+    <path d="M 450 124 C 438 126, 428 132, 420 138" stroke-width="5" />
+    <path d="M 445 126 C 452 138, 448 148, 438 150 C 430 152, 425 142, 428 132" stroke="#F472B6" stroke-width="4.5" fill="#F472B6" />
+
+    <!-- LONG FLOPPY EARS (Streaming Backwards in Wind) -->
+    <!-- Primary Upper Ear -->
+    <path d="M 380 75 C 330 45, 270 40, 220 50 C 205 54, 200 62, 212 65 C 260 65, 320 75, 365 90" stroke-width="5.5" />
+    <!-- Inner Ear Pastel Pink Accent -->
+    <path d="M 350 78 C 305 60, 260 56, 225 62" stroke="#F472B6" stroke-width="4.5" />
+    
+    <!-- Secondary Lower Ear (Trailing Just Behind) -->
+    <path d="M 370 85 C 325 60, 265 60, 215 75 C 202 80, 200 88, 212 90 C 255 88, 310 92, 355 102" stroke-width="5.5" />
+
+    <!-- Large Expressive Alert Eye & Eyebrow -->
+    <ellipse cx="435" cy="85" rx="6.5" ry="8.5" fill="#1A1A1A" />
+    <circle cx="437" cy="82" r="3" fill="#FFFFFF" />
+    <path d="M 425 72 C 435 68, 445 70, 452 74" stroke-width="4" />
+
+    <!-- Lively Whiskers -->
+    <path d="M 470 108 C 490 110, 505 110, 515 108" stroke-width="2.5" />
+    <path d="M 468 114 C 488 120, 502 124, 512 126" stroke-width="2.5" />
+    <path d="M 465 120 C 482 130, 495 138, 505 142" stroke-width="2.5" />
+
+    <!-- Speed Lines Behind & Underneath -->
+    <path d="M -10 315 C 10 310, 25 312, 38 315" stroke-width="3.5" stroke-dasharray="8 6" />
+    <path d="M 25 330 C 45 326, 65 328, 78 330" stroke-width="3.5" stroke-dasharray="10 8" />
+    <!-- Wind Lines Above Body -->
+    <path d="M 150 125 C 185 120, 220 122, 250 125" stroke-width="3.5" stroke-dasharray="10 8" />
+  </g>
+</svg>

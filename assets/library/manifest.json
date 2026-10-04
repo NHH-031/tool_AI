@@ -944,6 +944,137 @@
         "style": "clean_lineart",
         "stroke_width": 6
       }
+    },
+    {
+      "id": "asset_tiger",
+      "name": "tiger",
+      "category": "character",
+      "tags": [
+        "hổ",
+        "con hổ",
+        "chú hổ",
+        "cọp",
+        "con cọp",
+        "chú cọp",
+        "tiger",
+        "tigers",
+        "predator"
+      ],
+      "format": "svg",
+      "path": "svg/tiger_running.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/tiger_running.svg",
+          "description": "Fierce muscular tiger in dynamic running stride with roaring expression and stripes",
+          "view_box": "0 0 650 420"
+        },
+        "running": {
+          "name": "running",
+          "file_path": "svg/tiger_running.svg",
+          "description": "Fierce athletic tiger in full sprint chase with claws and fangs",
+          "view_box": "0 0 650 420"
+        },
+        "chasing": {
+          "name": "chasing",
+          "file_path": "svg/tiger_running.svg",
+          "description": "Tiger lunging forward in predatory chase",
+          "view_box": "0 0 650 420"
+        }
+      },
+      "actions": [
+        "running",
+        "chasing",
+        "pouncing",
+        "hunting"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 6
+      }
+    },
+    {
+      "id": "asset_rabbit",
+      "name": "rabbit",
+      "category": "character",
+      "tags": [
+        "thỏ",
+        "con thỏ",
+        "chú thỏ",
+        "rabbit",
+        "bunny",
+        "hare",
+        "rabbits"
+      ],
+      "format": "svg",
+      "path": "svg/rabbit_running.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/rabbit_running.svg",
+          "description": "Agile energetic rabbit bounding forward with long ears streaming in wind",
+          "view_box": "0 0 500 360"
+        },
+        "running": {
+          "name": "running",
+          "file_path": "svg/rabbit_running.svg",
+          "description": "Rabbit in full sprint flight with motion trails",
+          "view_box": "0 0 500 360"
+        },
+        "leaping": {
+          "name": "leaping",
+          "file_path": "svg/rabbit_running.svg",
+          "description": "Rabbit leaping high in dynamic escape",
+          "view_box": "0 0 500 360"
+        }
+      },
+      "actions": [
+        "running",
+        "leaping",
+        "fleeing"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 5
+      }
+    },
+    {
+      "id": "asset_forest",
+      "name": "forest",
+      "category": "structure",
+      "tags": [
+        "rừng",
+        "khu rừng",
+        "rừng già",
+        "rừng rậm",
+        "cánh rừng",
+        "forest",
+        "jungle",
+        "woods",
+        "trees"
+      ],
+      "format": "svg",
+      "path": "svg/forest_trees.svg",
+      "poses": {
+        "default": {
+          "name": "default",
+          "file_path": "svg/forest_trees.svg",
+          "description": "Ancient woodland forest with majestic trees, wild ferns, and grassy trails",
+          "view_box": "0 0 1000 650"
+        }
+      },
+      "actions": [
+        "standing",
+        "surrounding",
+        "framing"
+      ],
+      "metadata": {
+        "author": "WhiteboardStudio",
+        "style": "clean_lineart",
+        "stroke_width": 5
+      }
     }
   ]
 }

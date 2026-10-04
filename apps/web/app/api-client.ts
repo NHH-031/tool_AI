@@ -1,6 +1,7 @@
 import {
   AssetCatalogItem,
   JobStageProgress,
+  MasterpieceItem,
   MediaQAReport,
   MusicTrackItem,
   ProductionJob,
@@ -306,6 +307,14 @@ export async function fetchAssets(): Promise<AssetCatalogItem[]> {
       metadata: { style: "clean_lineart", stroke_width: 5 },
     },
   ];
+}
+
+export async function fetchMasterpieces(): Promise<MasterpieceItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/assets/masterpieces`, { signal: AbortSignal.timeout(2000) });
+    if (res.ok) return await res.json();
+  } catch {}
+  return [];
 }
 
 export async function fetchVoices(): Promise<VoiceItem[]> {

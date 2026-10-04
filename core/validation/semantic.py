@@ -32,16 +32,26 @@ class SemanticValidator:
     # Từ điển ánh xạ từ vựng tiếng Việt và tiếng Anh sang entity canonical key
     ENTITY_KEYWORDS: Dict[str, List[str]] = {
         # Characters & Animals
-        "cat": ["con mèo", "chú mèo", "mèo con", "mèo", "meo", "con meo", "chu meo", "cat", "kitten", "feline"],
+        "cat": ["con mèo", "chú mèo", "mèo con", "mèo", "con meo", "chu meo", "cat", "kitten", "feline"],
         "monkey": ["chú khỉ", "con khỉ", "khỉ", "con khi", "chu khi", "monkey", "ape"],
-        "dog": ["con chó", "chú chó", "chó con", "chó", "cho", "con cho", "chu cho", "dog", "puppy", "canine"],
-        "bird": ["con chim", "chú chim", "chim", "con chim", "chu chim", "bird", "avian"],
+        "dog": ["con chó", "chú chó", "chó con", "chó", "con cho", "chu cho", "dog", "puppy", "canine"],
+        "tiger": ["con hổ", "chú hổ", "hổ", "con cọp", "chú cọp", "cọp", "con ho", "tiger", "tigers"],
+        "rabbit": ["con thỏ", "chú thỏ", "thỏ", "con tho", "rabbit", "hare", "bunny", "rabbits"],
+        "bird": ["con chim", "chú chim", "chim", "chu chim", "bird", "avian"],
+        "fish": ["con cá", "chú cá", "cá con", "cá", "con ca", "chu ca", "fish", "fishes"],
+        "sea": ["đại dương", "biển cả", "dưới biển", "biển", "dai duong", "bien", "ocean", "sea", "underwater"],
         "teacher": ["giáo viên", "thầy giáo", "cô giáo", "giao vien", "thay giao", "co giao", "teacher", "instructor", "professor"],
         "farmer": ["người nông dân", "bác nông dân", "nông dân", "nong dan", "nguoi nong dan", "bac nong dan", "farmer", "grower", "planter"],
-        "children": ["trẻ em", "em bé", "bọn trẻ", "khán giả", "tre em", "em be", "bon tre", "children", "kids", "crowd"],
+        "children": ["học sinh", "hoc sinh", "trẻ em", "em bé", "bọn trẻ", "khán giả", "tre em", "em be", "bon tre", "children", "kids", "crowd", "students"],
+        "doctor": ["bác sĩ", "bac si", "y sĩ", "thầy thuốc", "doctor", "physician", "surgeon"],
+        "patient": ["bệnh nhân", "người bệnh", "benh nhan", "patient"],
+        "clinic": ["phòng khám", "bệnh viện", "phong kham", "clinic", "hospital"],
         "hiker": ["người leo núi", "vận động viên leo núi", "nguoi leo nui", "hiker", "climber", "mountaineer"],
-        "engineer": ["kỹ sư", "kỹ thuật viên", "thợ sửa máy", "ky su", "engineer", "technician", "mechanic"],
+        "engineer": ["kỹ sư", "lập trình viên", "ky su", "developer", "programmer", "engineer", "technician", "mechanic"],
+        "laptop": ["máy tính xách tay", "máy tính", "may tinh", "laptop", "computer"],
+        "chart": ["biểu đồ", "đồ thị", "bieu do", "chart", "analytics", "graph"],
         # Flora & Structures
+        "forest": ["khu rừng", "rừng già", "rừng rậm", "rừng", "cánh rừng", "khu rung", "rung", "forest", "jungle", "woods"],
         "areca_palm": ["cây cau", "cau", "cay cau", "areca palm", "areca", "betel palm", "areca_palm"],
         "tree": ["cái cây", "thân cây", "cây cối", "cây", "cay", "cai cay", "than cay", "tree"],
         "nest": ["tổ chim", "tổ", "to chim", "nest", "bird nest"],
@@ -68,7 +78,7 @@ class SemanticValidator:
         "astronaut": ["phi hành gia", "nhà du hành", "người du hành vũ trụ", "astronaut", "cosmonaut", "spaceman"],
         "spacecraft": ["tàu vũ trụ", "con tàu", "phi thuyền", "tàu đổ bộ", "spacecraft", "spaceship", "lander", "rocket"],
         "mars": ["sao hỏa", "hỏa tinh", "sao hoa", "hoa tinh", "mars", "martian", "martian surface"],
-    }
+      }
 
     # Từ điển ánh xạ hành động / quan hệ tổng quát: (action, sources, targets, keywords, relation_type)
     RELATIONSHIP_RULES: List[Dict] = [
@@ -80,12 +90,15 @@ class SemanticValidator:
             "keywords": ["trèo", "leo", "climb", "climbing", "bám", "treo"],
             "relation_type": "climbing_on",
         },
-        # Chasing interaction (dog chasing ball/prey)
+        # Chasing interaction (dog chasing ball/prey, tiger chasing rabbit)
         {
             "action": "chasing",
-            "sources": ["dog", "cat", "predator", "character"],
-            "targets": ["ball", "prey", "target"],
-            "keywords": ["đuổi theo", "chạy theo", "vồ", "chasing", "running after", "runs after", "pursuing"],
+            "sources": ["dog", "cat", "tiger", "predator", "character"],
+            "targets": ["ball", "rabbit", "prey", "target"],
+            "keywords": [
+                "đuổi theo", "chạy theo", "vồ", "đuổi", "rượt đuổi", "rượt", "săn",
+                "chasing", "running after", "runs after", "pursuing"
+            ],
             "relation_type": "chasing",
         },
         # Grabbing / Reaching
@@ -206,7 +219,7 @@ class SemanticValidator:
                 pattern = r"(?:\b|^)" + re.escape(kw) + r"(?:\b|$)"
                 for m in re.finditer(pattern, text_lower):
                     candidates.append((m.start(), m.end(), entity_key, kw))
-                if kw in text_lower:
+                if " " in kw and kw in text_lower:
                     idx = 0
                     while True:
                         idx = text_lower.find(kw, idx)

@@ -6,6 +6,7 @@ from PIL import Image
 
 from core.artwork.generator import (
     ArtworkGeneratorFactory,
+    FluxCloudArtProvider,
     HighFidelityArtProvider,
     ImageGeneratorProvider,
 )
@@ -75,8 +76,40 @@ async def test_high_fidelity_art_provider_resolution(tmp_path):
         assert img.size == (1920, 1080)
 
 
-def test_artwork_generator_factory():
+def test_artwork_generator_factory(monkeypatch):
     """Verify ArtworkGeneratorFactory creates appropriate provider instances."""
-    factory_provider = ArtworkGeneratorFactory.create()
-    assert isinstance(factory_provider, ImageGeneratorProvider)
-    assert isinstance(factory_provider, HighFidelityArtProvider)
+    monkeypatch.setenv("IMAGE_GENERATOR_PROVIDER", "high_fidelity")
+    provider_curated = ArtworkGeneratorFactory.create()
+    assert isinstance(provider_curated, ImageGeneratorProvider)
+    assert isinstance(provider_curated, HighFidelityArtProvider)
+
+    monkeypatch.setenv("IMAGE_GENERATOR_PROVIDER", "flux")
+    provider_flux = ArtworkGeneratorFactory.create()
+    assert isinstance(provider_flux, ImageGeneratorProvider)
+    assert isinstance(provider_flux, FluxCloudArtProvider)
+
+
+@pytest.mark.asyncio
+async def test_flux_cloud_art_provider_fallback(tmp_path):
+    """Verify FluxCloudArtProvider falls back gracefully to HighFidelityArtProvider when offline."""
+    fallback = HighFidelityArtProvider()
+    provider = FluxCloudArtProvider(space_id="invalid/space_id", fallback_provider=fallback)
+
+    prompt = StructuredIllustrationPrompt(
+        subject="astronaut",
+        action="walking on mars",
+        relationship="",
+        composition="16:9",
+        pose="walking",
+        line_style="clean line art",
+        whiteboard_style="Notion doodle",
+        background="#F5EBD7",
+        negative_constraints="no text",
+        full_prompt="Phi hành gia thám hiểm Sao Hỏa",
+    )
+    out_file = tmp_path / "flux_fallback_test.png"
+    res = await provider.generate_artwork(prompt, out_file)
+    assert res.exists()
+    with Image.open(res) as img:
+        assert img.size == (1920, 1080)
+

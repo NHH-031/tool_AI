@@ -184,6 +184,41 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
                 required
               />
             </div>
+
+            {/* Masterpiece Quick Presets (Phương án 2) */}
+            <div className="pt-1">
+              <div className="text-[11px] font-semibold text-slate-400 mb-2 flex items-center gap-1.5">
+                <span className="text-indigo-400">✨</span> Gợi ý kịch bản chuẩn Kiệt tác 1080p (Phương án 2):
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { icon: "🚀", title: "Phi hành gia Sao Hỏa", text: "Một phi hành gia bước ra khỏi tàu vũ trụ và đặt chân lên bề mặt đất đá Sao Hỏa." },
+                  { icon: "👩‍🏫", title: "Lớp học & Cô giáo", text: "Cô giáo đang giảng bài lịch sử bên bảng đen cho các học sinh chăm chú." },
+                  { icon: "💻", title: "Kỹ sư lập trình", text: "Một kỹ sư phần mềm làm việc bên laptop với các biểu đồ tăng trưởng phân tích." },
+                  { icon: "🩺", title: "Bác sĩ tư vấn", text: "Bác sĩ tận tình tư vấn kết quả khám sức khỏe cho bệnh nhân tại phòng khám." },
+                  { icon: "🐱", title: "Mèo leo cây cau", text: "Con mèo tinh nghịch đang leo thoăn thoắt lên cây cau vươn cao." },
+                  { icon: "🐶", title: "Chó đuổi bóng", text: "Con chó chạy thật nhanh trên sân cỏ đuổi theo quả bóng đang lăn." },
+                  { icon: "🐯", title: "Hổ và thỏ", text: "Cọp dũng mãnh và thỏ nhanh nhẹn cùng chạy trong khu rừng cổ thụ." },
+                  { icon: "🐟", title: "Đàn cá đại dương", text: "Đàn cá tung tăng bơi lội giữa rạn san hô dưới lòng đại dương xanh." },
+                  { icon: "👨‍🌾", title: "Nông dân gieo mầm", text: "Người nông dân cần mẫn chăm sóc mầm xanh bên bóng mát cây cổ thụ." },
+                  { icon: "🌍", title: "Trái đất & Mặt trời", text: "Trái Đất chuyển động trên quỹ đạo tỏa sáng xung quanh Mặt Trời." },
+                  { icon: "🐒", title: "Khỉ hái chuối", text: "Con khỉ đang trèo lên cây để lấy một quả chuối chín vàng." },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setTitle(item.title);
+                      setPrompt(item.text);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] text-slate-300 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-600/10 transition flex items-center gap-1.5"
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

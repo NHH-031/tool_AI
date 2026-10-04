@@ -5,6 +5,7 @@ import {
   ActiveTab,
   AssetCatalogItem,
   GenerationState,
+  MasterpieceItem,
   MusicTrackItem,
   ProductionJob,
   ProjectSummary,
@@ -20,6 +21,7 @@ import {
   fetchAssets,
   fetchJobReview,
   fetchJobs,
+  fetchMasterpieces,
   fetchMusic,
   fetchProjects,
   fetchTemplates,
@@ -47,6 +49,7 @@ export default function Home() {
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [musicTracks, setMusicTracks] = useState<MusicTrackItem[]>([]);
   const [jobs, setJobs] = useState<ProductionJob[]>([]);
+  const [masterpieces, setMasterpieces] = useState<MasterpieceItem[]>([]);
 
   // Active Job & Review State
   const [activeJob, setActiveJob] = useState<ProductionJob | null>(null);
@@ -62,9 +65,10 @@ export default function Home() {
       const health = await checkBackendHealth();
       setBackendHealthy(health.ok);
 
-      const [tpls, asts, vcs, msc, projs, jbs] = await Promise.all([
+      const [tpls, asts, msts, vcs, msc, projs, jbs] = await Promise.all([
         fetchTemplates(),
         fetchAssets(),
+        fetchMasterpieces(),
         fetchVoices(),
         fetchMusic(),
         fetchProjects(),
@@ -73,6 +77,7 @@ export default function Home() {
 
       setTemplates(tpls);
       setAssets(asts);
+      setMasterpieces(msts);
       setVoices(vcs);
       setMusicTracks(msc);
       setProjects(projs);
@@ -91,6 +96,11 @@ export default function Home() {
   // Quick generate from Dashboard
   const handleQuickGenerate = (promptText: string) => {
     setPrefilledPrompt(promptText);
+    setActiveTab("create");
+  };
+
+  const handleSelectMasterpiece = (item: MasterpieceItem) => {
+    setPrefilledPrompt(item.description);
     setActiveTab("create");
   };
 
@@ -245,7 +255,13 @@ export default function Home() {
           />
         )}
 
-        {activeTab === "assets" && <AssetsView assets={assets} />}
+        {activeTab === "assets" && (
+          <AssetsView
+            assets={assets}
+            masterpieces={masterpieces}
+            onSelectMasterpiece={handleSelectMasterpiece}
+          />
+        )}
 
         {activeTab === "voices" && <VoicesView voices={voices} />}
 
