@@ -345,19 +345,23 @@ class WhiteboardEngineAdapter:
                     f"[DynamicAIArtwork] Generating AI artwork for scene '{scene_id}' via {type(generator).__name__}..."
                 )
 
-                def _do_gen():
-                    return asyncio.run(
-                        generator.generate_artwork(
-                            prompt=prompt_obj,
-                            output_path=ai_art_file,
-                            width=timeline.canvas_width,
-                            height=timeline.canvas_height,
+                if ai_art_file.exists() and ai_art_file.stat().st_size > 10000:
+                    adapt_logger.info(f"[DynamicAIArtwork] Reusing existing AI artwork at {ai_art_file}")
+                    res_path = ai_art_file
+                else:
+                    def _do_gen():
+                        return asyncio.run(
+                            generator.generate_artwork(
+                                prompt=prompt_obj,
+                                output_path=ai_art_file,
+                                width=timeline.canvas_width,
+                                height=timeline.canvas_height,
+                            )
                         )
-                    )
 
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    fut = executor.submit(_do_gen)
-                    res_path = fut.result(timeout=65)
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                        fut = executor.submit(_do_gen)
+                        res_path = fut.result(timeout=65)
 
                 if res_path and res_path.exists():
                     dynamic_configs = {}
