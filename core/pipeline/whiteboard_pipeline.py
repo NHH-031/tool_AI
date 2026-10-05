@@ -63,8 +63,15 @@ class WhiteboardPipeline:
     ):
         self.llm_provider = llm_provider
         self.script_agent = script_agent or (ScriptAgent(llm=llm_provider) if llm_provider else None)
-        self.visual_planner_agent = visual_planner_agent or (VisualPlannerAgent(llm=llm_provider) if llm_provider else None)
-        self.tts_provider = tts_provider or MockTTSProvider(char_per_sec=11.0)
+        if tts_provider is not None:
+            self.tts_provider = tts_provider
+        else:
+            try:
+                from core.tts.edge import EdgeTTSProvider
+                self.tts_provider = EdgeTTSProvider(default_voice="vi-VN-HoaiMyNeural")
+            except Exception as e_tts:
+                logger.warning(f"[WhiteboardPipeline] Could not load EdgeTTSProvider ({e_tts}), using MockTTSProvider.")
+                self.tts_provider = MockTTSProvider(char_per_sec=11.0)
         self.narration_agent = narration_agent or NarrationAgent(tts=self.tts_provider)
         self.asset_provider = asset_provider or LocalAssetProvider()
         self.timeline_synchronizer = timeline_synchronizer or DrawingTimelineSynchronizer(asset_provider=self.asset_provider)
@@ -104,7 +111,7 @@ class WhiteboardPipeline:
                 input_text=raw_input,
                 input_mode=input_mode,
                 language=(voice_config.language if voice_config else "vi"),
-                voice_id=(voice_config.voice_id if voice_config else "vi-VN-Standard-B"),
+                voice_id=(voice_config.voice_id if voice_config else "vi-VN-HoaiMyNeural"),
                 speed=(voice_config.speed if voice_config else 1.0),
             )
 
@@ -188,7 +195,13 @@ class WhiteboardPipeline:
                 f"segments={len(segments)}"
             )
 
-        v_cfg = voice_config or VoiceConfig(voice_id=ctx.voice_id, language=ctx.language, speed=ctx.speed)
+        v_id = ctx.voice_id
+        if not voice_config and (not v_id or v_id == "vi-VN-HoaiMyNeural"):
+            hist_keywords = ["chiến dịch", "chiến thắng", "quân đội", "lịch sử", "hào hùng", "bộ đội", "điện biên phủ", "kháng chiến", "độc lập", "tướng", "quân ta", "chiến hào", "hầm"]
+            check_text = (idea or script or ctx.original_input or script_text or "").lower()
+            if any(kw in check_text for kw in hist_keywords):
+                v_id = "vi-VN-NamMinhNeural"
+        v_cfg = voice_config or VoiceConfig(voice_id=v_id, language=ctx.language, speed=ctx.speed)
 
         # -------------------------------------------------------------
         # Nếu kịch bản gồm nhiều phân cảnh (Multi-Scene Storyboard)

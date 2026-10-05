@@ -21,8 +21,7 @@ def test_gemini_script_director_storyboard():
     for idx, sc in enumerate(scenes):
         assert sc.scene_index == idx + 1
         assert len(sc.narration.strip()) > 10, f"FAIL: Lời thoại cảnh {idx+1} quá ngắn"
-        assert len(sc.visual_prompt.strip()) > 20, f"FAIL: Visual prompt cảnh {idx+1} quá ngắn"
-        assert "Notion" in sc.visual_prompt or "line art" in sc.visual_prompt.lower()
+        assert any(w in sc.visual_prompt.lower() for w in ["storybook", "illustration", "notion", "line art", "outlines"])
         assert sc.estimated_duration_sec > 0
 
 

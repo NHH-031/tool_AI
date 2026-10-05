@@ -32,13 +32,22 @@ class EdgeTTSProvider(TTSProvider):
         return list(self.SUPPORTED_VOICES)
 
     def _validate_voice(self, voice_config: VoiceConfig) -> None:
-        if voice_config.voice_id not in self.SUPPORTED_VOICES:
-            # Nếu voice_id không nằm trong danh sách kiểm duyệt nhưng có đuôi Neural thì cảnh báo hoặc cho phép
+        LEGACY_VOICE_MAP = {
+            "vi-VN-Standard-A": "vi-VN-HoaiMyNeural",
+            "vi-VN-Standard-B": "vi-VN-NamMinhNeural",
+            "vi-VN-Standard-C": "vi-VN-HoaiMyNeural",
+            "vi-VN-Standard-D": "vi-VN-NamMinhNeural",
+            "vi-VN-Wavenet-A": "vi-VN-HoaiMyNeural",
+            "vi-VN-Wavenet-B": "vi-VN-NamMinhNeural",
+            "vi-VN-Wavenet-C": "vi-VN-HoaiMyNeural",
+            "vi-VN-Wavenet-D": "vi-VN-NamMinhNeural",
+            "vi-VN-Neural2-A": "vi-VN-HoaiMyNeural",
+        }
+        if voice_config.voice_id in LEGACY_VOICE_MAP:
+            voice_config.voice_id = LEGACY_VOICE_MAP[voice_config.voice_id]
+        elif voice_config.voice_id not in self.SUPPORTED_VOICES:
             if not voice_config.voice_id.endswith("Neural"):
-                raise InvalidVoiceError(
-                    f"Giọng đọc Edge TTS '{voice_config.voice_id}' không hợp lệ. "
-                    f"Các giọng tiêu biểu: {self.SUPPORTED_VOICES}"
-                )
+                voice_config.voice_id = self.default_voice
 
     def _format_rate(self, speed: float) -> str:
         diff_pct = int(round((speed - 1.0) * 100))

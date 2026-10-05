@@ -458,9 +458,9 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             scene_desc = translated_action
 
         flux_prompt = (
-            f"Minimalist comic doodle line art in the Notion vector illustration style. "
-            f"{scene_desc}. Bold clean black ink outline, solid line-art, pure white background, "
-            f"high contrast, zero colors, zero gradients, no shading, storybook coloring page style, masterpiece, 1080p"
+            f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
+            f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+            f"harmonious lighting, high detail, masterpiece, 1080p"
         )
 
         logger.info(f"[FluxCloudArtProvider] Requesting AI line-art for: '{translated_action[:80]}...'")
@@ -522,20 +522,13 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
 
             # 1. Resize về kích thước canvas chuẩn 1920x1080 với Lanczos-4
             resized = cv2.resize(src, (width, height), interpolation=cv2.INTER_LANCZOS4)
-            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 
-            # 2. Chuẩn hóa độ tương phản triệt tiêu bóng xám, giữ nét mực đậm
-            alpha = np.clip((gray.astype(np.float32) - 30.0) / (240.0 - 30.0), 0.0, 1.0)
+            # 2. Tăng cường độ nét viền contour nhưng bảo toàn 100% màu sắc nguyên bản
+            gaussian = cv2.GaussianBlur(resized, (0, 0), 2.0)
+            enhanced = cv2.addWeighted(resized, 1.2, gaussian, -0.2, 0)
 
-            # 3. Phủ màu nền kem ấm (#F5EBD7 / BGR: 215, 235, 245) và nét mực đen (#1A1A1A / BGR: 26, 26, 26)
-            paper = np.array([215, 235, 245], dtype=np.float32)
-            ink = np.array([26, 26, 26], dtype=np.float32)
-            out_img = np.zeros((height, width, 3), dtype=np.uint8)
-            for c in range(3):
-                out_img[:, :, c] = np.clip((1.0 - alpha) * ink[c] + alpha * paper[c], 0, 255).astype(np.uint8)
-
-            cv2.imwrite(str(output_path), out_img)
-            logger.info(f"[FluxCloudArtProvider] Successfully generated and styled artwork at {output_path}")
+            cv2.imwrite(str(output_path), enhanced)
+            logger.info(f"[FluxCloudArtProvider] Successfully generated and styled vibrant artwork at {output_path}")
             return output_path
 
         except Exception as e:
@@ -586,17 +579,15 @@ class PollinationsArtProvider(ImageGeneratorProvider):
                 refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx)
             else:
                 refined_prompt = (
-                    f"Minimalist comic doodle line art in the Notion vector illustration style. "
-                    f"{prompt.subject}. {prompt.action}. Bold clean black ink outline, solid line-art, "
-                    f"pure white background, high contrast, zero colors, zero gradients, no shading, "
-                    f"storybook coloring page style, masterpiece, 1080p"
+                    f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
+                    f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                    f"harmonious lighting, high detail, masterpiece, 1080p"
                 )
         except Exception:
             refined_prompt = (
-                f"Minimalist comic doodle line art in the Notion vector illustration style. "
-                f"{prompt.subject}. {prompt.action}. Bold clean black ink outline, solid line-art, "
-                f"pure white background, high contrast, zero colors, zero gradients, no shading, "
-                f"storybook coloring page style, masterpiece, 1080p"
+                f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
+                f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                f"harmonious lighting, high detail, masterpiece, 1080p"
             )
 
         logger.info(f"[PollinationsArtProvider] Requesting image for prompt: '{refined_prompt[:80]}...'")
@@ -623,22 +614,15 @@ class PollinationsArtProvider(ImageGeneratorProvider):
             if src is None:
                 raise ValueError("Could not decode image received from Pollinations.ai")
 
-            # 1. Resize về kích thước canvas 1920x1080 với Lanczos-4
+            # 1. Resize về kích thước canvas chuẩn 1920x1080 với Lanczos-4
             resized = cv2.resize(src, (width, height), interpolation=cv2.INTER_LANCZOS4)
-            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 
-            # 2. Chuẩn hóa độ tương phản triệt tiêu bóng xám, giữ nét mực đậm
-            alpha = np.clip((gray.astype(np.float32) - 30.0) / (240.0 - 30.0), 0.0, 1.0)
+            # 2. Tăng cường độ nét viền contour nhưng bảo toàn 100% màu sắc nguyên bản
+            gaussian = cv2.GaussianBlur(resized, (0, 0), 2.0)
+            enhanced = cv2.addWeighted(resized, 1.2, gaussian, -0.2, 0)
 
-            # 3. Phủ màu nền kem ấm (#F5EBD7 / BGR: 215, 235, 245) và nét mực đen (#1A1A1A / BGR: 26, 26, 26)
-            paper = np.array([215, 235, 245], dtype=np.float32)
-            ink = np.array([26, 26, 26], dtype=np.float32)
-            out_img = np.zeros((height, width, 3), dtype=np.uint8)
-            for c in range(3):
-                out_img[:, :, c] = np.clip((1.0 - alpha) * ink[c] + alpha * paper[c], 0, 255).astype(np.uint8)
-
-            cv2.imwrite(str(output_path), out_img)
-            logger.info(f"[PollinationsArtProvider] Successfully saved Notion doodle artwork at {output_path}")
+            cv2.imwrite(str(output_path), enhanced)
+            logger.info(f"[PollinationsArtProvider] Successfully saved vibrant storybook artwork at {output_path}")
             return output_path
 
         except Exception as e:
