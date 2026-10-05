@@ -135,12 +135,26 @@ class WhiteboardPipeline:
                 f"segments=1 entities={required_ents}"
             )
         else:
-            # Mode IDEA: AI Script Agent tạo kịch bản từ ý tưởng
+            # Mode IDEA: AI Script Agent / Gemini Script Director tạo kịch bản từ ý tưởng
             idea_text = ctx.original_input or ctx.script
             if not idea_text.strip():
                 raise ValueError("Idea is required when input_mode is 'IDEA'.")
 
-            if self.script_agent is not None:
+            from core.artwork.gemini_director import GeminiScriptDirector
+            if GeminiScriptDirector.is_available():
+                sb_scenes = GeminiScriptDirector.create_storyboard(idea_text, target_scenes=3)
+                segments = [
+                    ScriptSegment(
+                        cue_index=s.scene_index,
+                        text=s.narration,
+                        estimated_duration_sec=s.estimated_duration_sec,
+                        semantic_meaning=s.title,
+                        key_entities=list(SemanticValidator.extract_required_entities(s.narration)),
+                    )
+                    for s in sb_scenes
+                ]
+                script_text = " ".join(s.narration for s in sb_scenes)
+            elif self.script_agent is not None:
                 script_res = await self.script_agent.generate_script(
                     idea=idea_text,
                     language=ctx.language,
@@ -174,10 +188,116 @@ class WhiteboardPipeline:
                 f"segments={len(segments)}"
             )
 
-        # -------------------------------------------------------------
-        # Bước 2: Script → Narration & Audio Timing (TTS)
-        # -------------------------------------------------------------
         v_cfg = voice_config or VoiceConfig(voice_id=ctx.voice_id, language=ctx.language, speed=ctx.speed)
+
+        # -------------------------------------------------------------
+        # Nếu kịch bản gồm nhiều phân cảnh (Multi-Scene Storyboard)
+        # -------------------------------------------------------------
+        if len(segments) > 1:
+            scene_clips: list[Path] = []
+            first_image_path = None
+            first_annot_path = None
+            first_sg = None
+            first_timeline = None
+
+            for s_idx, seg in enumerate(segments):
+                scene_num = s_idx + 1
+                seg_text = seg.text.strip()
+                logger.info(f"[MULTI_SCENE] Processing Scene {scene_num}/{len(segments)}: '{seg_text[:60]}...'")
+
+                # 1. Tạo audio cho phân cảnh này
+                seg_audio = await self.tts_provider.generate(seg_text, v_cfg)
+                seg_timing = seg_audio.timing or await self.tts_provider.get_timing(seg_text, v_cfg)
+                seg_audio_file = out_dir / f"scene_{scene_num}_narration.wav"
+                seg_audio.save_to_file(seg_audio_file)
+
+                # 2. Lập kế hoạch ngữ nghĩa cho phân cảnh này
+                seg_plan = SemanticVisualPlanner.plan_from_script(
+                    script=seg_text,
+                    segments=[seg],
+                    title=f"{seg.semantic_meaning or f'Cảnh {scene_num}'}",
+                )
+                seg_sg = seg_plan.scenes[0].scene_graph
+                seg_sg.scene_id = f"scene_{scene_num}"
+                seg_sg.narration = seg_text
+
+                # 3. Đồng bộ Timeline
+                seg_timeline = self.timeline_synchronizer.build_timeline(
+                    narration_timing=seg_timing,
+                    scene_graph=seg_sg,
+                )
+
+                # 4. Tạo Artwork & Annotation cho phân cảnh
+                seg_img, seg_annot = self.whiteboard_adapter.prepare_scene_artifacts(
+                    scene_graph=seg_sg,
+                    timeline=seg_timeline,
+                    output_dir=out_dir,
+                )
+                if first_image_path is None:
+                    first_image_path = seg_img
+                    first_annot_path = seg_annot
+                    first_sg = seg_sg
+                    first_timeline = seg_timeline
+
+                # 5. Render Video cho phân cảnh
+                seg_raw_video = out_dir / f"scene_{scene_num}_raw.mp4"
+                seg_cfg = render_config or WhiteboardRenderConfig(
+                    fps=24,
+                    cap_long_edge=640,
+                    ink_path="skeleton",
+                    color_fill="contour-wipe",
+                    total_ms=int(round(seg_timeline.total_duration * 1000)),
+                )
+                self.whiteboard_adapter.render_scene(
+                    image_path=seg_img,
+                    annotation_path=seg_annot,
+                    output_path=seg_raw_video,
+                    config=seg_cfg,
+                )
+
+                # 6. Mux Audio & Video của phân cảnh
+                seg_final_mp4 = out_dir / f"scene_{scene_num}_final.mp4"
+                self.whiteboard_adapter.mux_audio_video(
+                    video_path=seg_raw_video,
+                    audio_path=seg_audio_file,
+                    output_path=seg_final_mp4,
+                )
+                scene_clips.append(seg_final_mp4)
+
+            # 7. Ghép nối toàn bộ phân cảnh thành video hoàn chỉnh
+            merged_final_mp4 = out_dir / f"{ctx.job_id}_final.mp4"
+            from scripts.merge_scenes import _ffmpeg_concat_copy, _pyav_concat
+            concat_ok = _ffmpeg_concat_copy(scene_clips, merged_final_mp4) or _pyav_concat(scene_clips, merged_final_mp4)
+            final_video_out = merged_final_mp4 if (concat_ok and merged_final_mp4.exists()) else scene_clips[0]
+
+            total_exec_time = round(time.perf_counter() - start_time, 3)
+            return PipelineResult(
+                idea=idea or ctx.original_input,
+                script_text=script_text,
+                audio_path=str(out_dir / "scene_1_narration.wav"),
+                image_path=str(first_image_path),
+                annotation_path=str(first_annot_path),
+                raw_video_path=str(scene_clips[0]),
+                final_mp4_path=str(final_video_out),
+                media_report=MediaProbe.inspect_media(
+                    file_path=final_video_out,
+                    scene_graph=first_sg,
+                    timeline=first_timeline,
+                    script_text=script_text,
+                ),
+                is_success=True,
+                execution_time_sec=total_exec_time,
+                metadata={
+                    "job_id": ctx.job_id,
+                    "input_mode": ctx.input_mode,
+                    "scenes_count": len(scene_clips),
+                    "script_hash": ctx.script_hash,
+                },
+            )
+
+        # -------------------------------------------------------------
+        # Bước 2: Script → Narration & Audio Timing (TTS) cho phân cảnh đơn
+        # -------------------------------------------------------------
         audio_res = await self.tts_provider.generate(script_text, v_cfg)
         narration_timing = audio_res.timing or await self.tts_provider.get_timing(script_text, v_cfg)
 

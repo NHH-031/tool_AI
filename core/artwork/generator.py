@@ -551,6 +551,109 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             )
 
 
+class PollinationsArtProvider(ImageGeneratorProvider):
+    """
+    Nhà cung cấp sinh ảnh Whiteboard Art siêu tốc miễn phí qua Pollinations.ai REST API.
+    100% miễn phí, không cần token/API key, không bị giới hạn ZeroGPU quota.
+    Hỗ trợ mô hình FLUX siêu nét, tự động chuẩn hóa màu nền kem ấm (#F5EBD7)
+    và nét mực đen đậm (#1A1A1A). Tự động fallback về HighFidelityArtProvider nếu mất mạng.
+    """
+
+    def __init__(self, fallback_provider: Optional[ImageGeneratorProvider] = None):
+        self.fallback_provider = fallback_provider or FluxCloudArtProvider(fallback_provider=HighFidelityArtProvider())
+
+    async def generate_artwork(
+        self,
+        prompt: StructuredIllustrationPrompt,
+        output_path: Path,
+        width: int = 1920,
+        height: int = 1080,
+    ) -> Path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        import asyncio
+        import concurrent.futures
+        import urllib.parse
+        import cv2
+        import numpy as np
+        import requests
+
+        scene_ctx = getattr(prompt, "scene_context", "").strip()
+
+        # Nếu có GeminiScriptDirector, tự động lấy prompt tiếng Anh chuyên biệt
+        try:
+            from core.artwork.gemini_director import GeminiScriptDirector
+            if GeminiScriptDirector.is_available() and scene_ctx:
+                refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx)
+            else:
+                refined_prompt = (
+                    f"Minimalist comic doodle line art in the Notion vector illustration style. "
+                    f"{prompt.subject}. {prompt.action}. Bold clean black ink outline, solid line-art, "
+                    f"pure white background, high contrast, zero colors, zero gradients, no shading, "
+                    f"storybook coloring page style, masterpiece, 1080p"
+                )
+        except Exception:
+            refined_prompt = (
+                f"Minimalist comic doodle line art in the Notion vector illustration style. "
+                f"{prompt.subject}. {prompt.action}. Bold clean black ink outline, solid line-art, "
+                f"pure white background, high contrast, zero colors, zero gradients, no shading, "
+                f"storybook coloring page style, masterpiece, 1080p"
+            )
+
+        logger.info(f"[PollinationsArtProvider] Requesting image for prompt: '{refined_prompt[:80]}...'")
+
+        def _fetch_pollinations() -> bytes:
+            encoded_prompt = urllib.parse.quote(refined_prompt)
+            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed=42"
+            resp = requests.get(url, timeout=25)
+            if resp.status_code != 200:
+                raise RuntimeError(f"Pollinations returned status {resp.status_code}: {resp.text[:100]}")
+            return resp.content
+
+        try:
+            loop = asyncio.get_running_loop()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                content = await asyncio.wait_for(
+                    loop.run_in_executor(pool, _fetch_pollinations),
+                    timeout=30.0,
+                )
+
+            # Giải mã ảnh từ memory buffer
+            nparr = np.frombuffer(content, np.uint8)
+            src = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if src is None:
+                raise ValueError("Could not decode image received from Pollinations.ai")
+
+            # 1. Resize về kích thước canvas 1920x1080 với Lanczos-4
+            resized = cv2.resize(src, (width, height), interpolation=cv2.INTER_LANCZOS4)
+            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+
+            # 2. Chuẩn hóa độ tương phản triệt tiêu bóng xám, giữ nét mực đậm
+            alpha = np.clip((gray.astype(np.float32) - 30.0) / (240.0 - 30.0), 0.0, 1.0)
+
+            # 3. Phủ màu nền kem ấm (#F5EBD7 / BGR: 215, 235, 245) và nét mực đen (#1A1A1A / BGR: 26, 26, 26)
+            paper = np.array([215, 235, 245], dtype=np.float32)
+            ink = np.array([26, 26, 26], dtype=np.float32)
+            out_img = np.zeros((height, width, 3), dtype=np.uint8)
+            for c in range(3):
+                out_img[:, :, c] = np.clip((1.0 - alpha) * ink[c] + alpha * paper[c], 0, 255).astype(np.uint8)
+
+            cv2.imwrite(str(output_path), out_img)
+            logger.info(f"[PollinationsArtProvider] Successfully saved Notion doodle artwork at {output_path}")
+            return output_path
+
+        except Exception as e:
+            logger.warning(
+                f"[PollinationsArtProvider] Pollinations failed or timed out ({e}). "
+                f"Falling back to {type(self.fallback_provider).__name__}..."
+            )
+            return await self.fallback_provider.generate_artwork(
+                prompt=prompt,
+                output_path=output_path,
+                width=width,
+                height=height,
+            )
+
+
 class ArtworkGeneratorFactory:
     """Factory tự động lựa chọn Provider tối ưu theo biến môi trường."""
 
@@ -571,8 +674,11 @@ class ArtworkGeneratorFactory:
         elif openai_key and provider_type == "openai":
             logger.info("[ArtworkGeneratorFactory] Using OpenAIImageGenerator")
             return OpenAIImageGenerator(api_key=openai_key)
-        else:
-            # Mặc định sử dụng FLUX Cloud miễn phí 100% chuẩn Notion doodle, tự động fallback nếu offline
-            logger.info("[ArtworkGeneratorFactory] Using FluxCloudArtProvider (Free Cloud FLUX.1-schnell)")
+        elif provider_type == "flux":
+            logger.info("[ArtworkGeneratorFactory] Using FluxCloudArtProvider (HuggingFace Spaces)")
             return FluxCloudArtProvider()
+        else:
+            # Mặc định sử dụng Pollinations siêu tốc miễn phí, không bị giới hạn ZeroGPU Quota
+            logger.info("[ArtworkGeneratorFactory] Using PollinationsArtProvider (Free Fast FLUX)")
+            return PollinationsArtProvider()
 

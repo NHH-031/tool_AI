@@ -9,6 +9,7 @@ from core.artwork.generator import (
     FluxCloudArtProvider,
     HighFidelityArtProvider,
     ImageGeneratorProvider,
+    PollinationsArtProvider,
 )
 from core.artwork.prompt_builder import StructuredIllustrationPrompt
 
@@ -87,6 +88,18 @@ def test_artwork_generator_factory(monkeypatch):
     provider_flux = ArtworkGeneratorFactory.create()
     assert isinstance(provider_flux, ImageGeneratorProvider)
     assert isinstance(provider_flux, FluxCloudArtProvider)
+
+    monkeypatch.setenv("IMAGE_GENERATOR_PROVIDER", "pollinations")
+    provider_pol = ArtworkGeneratorFactory.create()
+    assert isinstance(provider_pol, ImageGeneratorProvider)
+    assert isinstance(provider_pol, PollinationsArtProvider)
+
+    # Default without explicit env should be PollinationsArtProvider
+    monkeypatch.delenv("IMAGE_GENERATOR_PROVIDER", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    provider_default = ArtworkGeneratorFactory.create()
+    assert isinstance(provider_default, PollinationsArtProvider)
 
 
 @pytest.mark.asyncio

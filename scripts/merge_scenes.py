@@ -57,36 +57,70 @@ def _pyav_concat(inputs: list[Path], output: Path) -> bool:
     except ImportError:
         return False
     from fractions import Fraction
-    import numpy as np  # noqa: F401
+
     first = av.open(str(inputs[0]))
     vs = first.streams.video[0]
     w, h = vs.codec_context.width, vs.codec_context.height
     rate = vs.average_rate
+    has_audio = len(first.streams.audio) > 0
     first.close()
 
     tb = Fraction(rate.denominator, rate.numerator)
     out = av.open(str(output), mode="w")
-    ostream = out.add_stream("h264", rate=rate)
-    ostream.width, ostream.height = w, h
-    ostream.pix_fmt = "yuv420p"
-    ostream.time_base = tb
-    ostream.options = {"crf": "24", "preset": "medium"}
-    pts = 0
+    v_out = out.add_stream("h264", rate=rate)
+    v_out.width, v_out.height = w, h
+    v_out.pix_fmt = "yuv420p"
+    v_out.time_base = tb
+    v_out.options = {"crf": "24", "preset": "medium"}
+
+    a_out = None
+    resampler = None
+    if has_audio:
+        a_out = out.add_stream("aac", rate=24000)
+        a_out.format = "fltp"
+        a_out.layout = "mono"
+        resampler = av.AudioResampler(format="fltp", layout="mono", rate=24000)
+
+    v_pts = 0
+    a_pts = 0
     for p in inputs:
         cont = av.open(str(p))
+        # 1. Decode & encode video frames
         for frame in cont.decode(video=0):
             if frame.width != w or frame.height != h:
                 frame = frame.reformat(width=w, height=h)
-            frame.pts = pts
+            frame.pts = v_pts
             frame.time_base = tb
-            pts += 1
-            for pkt in ostream.encode(frame):
+            v_pts += 1
+            for pkt in v_out.encode(frame):
                 out.mux(pkt)
+
+        # 2. Decode & encode audio frames if available
+        if has_audio and len(cont.streams.audio) > 0:
+            cont.seek(0)
+            for a_frame in cont.decode(audio=0):
+                resampled_frames = resampler.resample(a_frame)
+                for rf in resampled_frames:
+                    rf.pts = a_pts
+                    a_pts += rf.samples
+                    for pkt in a_out.encode(rf):
+                        out.mux(pkt)
         cont.close()
-    for pkt in ostream.encode(None):
+
+    for pkt in v_out.encode(None):
         out.mux(pkt)
+    if a_out is not None:
+        if resampler:
+            for rf in resampler.resample(None):
+                rf.pts = a_pts
+                a_pts += rf.samples
+                for pkt in a_out.encode(rf):
+                    out.mux(pkt)
+        for pkt in a_out.encode(None):
+            out.mux(pkt)
+
     out.close()
-    print(f"  PyAV 拼接完成: {output}")
+    print(f"  PyAV audio/video concat complete: {output}")
     return True
 
 
