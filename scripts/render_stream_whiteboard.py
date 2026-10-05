@@ -405,8 +405,13 @@ class RegionStreamRenderer:
                 fill_static(start_ms)
 
                 allowed = self._allowed_mask(element, elements[idx + 1:])
-                ink_frames = max(1, round(dur_ms * cfg.ink_weight / weight_sum * cfg.fps / 1000))
-                color_frames = max(1, round(dur_ms * cfg.color_weight / weight_sum * cfg.fps / 1000))
+                is_monochrome = (cfg.color_fill in ["none", "off"])
+                if is_monochrome:
+                    ink_frames = max(1, round(dur_ms * cfg.fps / 1000))
+                    color_frames = 0
+                else:
+                    ink_frames = max(1, round(dur_ms * cfg.ink_weight / weight_sum * cfg.fps / 1000))
+                    color_frames = max(1, round(dur_ms * cfg.color_weight / weight_sum * cfg.fps / 1000))
 
                 if cfg.ink_path_mode == "skeleton":
                     strokes = self._region_skeleton_strokes(allowed)
@@ -436,13 +441,14 @@ class RegionStreamRenderer:
 
                 cur_ms += ink_frames * ms_per_frame
 
-                if cfg.color_fill == "contour-wipe":
-                    self._wash_contour(writer, color_frames, allowed)
-                else:
-                    self._wash_brush(writer, color_frames, centers, allowed)
-                cur_ms += color_frames * ms_per_frame
+                if not is_monochrome:
+                    if cfg.color_fill == "contour-wipe":
+                        self._wash_contour(writer, color_frames, allowed)
+                    else:
+                        self._wash_brush(writer, color_frames, centers, allowed)
+                    cur_ms += color_frames * ms_per_frame
 
-                # Hoàn thiện 100% màu sắc rực rỡ chuẩn cho toàn bộ vùng này
+                # Hoàn thiện 100% hình ảnh chuẩn cho toàn bộ vùng này
                 self.drawn[allowed] = self.raw_color_img[allowed].astype(np.float32)
 
             # Hoàn thiện 100% toàn bộ nét vẽ và màu sắc của tác phẩm mỹ thuật trên toàn canvas
@@ -497,8 +503,8 @@ def _parse_args(argv=None):
     p.add_argument("--bare-tip", action="store_true", help="不叠加笔尖/手部")
     p.add_argument("--ink-path", default="grid", choices=["grid", "skeleton"],
                    help="笔迹路径: grid 网格(默认); skeleton 骨架追踪")
-    p.add_argument("--color-fill", default="contour-wipe", choices=["contour-wipe", "brush"],
-                   help="上色: contour-wipe 轮廓扫描(默认); brush 沿轨迹刷")
+    p.add_argument("--color-fill", default="contour-wipe", choices=["contour-wipe", "brush", "none", "off"],
+                   help="上色: contour-wipe 轮廓扫描(默认); brush 沿轨迹刷; none/off Không đổ màu (Monochrome Line Art)")
     p.add_argument("--pause", default="heavy", choices=["heavy", "auto", "light", "off"],
                    help="起笔段停顿节奏（预留，逐区域画法下影响较弱）")
     p.add_argument("--fps", type=int, default=None)
@@ -523,6 +529,9 @@ def _build_cfg(args) -> sr.Config:
         kw["brush_radius"] = args.brush_radius
     if args.cap_long_edge is not None:
         kw["cap_long_edge"] = args.cap_long_edge
+    if args.color_fill in ["none", "off"]:
+        kw["ink_weight"] = 3
+        kw["color_weight"] = 0
     kw["ink_path_mode"] = args.ink_path
     kw["color_fill"] = args.color_fill
     kw["pause_mode"] = args.pause

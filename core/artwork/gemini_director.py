@@ -49,15 +49,18 @@ class GeminiScriptDirector:
         return bool(cls.get_api_key())
 
     @classmethod
+    @classmethod
     def create_storyboard(
         cls,
         idea: str,
         target_scenes: int = 3,
         target_duration_sec: float = 60.0,
+        has_color: bool = True,
     ) -> List[StoryboardScene]:
         """
         Phân tích một ý tưởng hoặc câu chuyện dài thành danh sách các phân cảnh độc lập.
         Mỗi phân cảnh gồm lời thoại thuyết minh tiếng Việt và visual prompt tiếng Anh tương ứng.
+        Hỗ trợ cả chế độ có đổ màu (Ghibli watercolor) và không đổ màu (Comic ink line art).
         """
         api_key = cls.get_api_key()
         if not api_key:
@@ -67,7 +70,7 @@ class GeminiScriptDirector:
                     scene_index=1,
                     title="Phân cảnh tổng quan",
                     narration=idea,
-                    visual_prompt=cls.create_single_scene_prompt(idea),
+                    visual_prompt=cls.create_single_scene_prompt(idea, has_color=has_color),
                     estimated_duration_sec=max(5.0, round(len(idea.split()) / 2.8, 1)),
                 )
             ]
@@ -77,17 +80,31 @@ class GeminiScriptDirector:
             from google.genai import types
 
             client = genai.Client(api_key=api_key)
+            if has_color:
+                style_guide = (
+                    "video vẽ hoạt họa minh họa màu sắc sống động (Studio Ghibli Anime Watercolor Storybook Animation).\n"
+                    "visual_prompt: prompt tiếng Anh mô tả chi tiết cảnh vẽ tranh anime watercolor sinh động CÓ MÀU SẮC ĐẦY ĐỦ. "
+                    "Cấu trúc bắt buộc: 'Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. [Mô tả chi tiết nhân vật/sinh vật, con mồi nếu có hành động săn mồi, bối cảnh, hành động và BẢNG MÀU PHÙ HỢP]. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text'"
+                )
+            else:
+                style_guide = (
+                    "video vẽ hoạt họa tranh truyện mực đen kinh điển đỉnh cao (Masterpiece Comic Ink Illustration / Manga / Graphic Novel Line Art giống phong cách hổ đuổi thỏ trong rừng).\n"
+                    "visual_prompt: prompt tiếng Anh mô tả chi tiết tranh vẽ tay mực đen (Line Art / Ink Hatching), KHÔNG CÓ MÀU SẮC. "
+                    "Cấu trúc bắt buộc: 'Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. [Mô tả chi tiết nhân vật/sinh vật, con mồi nếu có hành động săn mồi, bối cảnh cây cối và hành động kịch tính]. Dynamic anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text'"
+                )
+
             system_instruction = (
-                "Bạn là đạo diễn kịch bản storyboard chuyên nghiệp cho video vẽ hoạt họa minh họa màu sắc sống động (Studio Ghibli Anime Watercolor Storybook Animation).\n"
+                f"Bạn là đạo diễn kịch bản storyboard chuyên nghiệp cho {style_guide}\n"
                 f"Nhiệm vụ: Phân tích ý tưởng hoặc câu chuyện thành chính xác {target_scenes} phân cảnh liền mạch, "
                 f"tổng thời lượng khoảng {target_duration_sec} giây.\n"
-                "Mỗi phân cảnh PHẢI có một nội dung hình ảnh riêng biệt, CÓ MÀU SẮC ĐẸP ĐẼ RỰC RỠ, ăn khớp 100% với lời thuyết minh của phân cảnh đó.\n"
+                "QUAN TRỌNG VỀ TÍNH ĂN KHỚP NỘI DUNG: Nếu câu chuyện có yếu tố săn mồi, rình rập, đối kháng (ví dụ: 'con rắn đang rình con mồi', 'hổ đuổi thỏ'), "
+                "bắt buộc PHẢI mô tả cả 2 bên (kẻ săn mồi và con mồi như chú ếch/chuột đang ẩn nấp) cùng bối cảnh môi trường kịch tính.\n"
+                "Mỗi phân cảnh PHẢI có một nội dung hình ảnh riêng biệt, ăn khớp 100% với lời thuyết minh của phân cảnh đó.\n"
                 "Yêu cầu xuất ra định dạng JSON mảng các object với các trường:\n"
                 "- scene_index: số nguyên thứ tự (1, 2, 3...)\n"
                 "- title: tiêu đề súc tích của cảnh (tiếng Việt)\n"
                 "- narration: lời thuyết minh tiếng Việt tự nhiên, truyền cảm, hào hùng hoặc sâu lắng (1-2 câu vừa đủ đọc trong 4-6 giây)\n"
-                "- visual_prompt: prompt tiếng Anh mô tả chi tiết cảnh vẽ tranh minh họa anime watercolor sinh động CÓ MÀU SẮC ĐẦY ĐỦ cho bộ sinh ảnh. "
-                "Cấu trúc bắt buộc: 'Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. [Mô tả chi tiết nhân vật, trang phục, bối cảnh, hành động và BẢNG MÀU PHÙ HỢP NGỮ CẢNH: ví dụ cô bé áo vàng đội nón lá cùng chú cún con trên thảm hoa bướm lượn, hoặc người nông dân áo nâu nón lá bên ruộng lúa chín vàng ươm, hoặc chiến hào Điện Biên Phủ với lá cờ đỏ sao vàng tung bay]. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen'\n"
+                "- visual_prompt: prompt tiếng Anh mô tả theo cấu trúc bắt buộc ở trên.\n"
                 "Chỉ trả về duy nhất chuỗi JSON hợp lệ, không bọc trong markdown hay thêm lời giải thích."
             )
 
@@ -142,23 +159,29 @@ class GeminiScriptDirector:
                     scene_index=1,
                     title="Phân cảnh tổng quan",
                     narration=idea,
-                    visual_prompt=cls.create_single_scene_prompt(idea),
+                    visual_prompt=cls.create_single_scene_prompt(idea, has_color=has_color),
                     estimated_duration_sec=max(5.0, round(len(idea.split()) / 2.8, 1)),
                 )
             ]
 
     @classmethod
-    def create_single_scene_prompt(cls, scene_text: str) -> str:
+    def create_single_scene_prompt(cls, scene_text: str, has_color: bool = True) -> str:
         """
-        Chuyển một câu văn/phân cảnh tiếng Việt đơn lẻ thành prompt Notion doodle tiếng Anh chuẩn mực.
+        Chuyển một câu văn/phân cảnh tiếng Việt đơn lẻ thành visual prompt tiếng Anh chuẩn mực,
+        hỗ trợ cả chế độ có đổ màu (Ghibli watercolor) và không đổ màu (Comic ink line art).
         """
         api_key = cls.get_api_key()
         if not api_key:
-            return (
-                f"Minimalist comic doodle line art in the Notion vector illustration style. "
-                f"{scene_text}. Bold clean black ink outline, solid line-art, pure white background, "
-                f"high contrast, zero colors, zero gradients, no shading, storybook coloring page style, masterpiece, 1080p"
-            )
+            if has_color:
+                return (
+                    f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                    f"{scene_text}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text"
+                )
+            else:
+                return (
+                    f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
+                    f"{scene_text}. Dynamic anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+                )
 
         try:
             from google import genai
@@ -166,24 +189,39 @@ class GeminiScriptDirector:
             client = genai.Client(api_key=api_key)
             prompt = (
                 "Bạn là đạo diễn hình ảnh storyboard chuyên nghiệp. "
-                "Nhiệm vụ: Chuyển câu văn sau thành 1 mô tả trực quan sinh động bằng tiếng Anh (chủ thể + hành động + bối cảnh + màu sắc đặc trưng hài hòa). "
-                "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh.\n"
+                "Nhiệm vụ: Chuyển câu văn sau thành 1 mô tả trực quan chi tiết sinh động bằng tiếng Anh: "
+                "- Xác định rõ tất cả các thực thể chủ chốt và hành động tương tác (Ví dụ: 'con rắn đang rình con mồi' thì PHẢI mô tả cả con rắn ngóc đầu trườn trong bụi cỏ và con mồi như chú chuột đồng hoặc chú ếch đang núp gần đó trong tư thế kịch tính; 'hổ đuổi thỏ' thì phải mô tả cả hổ đang phóng tới và thỏ chạy trốn). "
+                "- Bối cảnh môi trường chi tiết (cây cối, đất đá, cỏ lau, ánh sáng). "
+                "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
                 f"Câu văn: {scene_text}"
             )
             for m in ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash-preview", "gemini-flash-lite-latest", "gemini-3.5-flash"]:
                 try:
                     resp = client.models.generate_content(model=m, contents=prompt)
                     desc_en = resp.text.strip().replace("\n", " ")
-                    return (
-                        f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
-                        f"{desc_en}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious lighting, high detail, masterpiece, 1080p"
-                    )
+                    if has_color:
+                        return (
+                            f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                            f"{desc_en}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text"
+                        )
+                    else:
+                        return (
+                            f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
+                            f"{desc_en}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+                        )
                 except Exception:
                     continue
         except Exception as e:
             logger.warning(f"[GeminiScriptDirector] Single scene prompt error: {e}")
 
-        return (
-            f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
-            f"{scene_text}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious lighting, high detail, masterpiece, 1080p"
-        )
+        # Fallback an toàn
+        if has_color:
+            return (
+                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                f"{scene_text}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text"
+            )
+        else:
+            return (
+                f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
+                f"{scene_text}. Dynamic anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+            )

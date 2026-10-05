@@ -32,6 +32,7 @@ class WhiteboardRenderConfig:
     bare_tip: bool = False
     custom_hand_path: Optional[Path] = None
     total_ms: Optional[int] = None
+    has_color: bool = True
     draw_ratio: float = 0.40
     max_draw_ms: int = 2500
 
@@ -816,7 +817,7 @@ class WhiteboardEngineAdapter:
             "--ink-path",
             cfg.ink_path,
             "--color-fill",
-            cfg.color_fill,
+            (cfg.color_fill if cfg.has_color else "none"),
             "--fps",
             str(cfg.fps),
             "--cap-long-edge",

@@ -23,6 +23,7 @@ export const DEFAULT_REVIEW_DATA: ReviewData = {
   music_volume: 0.15,
   visual_style: "notion_minimal",
   aspect_ratio: "16:9",
+  has_color: true,
   video_url: "http://127.0.0.1:8000/media/monkey_banana_e2e/scene_default_final.mp4",
   thumbnail_url: "http://127.0.0.1:8000/media/monkey_banana_e2e/scene_default.png",
   audio_url: "http://127.0.0.1:8000/media/monkey_banana_e2e/narration.wav",
@@ -516,6 +517,7 @@ export async function createProductionJob(payload: {
   music_volume: number;
   visual_style: string;
   aspect_ratio: string;
+  has_color?: boolean;
 }): Promise<ProductionJob> {
   const res = await fetch(`${API_BASE}/jobs`, {
     method: "POST",
@@ -524,9 +526,10 @@ export async function createProductionJob(payload: {
       ...payload,
       script: payload.script || payload.prompt,
       input_mode: payload.input_mode || "SCRIPT",
+      has_color: payload.has_color !== undefined ? payload.has_color : true,
       auto_run: true,
     }),
-    signal: AbortSignal.timeout(60000),
+    signal: AbortSignal.timeout(180000),
   });
 
   if (!res.ok) {

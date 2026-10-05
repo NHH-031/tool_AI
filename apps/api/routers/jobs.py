@@ -202,6 +202,7 @@ class CreateJobRequest(BaseModel):
     music_volume: float = 0.15
     visual_style: str = "notion_minimal"
     aspect_ratio: str = "16:9"
+    has_color: bool = Field(default=True, description="Chế độ đổ màu (True: Ghibli anime watercolor, False: Comic ink line art)")
     auto_run: bool = False
 
 
@@ -257,6 +258,7 @@ async def create_job(req: CreateJobRequest) -> ProductionJob:
             input_mode=req.input_mode.upper(),
             output_dir=output_dir,
             job_id=job.id,
+            has_color=req.has_color,
         )
 
         job.script = res.script_text
@@ -343,6 +345,7 @@ async def create_job(req: CreateJobRequest) -> ProductionJob:
             "music_volume": req.music_volume,
             "visual_style": req.visual_style,
             "aspect_ratio": req.aspect_ratio,
+            "has_color": req.has_color,
             "video_url": job.artifacts["video"],
             "thumbnail_url": job.artifacts["thumbnail"],
             "audio_url": job.artifacts["audio"],

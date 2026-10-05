@@ -407,9 +407,21 @@ export const ReviewScreenView: React.FC<ReviewScreenViewProps> = ({
                 <span>📹</span>
                 <span>Whiteboard Stream Preview</span>
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                1080p @ 30fps
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span
+                  id="badge-color-mode"
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    reviewData.has_color !== false
+                      ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
+                      : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                  }`}
+                >
+                  {reviewData.has_color !== false ? "🎨 Có đổ màu" : "🖋️ Nét mực đen"}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  1080p
+                </span>
+              </div>
             </div>
 
             {/* Video Player */}

@@ -232,6 +232,7 @@ export interface ReviewData {
   music_volume: number;
   visual_style: string;
   aspect_ratio: string;
+  has_color?: boolean;
   video_url: string;
   thumbnail_url: string;
   audio_url: string;

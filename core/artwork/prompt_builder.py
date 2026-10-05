@@ -21,6 +21,7 @@ class StructuredIllustrationPrompt(BaseModel):
     negative_constraints: str = Field(description="Danh sách các điều cấm kỵ tuyệt đối")
     full_prompt: str = Field(description="Toàn văn prompt hoàn chỉnh ghép nối từ 9 thành phần")
     scene_context: str = Field(default="", description="Bối cảnh kịch bản thoại gốc")
+    has_color: bool = Field(default=True, description="Chế độ đổ màu (True: Ghibli watercolor, False: Comic ink line art)")
 
 
 class IllustrationPromptBuilder:
@@ -133,20 +134,29 @@ class IllustrationPromptBuilder:
             f"ground/background={budget.background}. Well-balanced breathing room, no cramped edges."
         )
 
-        # 6. LINE STYLE
-        line_desc = (
-            f"Monochrome hand-drawn sketch line art in dark charcoal ink ({profile.primary_line_color}). "
-            f"Uniform controlled line weight ({profile.line_weight}px), clean intentional strokes, "
-            f"smooth connected contours, elegant silhouette, no messy scratchy double lines."
-        )
+        has_color = getattr(scene_graph, "has_color", True)
 
-        # 7. WHITEBOARD STYLE
-        accent_str = ", ".join(profile.accent_colors)
-        wb_desc = (
-            f"Professional Notion-style minimalist doodle whiteboard illustration. "
-            f"Restrained aesthetic with few but deliberate expressive strokes. "
-            f"Optional subtle conceptual accent color highlights ({accent_str}) strictly used only when meaningful."
-        )
+        # 6. LINE STYLE
+        if has_color:
+            line_desc = (
+                f"Clear clean dark ink outlines ({profile.primary_line_color}) with vibrant watercolor and cel-shaded color fills. "
+                f"Studio Ghibli inspired anime watercolor storybook illustration, smooth connected contours, harmonious lighting."
+            )
+            wb_desc = (
+                f"Studio Ghibli inspired anime watercolor storybook illustration with rich warm harmonious colors. "
+                f"Clear distinct contour lines, rich watercolor fills, highly detailed, peaceful aesthetic."
+            )
+        else:
+            line_desc = (
+                f"Masterpiece comic book ink line art in dark charcoal ink ({profile.primary_line_color}). "
+                f"Crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures, "
+                f"smooth connected contours, dynamic expressive anatomy and lush detailed environment (like tiger_rabbit_forest.png)."
+            )
+            wb_desc = (
+                f"Masterpiece comic book line art illustration (vintage graphic novel & manga ink style). "
+                f"Rich hand-drawn line textures and professional ink cross-hatching. "
+                f"Absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art."
+            )
 
         # 8. BACKGROUND
         bg_desc = (
@@ -194,4 +204,5 @@ class IllustrationPromptBuilder:
             negative_constraints=neg_desc,
             full_prompt=full_prompt,
             scene_context=scene_ctx,
+            has_color=has_color,
         )

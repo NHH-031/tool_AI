@@ -449,33 +449,47 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             if vn in translated_action:
                 translated_action = translated_action.replace(vn, en)
 
-        # Nếu prompt đã có visual_prompt chi tiết chuẩn Studio Ghibli từ đạo diễn phân cảnh
+        # Kiểm tra chế độ đổ màu (Ghibli watercolor) vs đơn sắc (Comic ink line art)
         full_p = getattr(prompt, "full_prompt", "").strip()
-        if scene_ctx and any(k in scene_ctx.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
-            flux_prompt = scene_ctx
-        elif full_p and any(k in full_p.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
-            flux_prompt = full_p
-        elif translated_ctx and any(c in translated_ctx for c in ["men", "man", "women", "people", "fighters", "conversation", "talking"]):
-            scene_desc = f"{translated_ctx}. {translated_action}".strip(". ")
-            flux_prompt = (
-                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
-            )
-        elif translated_ctx:
-            scene_desc = translated_ctx
-            flux_prompt = (
-                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
-            )
+        is_color = getattr(prompt, "has_color", True)
+
+        if not is_color:
+            if scene_ctx and any(k in scene_ctx.lower() for k in ["ink line art", "cross-hatching", "comic book"]):
+                flux_prompt = scene_ctx
+            elif full_p and any(k in full_p.lower() for k in ["ink line art", "cross-hatching", "comic book"]):
+                flux_prompt = full_p
+            else:
+                desc = translated_ctx or translated_action
+                flux_prompt = (
+                    f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
+                    f"{desc}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+                )
         else:
-            scene_desc = translated_action
-            flux_prompt = (
-                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
-            )
+            if scene_ctx and any(k in scene_ctx.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+                flux_prompt = scene_ctx
+            elif full_p and any(k in full_p.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+                flux_prompt = full_p
+            elif translated_ctx and any(c in translated_ctx for c in ["men", "man", "women", "people", "fighters", "conversation", "talking"]):
+                scene_desc = f"{translated_ctx}. {translated_action}".strip(". ")
+                flux_prompt = (
+                    f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                    f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                    f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+                )
+            elif translated_ctx:
+                scene_desc = translated_ctx
+                flux_prompt = (
+                    f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                    f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                    f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+                )
+            else:
+                scene_desc = translated_action
+                flux_prompt = (
+                    f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                    f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                    f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+                )
 
         logger.info(f"[FluxCloudArtProvider] Requesting AI line-art for: '{flux_prompt[:80]}...'")
 
@@ -586,29 +600,51 @@ class PollinationsArtProvider(ImageGeneratorProvider):
 
         scene_ctx = getattr(prompt, "scene_context", "").strip()
         full_p = getattr(prompt, "full_prompt", "").strip()
+        is_color = getattr(prompt, "has_color", True)
 
-        if scene_ctx and any(k in scene_ctx.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
-            refined_prompt = scene_ctx
-        elif full_p and any(k in full_p.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
-            refined_prompt = full_p
+        if not is_color:
+            if scene_ctx and any(k in scene_ctx.lower() for k in ["ink line art", "cross-hatching", "comic book"]):
+                refined_prompt = scene_ctx
+            elif full_p and any(k in full_p.lower() for k in ["ink line art", "cross-hatching", "comic book"]):
+                refined_prompt = full_p
+            else:
+                try:
+                    from core.artwork.gemini_director import GeminiScriptDirector
+                    if GeminiScriptDirector.is_available() and scene_ctx:
+                        refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx, has_color=False)
+                    else:
+                        refined_prompt = (
+                            f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
+                            f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+                        )
+                except Exception:
+                    refined_prompt = (
+                        f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
+                        f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+                    )
         else:
-            # Nếu có GeminiScriptDirector, tự động lấy prompt tiếng Anh chuyên biệt
-            try:
-                from core.artwork.gemini_director import GeminiScriptDirector
-                if GeminiScriptDirector.is_available() and scene_ctx:
-                    refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx)
-                else:
+            if scene_ctx and any(k in scene_ctx.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+                refined_prompt = scene_ctx
+            elif full_p and any(k in full_p.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+                refined_prompt = full_p
+            else:
+                # Nếu có GeminiScriptDirector, tự động lấy prompt tiếng Anh chuyên biệt
+                try:
+                    from core.artwork.gemini_director import GeminiScriptDirector
+                    if GeminiScriptDirector.is_available() and scene_ctx:
+                        refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx, has_color=True)
+                    else:
+                        refined_prompt = (
+                            f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                            f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                            f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+                        )
+                except Exception:
                     refined_prompt = (
                         f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
                         f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
                         f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
                     )
-            except Exception:
-                refined_prompt = (
-                    f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                    f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                    f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
-                )
 
         logger.info(f"[PollinationsArtProvider] Requesting image for prompt: '{refined_prompt[:80]}...'")
 

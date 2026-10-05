@@ -20,6 +20,7 @@ interface CreateVideoViewProps {
     music_volume: number;
     visual_style: string;
     aspect_ratio: string;
+    has_color: boolean;
   }) => void;
   isGenerating: boolean;
 }
@@ -60,6 +61,9 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
   // 8. Aspect Ratio
   const [aspectRatio, setAspectRatio] = useState<string>("16:9");
 
+  // 9. Color Rendering Mode (Có đổ màu vs Không đổ màu)
+  const [hasColor, setHasColor] = useState<boolean>(true);
+
   // Sample Audio Player State
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
 
@@ -88,6 +92,7 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
       music_volume: musicVolume / 100,
       visual_style: visualStyle,
       aspect_ratio: aspectRatio,
+      has_color: hasColor,
     });
   };
 
@@ -410,6 +415,69 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
               5
             </span>
             <h2 className="text-base font-bold text-white">Visual Style & Aspect Ratio</h2>
+          </div>
+
+          {/* Color Fill Mode Selector (Có đổ màu vs Không đổ màu) */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-xs font-medium text-slate-300">
+                Chế độ màu sắc (Color Rendering Mode)
+              </label>
+              <span className="text-[11px] text-indigo-400 font-medium">
+                {hasColor ? "🎨 Full Color Storybook" : "🖋️ Vintage Comic Ink Art"}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div
+                id="btn-color-mode-on"
+                onClick={() => setHasColor(true)}
+                className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${
+                  hasColor
+                    ? "bg-gradient-to-br from-indigo-950/60 to-purple-950/40 border-indigo-500 text-white shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/50"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-white hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30">🎨</div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-white">Có đổ màu (Full Color)</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Khuyên dùng
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      Màu nước Anime Studio Ghibli ấm áp rực rỡ. Nét vẽ hoàn thành nhanh trong ~2.2s rồi giữ màu nguyên bản sắc nét cùng audio (chuẩn phong cách Trường Giang).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="btn-color-mode-off"
+                onClick={() => setHasColor(false)}
+                className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${
+                  !hasColor
+                    ? "bg-gradient-to-br from-amber-950/40 to-slate-900/60 border-amber-500 text-white shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/50"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-white hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl p-2 rounded-xl bg-amber-500/20 border border-amber-500/30">🖋️</div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-white">Không đổ màu (Line Art)</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        Mực than chì
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      Tranh truyện tranh mực đen than chì đỉnh cao với kỹ thuật đan nét (cross-hatching) trên giấy kem vintage cổ điển <span className="font-mono text-amber-300">#F5EBD7</span>, hoàn toàn không màu loang xám (chuẩn Hổ & Thỏ).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Style Selector */}

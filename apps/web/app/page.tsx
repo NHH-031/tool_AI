@@ -121,6 +121,7 @@ export default function Home() {
     music_volume: number;
     visual_style: string;
     aspect_ratio: string;
+    has_color?: boolean;
   }) => {
     setActiveJob(null);
     setReviewData(null);

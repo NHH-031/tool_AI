@@ -228,6 +228,9 @@ class SceneGraph(BaseModel):
     visual_prompt: str = Field(
         default="", description="Prompt mô tả thị giác chi tiết cho AI sinh ảnh nghệ thuật"
     )
+    has_color: bool = Field(
+        default=True, description="Chế độ có đổ màu (True: Ghibli anime watercolor) hoặc không đổ màu (False: Comic ink art)"
+    )
 
     def model_post_init(self, __context: Any) -> None:
         if not self.narration and self.description:

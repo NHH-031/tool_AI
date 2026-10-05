@@ -88,6 +88,7 @@ class WhiteboardPipeline:
         voice_config: Optional[VoiceConfig] = None,
         context: Optional[PipelineContext] = None,
         job_id: Optional[str] = None,
+        has_color: bool = True,
     ) -> PipelineResult:
         """
         Thực thi toàn bộ pipeline từ Input đầu vào tới file MP4 hoàn chỉnh.
@@ -129,6 +130,8 @@ class WhiteboardPipeline:
             if not script_text.strip():
                 raise ValueError("Script is required when input_mode is 'SCRIPT'.")
             required_ents = list(SemanticValidator.extract_required_entities(script_text))
+            from core.artwork.gemini_director import GeminiScriptDirector
+            v_prompt_script = GeminiScriptDirector.create_single_scene_prompt(script_text, has_color=has_color) if GeminiScriptDirector.is_available() else ""
             segments = [
                 ScriptSegment(
                     cue_index=1,
@@ -136,6 +139,7 @@ class WhiteboardPipeline:
                     estimated_duration_sec=max(3.5, round(len(script_text.split()) / 2.8, 1)),
                     semantic_meaning=f"Phân cảnh diễn hoạt cho kịch bản: {script_text}",
                     key_entities=required_ents,
+                    visual_prompt=v_prompt_script,
                 )
             ]
             logger.info(
@@ -150,7 +154,7 @@ class WhiteboardPipeline:
 
             from core.artwork.gemini_director import GeminiScriptDirector
             if GeminiScriptDirector.is_available():
-                sb_scenes = GeminiScriptDirector.create_storyboard(idea_text, target_scenes=3)
+                sb_scenes = GeminiScriptDirector.create_storyboard(idea_text, target_scenes=3, has_color=has_color)
                 segments = [
                     ScriptSegment(
                         cue_index=s.scene_index,
@@ -235,6 +239,7 @@ class WhiteboardPipeline:
                 seg_sg = seg_plan.scenes[0].scene_graph
                 seg_sg.scene_id = f"scene_{scene_num}"
                 seg_sg.narration = seg_text
+                seg_sg.has_color = has_color
                 seg_sg.visual_prompt = getattr(seg, "visual_prompt", "") or seg.semantic_meaning
 
                 # 3. Đồng bộ Timeline
@@ -261,7 +266,8 @@ class WhiteboardPipeline:
                     fps=24,
                     cap_long_edge=640,
                     ink_path="skeleton",
-                    color_fill="contour-wipe",
+                    color_fill="contour-wipe" if has_color else "none",
+                    has_color=has_color,
                     total_ms=int(round(seg_timeline.total_duration * 1000)),
                 )
                 self.whiteboard_adapter.render_scene(
@@ -306,6 +312,7 @@ class WhiteboardPipeline:
                 metadata={
                     "job_id": ctx.job_id,
                     "input_mode": ctx.input_mode,
+                    "has_color": has_color,
                     "scenes_count": len(scene_clips),
                     "script_hash": ctx.script_hash,
                 },
@@ -348,6 +355,7 @@ class WhiteboardPipeline:
             scene_graph = plan.scenes[0].scene_graph
         if segments and getattr(segments[0], "visual_prompt", ""):
             scene_graph.visual_prompt = segments[0].visual_prompt
+        scene_graph.has_color = has_color
 
         entity_labels = [e.label for e in scene_graph.entities]
         logger.info(
@@ -404,7 +412,8 @@ class WhiteboardPipeline:
             fps=24,
             cap_long_edge=640,
             ink_path="skeleton",
-            color_fill="contour-wipe",
+            color_fill="contour-wipe" if has_color else "none",
+            has_color=has_color,
             total_ms=int(round(timeline.total_duration * 1000)),
         )
 
@@ -460,6 +469,7 @@ class WhiteboardPipeline:
                 "job_id": ctx.job_id,
                 "project_id": ctx.project_id,
                 "input_mode": ctx.input_mode,
+                "has_color": has_color,
                 "script_hash": ctx.script_hash,
                 "scene_id": scene_graph.scene_id,
                 "entities": entity_labels,
