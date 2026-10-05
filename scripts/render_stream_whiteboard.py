@@ -110,6 +110,10 @@ class RegionStreamRenderer:
         if cfg.match_bg:
             self._match_original_background()
 
+        # Bản vẽ nét đen trắng thuần túy trên giấy kem (Monochrome line art on cream canvas)
+        self.mono_img = np.full((self.out_h, self.out_w, 3), self.canvas_bgr, dtype=np.float32)
+        self.mono_img[self.ink_pixels] = self.ink_paint[self.ink_pixels]
+
         # 共享持久画布
         self.drawn = np.empty((self.out_h, self.out_w, 3), dtype=np.float32)
         self.drawn[...] = self.canvas_bgr.astype(np.float32)
@@ -447,12 +451,15 @@ class RegionStreamRenderer:
                     else:
                         self._wash_brush(writer, color_frames, centers, allowed)
                     cur_ms += color_frames * ms_per_frame
+                    self.drawn[allowed] = self.raw_color_img[allowed].astype(np.float32)
+                else:
+                    self.drawn[allowed] = self.mono_img[allowed].astype(np.float32)
 
-                # Hoàn thiện 100% hình ảnh chuẩn cho toàn bộ vùng này
-                self.drawn[allowed] = self.raw_color_img[allowed].astype(np.float32)
-
-            # Hoàn thiện 100% toàn bộ nét vẽ và màu sắc của tác phẩm mỹ thuật trên toàn canvas
-            self.drawn[...] = self.raw_color_img.astype(np.float32)
+            # Hoàn thiện 100% toàn bộ tác phẩm trên toàn canvas
+            if not is_monochrome:
+                self.drawn[...] = self.raw_color_img.astype(np.float32)
+            else:
+                self.drawn[...] = self.mono_img.astype(np.float32)
 
             # 2. Giai đoạn tĩnh (Hold phase): Rút tay về, giữ nguyên bức tranh mỹ thuật 100% hoàn hảo
             # trong toàn bộ thời gian thuyết minh còn lại của audio (ví dụ từ giây thứ 2 đến giây thứ 5)

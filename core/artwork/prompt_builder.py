@@ -136,27 +136,15 @@ class IllustrationPromptBuilder:
 
         has_color = getattr(scene_graph, "has_color", True)
 
-        # 6. LINE STYLE
-        if has_color:
-            line_desc = (
-                f"Clear clean dark ink outlines ({profile.primary_line_color}) with vibrant watercolor and cel-shaded color fills. "
-                f"Studio Ghibli inspired anime watercolor storybook illustration, smooth connected contours, harmonious lighting."
-            )
-            wb_desc = (
-                f"Studio Ghibli inspired anime watercolor storybook illustration with rich warm harmonious colors. "
-                f"Clear distinct contour lines, rich watercolor fills, highly detailed, peaceful aesthetic."
-            )
-        else:
-            line_desc = (
-                f"Masterpiece comic book ink line art in dark charcoal ink ({profile.primary_line_color}). "
-                f"Crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures, "
-                f"smooth connected contours, dynamic expressive anatomy and lush detailed environment (like tiger_rabbit_forest.png)."
-            )
-            wb_desc = (
-                f"Masterpiece comic book line art illustration (vintage graphic novel & manga ink style). "
-                f"Rich hand-drawn line textures and professional ink cross-hatching. "
-                f"Absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art."
-            )
+        # 6. LINE STYLE & WHITEBOARD AESTHETIC (Master Artwork with crisp ink lines & rich watercolor)
+        line_desc = (
+            f"Clear clean expressive dark ink contours and outlines ({profile.primary_line_color}) with vibrant watercolor and cel-shaded color fills. "
+            f"Masterpiece storybook watercolor illustration, smooth connected contours, harmonious lighting on vintage cream paper."
+        )
+        wb_desc = (
+            f"Storybook watercolor and ink illustration with rich warm harmonious colors and crisp ink outlines. "
+            f"Clear distinct contour lines, rich watercolor fills, highly detailed, beautiful aesthetic."
+        )
 
         # 8. BACKGROUND
         bg_desc = (

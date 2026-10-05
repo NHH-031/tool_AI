@@ -49,7 +49,6 @@ class GeminiScriptDirector:
         return bool(cls.get_api_key())
 
     @classmethod
-    @classmethod
     def create_storyboard(
         cls,
         idea: str,
@@ -80,25 +79,21 @@ class GeminiScriptDirector:
             from google.genai import types
 
             client = genai.Client(api_key=api_key)
-            if has_color:
-                style_guide = (
-                    "video vẽ hoạt họa minh họa màu sắc sống động (Studio Ghibli Anime Watercolor Storybook Animation).\n"
-                    "visual_prompt: prompt tiếng Anh mô tả chi tiết cảnh vẽ tranh anime watercolor sinh động CÓ MÀU SẮC ĐẦY ĐỦ. "
-                    "Cấu trúc bắt buộc: 'Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. [Mô tả chi tiết nhân vật/sinh vật, con mồi nếu có hành động săn mồi, bối cảnh, hành động và BẢNG MÀU PHÙ HỢP]. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text'"
-                )
-            else:
-                style_guide = (
-                    "video vẽ hoạt họa tranh truyện mực đen kinh điển đỉnh cao (Masterpiece Comic Ink Illustration / Manga / Graphic Novel Line Art giống phong cách hổ đuổi thỏ trong rừng).\n"
-                    "visual_prompt: prompt tiếng Anh mô tả chi tiết tranh vẽ tay mực đen (Line Art / Ink Hatching), KHÔNG CÓ MÀU SẮC. "
-                    "Cấu trúc bắt buộc: 'Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. [Mô tả chi tiết nhân vật/sinh vật, con mồi nếu có hành động săn mồi, bối cảnh cây cối và hành động kịch tính]. Dynamic anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text'"
-                )
+            style_guide = (
+                "video vẽ hoạt họa minh họa đỉnh cao (Masterpiece Whiteboard Storybook Watercolor & Ink Animation).\n"
+                "visual_prompt: prompt tiếng Anh mô tả chi tiết tác phẩm mỹ thuật với NÉT MỰC ĐEN RÕ RÀNG (crisp dark ink contours) "
+                "và MÀU SẮC NƯỚC RỰC RỠ HÀI HÒA (rich vibrant watercolor color fills) trên nền giấy kem ấm cổ điển #F5EBD7.\n"
+                "Cấu trúc bắt buộc: 'Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7. [Mô tả chi tiết nhân vật/sinh vật, con mồi nếu có hành động săn mồi, bối cảnh tự nhiên và ánh sáng]. Clear distinct contour lines, smooth connected ink outlines, rich watercolor fills, high detail, 1080p widescreen, no text'"
+            )
 
             system_instruction = (
                 f"Bạn là đạo diễn kịch bản storyboard chuyên nghiệp cho {style_guide}\n"
                 f"Nhiệm vụ: Phân tích ý tưởng hoặc câu chuyện thành chính xác {target_scenes} phân cảnh liền mạch, "
                 f"tổng thời lượng khoảng {target_duration_sec} giây.\n"
-                "QUAN TRỌNG VỀ TÍNH ĂN KHỚP NỘI DUNG: Nếu câu chuyện có yếu tố săn mồi, rình rập, đối kháng (ví dụ: 'con rắn đang rình con mồi', 'hổ đuổi thỏ'), "
-                "bắt buộc PHẢI mô tả cả 2 bên (kẻ săn mồi và con mồi như chú ếch/chuột đang ẩn nấp) cùng bối cảnh môi trường kịch tính.\n"
+                "QUAN TRỌNG VỀ TÍNH ĂN KHỚP NỘI DUNG VÀ GIẢI PHẪU CHÍNH XÁC:\n"
+                "- Nếu câu chuyện có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog, toad, or amphibian limbs or wide amphibian mouth'.\n"
+                "- Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', tuyệt đối KHÔNG mô tả con mồi là ếch để tránh nhầm lẫn hình thể.\n"
+                "- Nếu có hổ/thỏ hoặc các loài khác: mô tả chính xác tương tác đối kháng kịch tính.\n"
                 "Mỗi phân cảnh PHẢI có một nội dung hình ảnh riêng biệt, ăn khớp 100% với lời thuyết minh của phân cảnh đó.\n"
                 "Yêu cầu xuất ra định dạng JSON mảng các object với các trường:\n"
                 "- scene_index: số nguyên thứ tự (1, 2, 3...)\n"
@@ -171,17 +166,12 @@ class GeminiScriptDirector:
         hỗ trợ cả chế độ có đổ màu (Ghibli watercolor) và không đổ màu (Comic ink line art).
         """
         api_key = cls.get_api_key()
+        base_style_template = (
+            "Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7. "
+            "{content}. Clear distinct contour lines, smooth connected outlines, rich watercolor fills, harmonious lighting, high detail, 1080p widescreen, no text"
+        )
         if not api_key:
-            if has_color:
-                return (
-                    f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                    f"{scene_text}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text"
-                )
-            else:
-                return (
-                    f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
-                    f"{scene_text}. Dynamic anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
-                )
+            return base_style_template.format(content=scene_text)
 
         try:
             from google import genai
@@ -189,8 +179,10 @@ class GeminiScriptDirector:
             client = genai.Client(api_key=api_key)
             prompt = (
                 "Bạn là đạo diễn hình ảnh storyboard chuyên nghiệp. "
-                "Nhiệm vụ: Chuyển câu văn sau thành 1 mô tả trực quan chi tiết sinh động bằng tiếng Anh: "
-                "- Xác định rõ tất cả các thực thể chủ chốt và hành động tương tác (Ví dụ: 'con rắn đang rình con mồi' thì PHẢI mô tả cả con rắn ngóc đầu trườn trong bụi cỏ và con mồi như chú chuột đồng hoặc chú ếch đang núp gần đó trong tư thế kịch tính; 'hổ đuổi thỏ' thì phải mô tả cả hổ đang phóng tới và thỏ chạy trốn). "
+                "Nhiệm vụ: Chuyển câu văn sau thành 1 mô tả trực quan chi tiết sinh động bằng tiếng Anh cho tác phẩm tranh vẽ minh họa: "
+                "- Xác định rõ tất cả các thực thể chủ chốt và hành động tương tác. "
+                "- Nếu có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog or amphibian limbs or wide mouth'. "
+                "- Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', KHÔNG dùng từ frog. "
                 "- Bối cảnh môi trường chi tiết (cây cối, đất đá, cỏ lau, ánh sáng). "
                 "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
                 f"Câu văn: {scene_text}"
@@ -199,29 +191,11 @@ class GeminiScriptDirector:
                 try:
                     resp = client.models.generate_content(model=m, contents=prompt)
                     desc_en = resp.text.strip().replace("\n", " ")
-                    if has_color:
-                        return (
-                            f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                            f"{desc_en}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text"
-                        )
-                    else:
-                        return (
-                            f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
-                            f"{desc_en}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
-                        )
+                    return base_style_template.format(content=desc_en)
                 except Exception:
                     continue
         except Exception as e:
             logger.warning(f"[GeminiScriptDirector] Single scene prompt error: {e}")
 
         # Fallback an toàn
-        if has_color:
-            return (
-                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                f"{scene_text}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen, no text"
-            )
-        else:
-            return (
-                f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
-                f"{scene_text}. Dynamic anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
-            )
+        return base_style_template.format(content=scene_text)

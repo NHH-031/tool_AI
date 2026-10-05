@@ -320,9 +320,15 @@ class WhiteboardEngineAdapter:
                         return True
             return False
 
-        # 0. Dynamic Generative AI Artwork Provider (ByteDance Hyper-FLUX LoRA / FLUX / Pollinations)
-        # Tự động ưu tiên sinh tranh vẽ minh họa độc bản CÓ MÀU SẮC RỰC RỠ khớp 100% kịch bản
+        # 0. Check Curated Masterpiece Library first (Guarantees 100% human-verified visual excellence)
         provider_mode = os.getenv("IMAGE_GENERATOR_PROVIDER", "").strip().lower()
+        if provider_mode != "force_dynamic":
+            curated_art = self._match_curated_library(kw_match, scene_graph, timeline)
+            if curated_art:
+                return curated_art
+
+        # 1. Dynamic Generative AI Artwork Provider (ByteDance Hyper-FLUX LoRA / FLUX / Pollinations)
+        # Tự động ưu tiên sinh tranh vẽ minh họa độc bản CÓ MÀU SẮC RỰC RỠ khớp 100% kịch bản
         if provider_mode not in ["high_fidelity", "masterpiece", "curated", "local"] and output_dir is not None:
             try:
                 from core.artwork.generator import ArtworkGeneratorFactory
@@ -404,6 +410,85 @@ class WhiteboardEngineAdapter:
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).warning(f"[DynamicAIArtwork] AI generation failed, falling back to curated assets: {e}")
+
+        # Fallback to curated library
+        curated_art = self._match_curated_library(kw_match, scene_graph, timeline)
+        if curated_art:
+            return curated_art
+
+        # 13. Universal Masterpiece Fallback:
+        fallback_order = [
+            self.assets_dir / "artwork" / "generated" / "chicken_running.png",
+            self.assets_dir / "artwork" / "generated" / "teacher_classroom.png",
+            self.assets_dir / "artwork" / "generated" / "astronaut_mars.png",
+            self.assets_dir / "artwork" / "generated" / "engineer_workspace.png",
+            self.assets_dir / "artwork" / "generated" / "doctor_medical.png",
+            self.assets_dir / "artwork" / "generated" / "fish_ocean.png",
+            self.assets_dir / "artwork" / "generated" / "tiger_rabbit_forest.png",
+        ]
+        for fb_art in fallback_order:
+            if fb_art.exists():
+                dynamic_configs = {}
+                c_w = timeline.canvas_width
+                c_h = timeline.canvas_height
+                num_ents = len(scene_graph.entities)
+                if num_ents <= 1:
+                    key_name = (scene_graph.entities[0].label or scene_graph.entities[0].name or "character").lower() if num_ents == 1 else "scene"
+                    dynamic_configs[key_name] = {
+                        "region": {"x": 0, "y": 0, "width": c_w, "height": c_h},
+                        "hand_start": (250, 200),
+                        "hand_end": (c_w - 250, c_h - 200),
+                    }
+                else:
+                    for i, e in enumerate(scene_graph.entities):
+                        e_key = (e.label or e.name or e.species or f"entity_{i}").lower()
+                        x_start = int(i * c_w / num_ents)
+                        x_end = int((i + 1) * c_w / num_ents)
+                        rw = x_end - x_start
+                        dynamic_configs[e_key] = {
+                            "region": {
+                                "x": x_start,
+                                "y": 0,
+                                "width": rw,
+                                "height": c_h,
+                            },
+                            "hand_start": (x_start + 150, 200),
+                            "hand_end": (x_start + max(10, rw - 150), c_h - 200),
+                        }
+                return fb_art, dynamic_configs
+
+        return None
+
+    def _match_curated_library(
+        self, kw_match, scene_graph: SceneGraph, timeline: DrawingTimeline
+    ) -> Optional[Tuple[Path, Dict[str, Any]]]:
+        """Tra cứu thư viện tác phẩm mỹ thuật 1080p đã kiểm định thủ công."""
+        # 0. Snake stalking prey in grass (Masterpiece with unified line-art and color)
+        if kw_match("snake", "rắn", "con rắn", "rắn lục"):
+            art = self.assets_dir / "artwork" / "generated" / "snake_prey_master.png"
+            if art.exists():
+                return art, {
+                    "scene": {
+                        "region": {"x": 0, "y": 0, "width": 1920, "height": 1080},
+                        "hand_start": (300, 200),
+                        "hand_end": (1600, 850),
+                    },
+                    "snake": {
+                        "region": {"x": 100, "y": 100, "width": 1720, "height": 880},
+                        "hand_start": (350, 300),
+                        "hand_end": (1400, 800),
+                    },
+                    "con_ran": {
+                        "region": {"x": 100, "y": 100, "width": 1720, "height": 880},
+                        "hand_start": (350, 300),
+                        "hand_end": (1400, 800),
+                    },
+                    "character": {
+                        "region": {"x": 0, "y": 0, "width": 1920, "height": 1080},
+                        "hand_start": (350, 300),
+                        "hand_end": (1400, 800),
+                    },
+                }
 
         # 1. Tiger chasing Rabbit in Forest
         if kw_match("tiger", "hổ", "cọp") and kw_match("rabbit", "thỏ", "forest", "rừng"):
@@ -751,48 +836,6 @@ class WhiteboardEngineAdapter:
                         "hand_end": (1100, 950),
                     },
                 }
-        # 13. Universal Masterpiece Fallback (Phương án 2):
-        # Đảm bảo BẤT KỲ kịch bản nào của người dùng cũng nhận được tác phẩm vẽ tay 1080p chuẩn mực
-        fallback_order = [
-            self.assets_dir / "artwork" / "generated" / "chicken_running.png",
-            self.assets_dir / "artwork" / "generated" / "teacher_classroom.png",
-            self.assets_dir / "artwork" / "generated" / "astronaut_mars.png",
-            self.assets_dir / "artwork" / "generated" / "engineer_workspace.png",
-            self.assets_dir / "artwork" / "generated" / "doctor_medical.png",
-            self.assets_dir / "artwork" / "generated" / "fish_ocean.png",
-            self.assets_dir / "artwork" / "generated" / "tiger_rabbit_forest.png",
-        ]
-        for fb_art in fallback_order:
-            if fb_art.exists():
-                dynamic_configs = {}
-                c_w = timeline.canvas_width
-                c_h = timeline.canvas_height
-                num_ents = len(scene_graph.entities)
-                if num_ents <= 1:
-                    key_name = (scene_graph.entities[0].label or scene_graph.entities[0].name or "character").lower() if num_ents == 1 else "scene"
-                    dynamic_configs[key_name] = {
-                        "region": {"x": 0, "y": 0, "width": c_w, "height": c_h},
-                        "hand_start": (250, 200),
-                        "hand_end": (c_w - 250, c_h - 200),
-                    }
-                else:
-                    for i, e in enumerate(scene_graph.entities):
-                        e_key = (e.label or e.name or e.species or f"entity_{i}").lower()
-                        x_start = int(i * c_w / num_ents)
-                        x_end = int((i + 1) * c_w / num_ents)
-                        rw = x_end - x_start
-                        dynamic_configs[e_key] = {
-                            "region": {
-                                "x": x_start,
-                                "y": 0,
-                                "width": rw,
-                                "height": c_h,
-                            },
-                            "hand_start": (x_start + 150, 200),
-                            "hand_end": (x_start + max(10, rw - 150), c_h - 200),
-                        }
-                return fb_art, dynamic_configs
-
         return None
 
     def render_scene(
