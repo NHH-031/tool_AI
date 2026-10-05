@@ -95,7 +95,8 @@ class RegionStreamRenderer:
         self.sx = self.out_w / cw
         self.sy = self.out_h / ch
 
-        self.color_img = cv2.resize(image_bgr, (self.out_w, self.out_h), interpolation=cv2.INTER_AREA)
+        self.raw_color_img = cv2.resize(image_bgr, (self.out_w, self.out_h), interpolation=cv2.INTER_AREA)
+        self.color_img = self.raw_color_img.copy()
         gray = cv2.cvtColor(self.color_img, cv2.COLOR_BGR2GRAY)
         self.thresh_map = cv2.adaptiveThreshold(
             gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, 10
@@ -367,13 +368,20 @@ class RegionStreamRenderer:
         return samples, pen_lifts, sample_cell
 
     # ── 主渲染 ──
-    def render_to(self, raw_path: Path, total_ms: int) -> Path:
+    def render_to(self, raw_path: Path, total_ms: int, draw_ratio: float = 0.40, max_draw_ms: int = 2500) -> Path:
         cfg = self.cfg
         elements = sorted(self.ann["elements"], key=lambda e: e["reveal"]["startMs"])
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         writer = cv2.VideoWriter(str(raw_path), fourcc, cfg.fps, (self.out_w, self.out_h))
         if not writer.isOpened():
             raise RuntimeError("无法打开视频写入器")
+
+        # 1. Tỉ lệ hoàn thành vẽ tay nhanh (Fast Active Drawing Phase)
+        # Theo yêu cầu người dùng: Ví dụ cảnh 5s thì ~2s (40%) vẽ xong toàn bộ tranh,
+        # phần thời lượng còn lại giữ nguyên bức tranh tĩnh sắc nét để audio tiếp tục đọc lời thuyết minh.
+        target_draw_ms = min(max_draw_ms, max(1200, int(round(total_ms * draw_ratio))))
+        orig_max_end = max((e["reveal"]["startMs"] + e["reveal"]["durationMs"]) for e in elements) if elements else total_ms
+        time_scale = (target_draw_ms / orig_max_end) if orig_max_end > 0 else 1.0
 
         weight_sum = cfg.ink_weight + cfg.color_weight
         cur_ms = 0.0
@@ -392,8 +400,8 @@ class RegionStreamRenderer:
         try:
             for idx, element in enumerate(elements):
                 reveal = element["reveal"]
-                start_ms = reveal["startMs"]
-                dur_ms = reveal["durationMs"]
+                start_ms = int(round(reveal["startMs"] * time_scale))
+                dur_ms = max(int(1000 / cfg.fps * 4), int(round(reveal["durationMs"] * time_scale)))
                 fill_static(start_ms)
 
                 allowed = self._allowed_mask(element, elements[idx + 1:])
@@ -434,20 +442,15 @@ class RegionStreamRenderer:
                     self._wash_brush(writer, color_frames, centers, allowed)
                 cur_ms += color_frames * ms_per_frame
 
-                # Đảm bảo 100% nét vẽ của element này được hạ mực trọn vẹn (No incomplete strokes)
-                revealed_elem = self.ink_pixels & allowed
-                self.drawn[revealed_elem] = self.ink_paint[revealed_elem]
+                # Hoàn thiện 100% màu sắc rực rỡ chuẩn cho toàn bộ vùng này
+                self.drawn[allowed] = self.raw_color_img[allowed].astype(np.float32)
 
-            # Hoàn thiện 100% toàn bộ nét vẽ của bức tranh mỹ thuật trên toàn canvas
-            # Đảm bảo kết thúc video bức tranh được vẽ hoàn tất trọn vẹn, không bị dang dở
-            all_ink = self.ink_pixels
-            self.drawn[all_ink] = self.ink_paint[all_ink]
+            # Hoàn thiện 100% toàn bộ nét vẽ và màu sắc của tác phẩm mỹ thuật trên toàn canvas
+            self.drawn[...] = self.raw_color_img.astype(np.float32)
 
-            # 凝视：补到 total_ms，并确保结尾至少停留 0.5s
-            gaze_until = max(total_ms, cur_ms + 500)
-            # Lưu ý: Tuyệt đối KHÔNG gán đè self.drawn = self.color_img (No instant reveal)
-            # Trạng thái tĩnh cuối cùng bảo lưu 100% kết quả vẽ tay lũy tiến tự nhiên
-            fill_static(gaze_until)
+            # 2. Giai đoạn tĩnh (Hold phase): Rút tay về, giữ nguyên bức tranh mỹ thuật 100% hoàn hảo
+            # trong toàn bộ thời gian thuyết minh còn lại của audio (ví dụ từ giây thứ 2 đến giây thứ 5)
+            fill_static(total_ms)
         finally:
             writer.release()
         return raw_path
@@ -503,6 +506,10 @@ def _parse_args(argv=None):
     p.add_argument("--brush-radius", type=int, default=None)
     p.add_argument("--cap-long-edge", type=int, default=None,
                    help="输出长边像素上限（预览可调小加速，默认 1080）")
+    p.add_argument("--draw-ratio", type=float, default=0.40,
+                   help="Tỉ lệ thời gian vẽ tay trên tổng thời lượng cảnh (mặc định 0.40 = vẽ xong trong 40% đầu)")
+    p.add_argument("--max-draw-ms", type=int, default=2500,
+                   help="Thời gian vẽ tay tối đa cho một phân cảnh (ms, mặc định 2500ms)")
     return p.parse_args(argv)
 
 
@@ -559,7 +566,7 @@ def main(argv=None) -> int:
     print(f"  区域数: {len(annotation['elements'])}, 总时长: {total_ms}ms, "
           f"笔迹: {cfg.ink_path_mode}, 上色: {cfg.color_fill}")
 
-    renderer.render_to(raw_path, total_ms)
+    renderer.render_to(raw_path, total_ms, draw_ratio=args.draw_ratio, max_draw_ms=args.max_draw_ms)
     final = sr.transcode_h264(raw_path, out_path)
 
     size_mb = final.stat().st_size / (1024 * 1024)

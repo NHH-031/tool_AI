@@ -63,6 +63,7 @@ class WhiteboardPipeline:
     ):
         self.llm_provider = llm_provider
         self.script_agent = script_agent or (ScriptAgent(llm=llm_provider) if llm_provider else None)
+        self.visual_planner_agent = visual_planner_agent
         if tts_provider is not None:
             self.tts_provider = tts_provider
         else:
@@ -157,6 +158,7 @@ class WhiteboardPipeline:
                         estimated_duration_sec=s.estimated_duration_sec,
                         semantic_meaning=s.title,
                         key_entities=list(SemanticValidator.extract_required_entities(s.narration)),
+                        visual_prompt=s.visual_prompt,
                     )
                     for s in sb_scenes
                 ]
@@ -233,6 +235,7 @@ class WhiteboardPipeline:
                 seg_sg = seg_plan.scenes[0].scene_graph
                 seg_sg.scene_id = f"scene_{scene_num}"
                 seg_sg.narration = seg_text
+                seg_sg.visual_prompt = getattr(seg, "visual_prompt", "") or seg.semantic_meaning
 
                 # 3. Đồng bộ Timeline
                 seg_timeline = self.timeline_synchronizer.build_timeline(
@@ -343,6 +346,8 @@ class WhiteboardPipeline:
                 title=f"Scene {ctx.job_id}",
             )
             scene_graph = plan.scenes[0].scene_graph
+        if segments and getattr(segments[0], "visual_prompt", ""):
+            scene_graph.visual_prompt = segments[0].visual_prompt
 
         entity_labels = [e.label for e in scene_graph.entities]
         logger.info(

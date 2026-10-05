@@ -47,6 +47,10 @@ class ScriptSegment(BaseModel):
         default_factory=list,
         description="Các hành động cốt lõi diễn ra",
     )
+    visual_prompt: str = Field(
+        default="",
+        description="Prompt chi tiết sinh ảnh minh họa anime watercolor cho phân cảnh",
+    )
 
 
 class ScriptOutput(BaseModel):

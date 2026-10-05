@@ -78,21 +78,28 @@ class GeminiScriptDirector:
 
             client = genai.Client(api_key=api_key)
             system_instruction = (
-                "Bạn là đạo diễn kịch bản storyboard chuyên nghiệp cho video vẽ hoạt họa minh họa màu sắc sống động (Vibrant Storybook Whiteboard Animation).\n"
+                "Bạn là đạo diễn kịch bản storyboard chuyên nghiệp cho video vẽ hoạt họa minh họa màu sắc sống động (Studio Ghibli Anime Watercolor Storybook Animation).\n"
                 f"Nhiệm vụ: Phân tích ý tưởng hoặc câu chuyện thành chính xác {target_scenes} phân cảnh liền mạch, "
                 f"tổng thời lượng khoảng {target_duration_sec} giây.\n"
                 "Mỗi phân cảnh PHẢI có một nội dung hình ảnh riêng biệt, CÓ MÀU SẮC ĐẸP ĐẼ RỰC RỠ, ăn khớp 100% với lời thuyết minh của phân cảnh đó.\n"
                 "Yêu cầu xuất ra định dạng JSON mảng các object với các trường:\n"
                 "- scene_index: số nguyên thứ tự (1, 2, 3...)\n"
                 "- title: tiêu đề súc tích của cảnh (tiếng Việt)\n"
-                "- narration: lời thuyết minh tiếng Việt truyền cảm, hào hùng hoặc sâu lắng (khoảng 2-3 câu vừa đủ đọc)\n"
-                "- visual_prompt: prompt tiếng Anh mô tả chi tiết cảnh vẽ tranh minh họa sinh động CÓ MÀU SẮC ĐẦY ĐỦ cho bộ sinh ảnh. "
-                "Cấu trúc bắt buộc: 'Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. [Mô tả chi tiết nhân vật, bối cảnh, hành động và BẢNG MÀU PHÙ HỢP NGỮ CẢNH: ví dụ ruộng lúa xanh ngát, mái tranh vàng óng, nón lá, áo nâu đất; hoặc núi rừng xanh thẫm, đất bùn đỏ, súng pháo kim loại, cờ đỏ sao vàng]. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious lighting, high detail, masterpiece, 1080p'\n"
+                "- narration: lời thuyết minh tiếng Việt tự nhiên, truyền cảm, hào hùng hoặc sâu lắng (1-2 câu vừa đủ đọc trong 4-6 giây)\n"
+                "- visual_prompt: prompt tiếng Anh mô tả chi tiết cảnh vẽ tranh minh họa anime watercolor sinh động CÓ MÀU SẮC ĐẦY ĐỦ cho bộ sinh ảnh. "
+                "Cấu trúc bắt buộc: 'Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. [Mô tả chi tiết nhân vật, trang phục, bối cảnh, hành động và BẢNG MÀU PHÙ HỢP NGỮ CẢNH: ví dụ cô bé áo vàng đội nón lá cùng chú cún con trên thảm hoa bướm lượn, hoặc người nông dân áo nâu nón lá bên ruộng lúa chín vàng ươm, hoặc chiến hào Điện Biên Phủ với lá cờ đỏ sao vàng tung bay]. Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen'\n"
                 "Chỉ trả về duy nhất chuỗi JSON hợp lệ, không bọc trong markdown hay thêm lời giải thích."
             )
 
             prompt_text = f"Ý tưởng / Kịch bản: {idea}"
-            candidate_models = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"]
+            candidate_models = [
+                "gemini-3.5-flash-lite",
+                "gemini-3.6-flash",
+                "gemini-3.7-flash",
+                "gemini-3-flash-preview",
+                "gemini-flash-lite-latest",
+                "gemini-3.5-flash",
+            ]
             
             raw_text = None
             for model_name in candidate_models:
@@ -163,7 +170,7 @@ class GeminiScriptDirector:
                 "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh.\n"
                 f"Câu văn: {scene_text}"
             )
-            for m in ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"]:
+            for m in ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash-preview", "gemini-flash-lite-latest", "gemini-3.5-flash"]:
                 try:
                     resp = client.models.generate_content(model=m, contents=prompt)
                     desc_en = resp.text.strip().replace("\n", " ")

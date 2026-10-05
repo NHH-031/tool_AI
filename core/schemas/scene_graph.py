@@ -225,6 +225,9 @@ class SceneGraph(BaseModel):
     timing: Dict[str, Any] = Field(
         default_factory=dict, description="Metadata điều phối thời gian của cảnh"
     )
+    visual_prompt: str = Field(
+        default="", description="Prompt mô tả thị giác chi tiết cho AI sinh ảnh nghệ thuật"
+    )
 
     def model_post_init(self, __context: Any) -> None:
         if not self.narration and self.description:

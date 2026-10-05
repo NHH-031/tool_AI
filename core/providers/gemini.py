@@ -35,11 +35,11 @@ class GeminiProvider(LLMProvider):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-1.5-flash",
+        model_name: str = "gemini-2.5-flash",
         base_url: str = "https://generativelanguage.googleapis.com/v1beta",
         timeout_seconds: float = 60.0,
     ):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
+        self.api_key = api_key if api_key is not None else os.getenv("GEMINI_API_KEY", "")
         self.model_name = model_name
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds

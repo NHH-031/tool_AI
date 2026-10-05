@@ -32,6 +32,8 @@ class WhiteboardRenderConfig:
     bare_tip: bool = False
     custom_hand_path: Optional[Path] = None
     total_ms: Optional[int] = None
+    draw_ratio: float = 0.40
+    max_draw_ms: int = 2500
 
 
 class WhiteboardEngineAdapter:
@@ -316,6 +318,87 @@ class WhiteboardEngineAdapter:
                     if re.search(rf"\b{re.escape(kw)}\b", text_corpus):
                         return True
             return False
+
+        # 0. Dynamic Generative AI Artwork Provider (ByteDance Hyper-FLUX LoRA / FLUX / Pollinations)
+        # Tự động ưu tiên sinh tranh vẽ minh họa độc bản CÓ MÀU SẮC RỰC RỠ khớp 100% kịch bản
+        provider_mode = os.getenv("IMAGE_GENERATOR_PROVIDER", "").strip().lower()
+        if provider_mode not in ["high_fidelity", "masterpiece", "curated", "local"] and output_dir is not None:
+            try:
+                from core.artwork.generator import ArtworkGeneratorFactory
+                from core.artwork.prompt_builder import IllustrationPromptBuilder
+                import asyncio
+                import concurrent.futures
+                import logging
+
+                adapt_logger = logging.getLogger(__name__)
+                scene_id = scene_graph.scene_id or "scene_default"
+                ai_art_file = output_dir / f"{scene_id}_ai_artwork.png"
+                
+                prompt_obj = IllustrationPromptBuilder.build_from_scene_graph(scene_graph)
+                v_prompt = getattr(scene_graph, "visual_prompt", "") or getattr(scene_graph, "narration", "")
+                if v_prompt:
+                    prompt_obj.scene_context = v_prompt
+                    prompt_obj.full_prompt = v_prompt
+
+                generator = ArtworkGeneratorFactory.create()
+                adapt_logger.info(
+                    f"[DynamicAIArtwork] Generating AI artwork for scene '{scene_id}' via {type(generator).__name__}..."
+                )
+
+                def _do_gen():
+                    return asyncio.run(
+                        generator.generate_artwork(
+                            prompt=prompt_obj,
+                            output_path=ai_art_file,
+                            width=timeline.canvas_width,
+                            height=timeline.canvas_height,
+                        )
+                    )
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    fut = executor.submit(_do_gen)
+                    res_path = fut.result(timeout=65)
+
+                if res_path and res_path.exists():
+                    dynamic_configs = {}
+                    num_ents = len(scene_graph.entities)
+                    c_w = timeline.canvas_width
+                    c_h = timeline.canvas_height
+
+                    if num_ents <= 1:
+                        key_name = (scene_graph.entities[0].label or scene_graph.entities[0].name or "character").lower() if num_ents == 1 else "scene"
+                        dynamic_configs[key_name] = {
+                            "region": {"x": 0, "y": 0, "width": c_w, "height": c_h},
+                            "hand_start": (250, 200),
+                            "hand_end": (c_w - 250, c_h - 200),
+                        }
+                    else:
+                        for i, e in enumerate(scene_graph.entities):
+                            e_key = (e.label or e.name or e.species or f"entity_{i}").lower()
+                            e_id = e.id.lower()
+                            x_start = int(i * c_w / num_ents)
+                            x_end = int((i + 1) * c_w / num_ents)
+                            rw = x_end - x_start
+                            cfg_item = {
+                                "region": {
+                                    "x": x_start,
+                                    "y": 0,
+                                    "width": rw,
+                                    "height": c_h,
+                                },
+                                "hand_start": (x_start + 150, 200),
+                                "hand_end": (x_start + max(10, rw - 150), c_h - 200),
+                            }
+                            dynamic_configs[e_id] = cfg_item
+                            dynamic_configs[f"{e_key}_{i+1}"] = cfg_item
+                            if e_key not in dynamic_configs:
+                                dynamic_configs[e_key] = cfg_item
+                    adapt_logger.info(f"[DynamicAIArtwork] Successfully deployed vibrant AI artwork: {res_path}")
+                    return res_path, dynamic_configs
+
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"[DynamicAIArtwork] AI generation failed, falling back to curated assets: {e}")
 
         # 1. Tiger chasing Rabbit in Forest
         if kw_match("tiger", "hổ", "cọp") and kw_match("rabbit", "thỏ", "forest", "rừng"):
@@ -663,81 +746,6 @@ class WhiteboardEngineAdapter:
                         "hand_end": (1100, 950),
                     },
                 }
-
-        # 12. Dynamic Generative AI Artwork Provider (FLUX.1-schnell / Imagen 3 / DALL-E 3)
-        provider_mode = os.getenv("IMAGE_GENERATOR_PROVIDER", "").strip().lower()
-        if provider_mode not in ["high_fidelity", "masterpiece", "curated", "local"] and output_dir is not None:
-            try:
-                from core.artwork.generator import ArtworkGeneratorFactory
-                from core.artwork.prompt_builder import IllustrationPromptBuilder
-                import asyncio
-                import concurrent.futures
-                import logging
-
-                adapt_logger = logging.getLogger(__name__)
-                scene_id = scene_graph.scene_id or "scene_default"
-                ai_art_file = output_dir / f"{scene_id}_ai_artwork.png"
-                prompt_obj = IllustrationPromptBuilder.build_from_scene_graph(scene_graph)
-                generator = ArtworkGeneratorFactory.create()
-
-                adapt_logger.info(
-                    f"[DynamicAIArtwork] Generating AI line-art masterpiece for scene '{scene_id}' via {type(generator).__name__}..."
-                )
-
-                def _do_gen():
-                    return asyncio.run(
-                        generator.generate_artwork(
-                            prompt=prompt_obj,
-                            output_path=ai_art_file,
-                            width=timeline.canvas_width,
-                            height=timeline.canvas_height,
-                        )
-                    )
-
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    fut = executor.submit(_do_gen)
-                    res_path = fut.result(timeout=65)
-
-                if res_path and res_path.exists():
-                    dynamic_configs = {}
-                    num_ents = len(scene_graph.entities)
-                    c_w = timeline.canvas_width
-                    c_h = timeline.canvas_height
-
-                    if num_ents <= 1:
-                        key_name = (scene_graph.entities[0].label or scene_graph.entities[0].name or "character").lower() if num_ents == 1 else "scene"
-                        dynamic_configs[key_name] = {
-                            "region": {"x": 0, "y": 0, "width": c_w, "height": c_h},
-                            "hand_start": (250, 200),
-                            "hand_end": (c_w - 250, c_h - 200),
-                        }
-                    else:
-                        for i, e in enumerate(scene_graph.entities):
-                            e_key = (e.label or e.name or e.species or f"entity_{i}").lower()
-                            e_id = e.id.lower()
-                            x_start = int(i * c_w / num_ents)
-                            x_end = int((i + 1) * c_w / num_ents)
-                            rw = x_end - x_start
-                            cfg_item = {
-                                "region": {
-                                    "x": x_start,
-                                    "y": 0,
-                                    "width": rw,
-                                    "height": c_h,
-                                },
-                                "hand_start": (x_start + 150, 200),
-                                "hand_end": (x_start + max(10, rw - 150), c_h - 200),
-                            }
-                            dynamic_configs[e_id] = cfg_item
-                            dynamic_configs[f"{e_key}_{i+1}"] = cfg_item
-                            if e_key not in dynamic_configs:
-                                dynamic_configs[e_key] = cfg_item
-                    adapt_logger.info(f"[DynamicAIArtwork] Successfully deployed AI generated artwork: {res_path}")
-                    return res_path, dynamic_configs
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"[DynamicAIArtwork] AI generation failed, falling back to local: {e}")
-
         # 13. Universal Masterpiece Fallback (Phương án 2):
         # Đảm bảo BẤT KỲ kịch bản nào của người dùng cũng nhận được tác phẩm vẽ tay 1080p chuẩn mực
         fallback_order = [
@@ -812,6 +820,10 @@ class WhiteboardEngineAdapter:
         ]
         if cfg.total_ms is not None:
             cmd.extend(["--total-ms", str(cfg.total_ms)])
+        if cfg.draw_ratio is not None:
+            cmd.extend(["--draw-ratio", str(cfg.draw_ratio)])
+        if cfg.max_draw_ms is not None:
+            cmd.extend(["--max-draw-ms", str(cfg.max_draw_ms)])
         if cfg.bare_tip:
             cmd.append("--bare-tip")
 

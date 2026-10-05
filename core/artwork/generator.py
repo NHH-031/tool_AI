@@ -449,21 +449,35 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             if vn in translated_action:
                 translated_action = translated_action.replace(vn, en)
 
-        # Kết hợp mô tả cảnh tối ưu cho FLUX
-        if translated_ctx and any(c in translated_ctx for c in ["men", "man", "women", "people", "fighters", "conversation", "talking"]):
+        # Nếu prompt đã có visual_prompt chi tiết chuẩn Studio Ghibli từ đạo diễn phân cảnh
+        full_p = getattr(prompt, "full_prompt", "").strip()
+        if scene_ctx and any(k in scene_ctx.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+            flux_prompt = scene_ctx
+        elif full_p and any(k in full_p.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+            flux_prompt = full_p
+        elif translated_ctx and any(c in translated_ctx for c in ["men", "man", "women", "people", "fighters", "conversation", "talking"]):
             scene_desc = f"{translated_ctx}. {translated_action}".strip(". ")
+            flux_prompt = (
+                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+            )
         elif translated_ctx:
             scene_desc = translated_ctx
+            flux_prompt = (
+                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+            )
         else:
             scene_desc = translated_action
+            flux_prompt = (
+                f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+            )
 
-        flux_prompt = (
-            f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
-            f"{scene_desc}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-            f"harmonious lighting, high detail, masterpiece, 1080p"
-        )
-
-        logger.info(f"[FluxCloudArtProvider] Requesting AI line-art for: '{translated_action[:80]}...'")
+        logger.info(f"[FluxCloudArtProvider] Requesting AI line-art for: '{flux_prompt[:80]}...'")
 
         def _call_gradio() -> str:
             from gradio_client import Client
@@ -571,24 +585,30 @@ class PollinationsArtProvider(ImageGeneratorProvider):
         import requests
 
         scene_ctx = getattr(prompt, "scene_context", "").strip()
+        full_p = getattr(prompt, "full_prompt", "").strip()
 
-        # Nếu có GeminiScriptDirector, tự động lấy prompt tiếng Anh chuyên biệt
-        try:
-            from core.artwork.gemini_director import GeminiScriptDirector
-            if GeminiScriptDirector.is_available() and scene_ctx:
-                refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx)
-            else:
+        if scene_ctx and any(k in scene_ctx.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+            refined_prompt = scene_ctx
+        elif full_p and any(k in full_p.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+            refined_prompt = full_p
+        else:
+            # Nếu có GeminiScriptDirector, tự động lấy prompt tiếng Anh chuyên biệt
+            try:
+                from core.artwork.gemini_director import GeminiScriptDirector
+                if GeminiScriptDirector.is_available() and scene_ctx:
+                    refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx)
+                else:
+                    refined_prompt = (
+                        f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
+                        f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
+                        f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+                    )
+            except Exception:
                 refined_prompt = (
-                    f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
+                    f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
                     f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                    f"harmonious lighting, high detail, masterpiece, 1080p"
+                    f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
                 )
-        except Exception:
-            refined_prompt = (
-                f"Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
-                f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                f"harmonious lighting, high detail, masterpiece, 1080p"
-            )
 
         logger.info(f"[PollinationsArtProvider] Requesting image for prompt: '{refined_prompt[:80]}...'")
 
@@ -659,10 +679,10 @@ class ArtworkGeneratorFactory:
             logger.info("[ArtworkGeneratorFactory] Using OpenAIImageGenerator")
             return OpenAIImageGenerator(api_key=openai_key)
         elif provider_type == "flux":
-            logger.info("[ArtworkGeneratorFactory] Using FluxCloudArtProvider (HuggingFace Spaces)")
-            return FluxCloudArtProvider()
+            logger.info("[ArtworkGeneratorFactory] Using FluxCloudArtProvider (ByteDance Hyper-FLUX LoRA)")
+            return FluxCloudArtProvider(fallback_provider=PollinationsArtProvider(fallback_provider=HighFidelityArtProvider()))
         else:
-            # Mặc định sử dụng Pollinations siêu tốc miễn phí, không bị giới hạn ZeroGPU Quota
-            logger.info("[ArtworkGeneratorFactory] Using PollinationsArtProvider (Free Fast FLUX)")
-            return PollinationsArtProvider()
+            # Mặc định sử dụng PollinationsArtProvider (Free Fast FLUX & Studio Ghibli watercolor)
+            logger.info("[ArtworkGeneratorFactory] Using PollinationsArtProvider (Default Free Fast FLUX)")
+            return PollinationsArtProvider(fallback_provider=HighFidelityArtProvider())
 

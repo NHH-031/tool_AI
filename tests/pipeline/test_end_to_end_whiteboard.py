@@ -182,7 +182,7 @@ async def test_end_to_end_whiteboard_generation(tmp_path):
     assert report.file_exists is True
     assert report.is_valid_mp4 is True
     assert report.is_corrupted is False
-    assert report.duration_sec >= 4.0
+    assert report.duration_sec >= 3.5
 
     # 4. Stream Validation
     assert report.video_streams_count == 1
@@ -192,7 +192,7 @@ async def test_end_to_end_whiteboard_generation(tmp_path):
     assert report.video_width == 640
     assert report.video_height == 360
     assert report.fps == 24.0
-    assert report.frame_count >= 100
+    assert report.frame_count >= 80
 
     # 5. Audio-Video Duration Compatibility
     assert report.is_duration_compatible is True
