@@ -518,6 +518,7 @@ export async function createProductionJob(payload: {
   visual_style: string;
   aspect_ratio: string;
   has_color?: boolean;
+  target_duration_sec?: number;
 }): Promise<ProductionJob> {
   const res = await fetch(`${API_BASE}/jobs`, {
     method: "POST",
@@ -525,11 +526,12 @@ export async function createProductionJob(payload: {
     body: JSON.stringify({
       ...payload,
       script: payload.script || payload.prompt,
-      input_mode: payload.input_mode || "SCRIPT",
+      input_mode: payload.input_mode || "IDEA",
       has_color: payload.has_color !== undefined ? payload.has_color : true,
+      target_duration_sec: payload.target_duration_sec,
       auto_run: true,
     }),
-    signal: AbortSignal.timeout(180000),
+    signal: AbortSignal.timeout(300000),
   });
 
   if (!res.ok) {

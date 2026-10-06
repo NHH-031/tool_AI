@@ -43,6 +43,47 @@ class PipelineResult(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata bổ sung")
 
 
+def is_idea_prompt(text: str) -> bool:
+    """
+    Tự động phát hiện nếu chuỗi input là một câu lệnh/yêu cầu/ý tưởng sinh video
+    thay vì một kịch bản lời thoại đọc trực tiếp.
+    """
+    t = text.strip().lower()
+    intent_keywords = [
+        "hãy", "tóm tắt", "kể về", "kể lại", "kể câu chuyện", "câu chuyện về",
+        "giới thiệu về", "viết kịch bản", "làm video", "tạo video", "sinh video",
+        "cuộc đời", "tiểu sử", "sự nghiệp", "lịch sử", "giải thích", "review",
+        "phân tích", "hành trình", "mô tả", "chia sẻ về", "nói về", "giúp tôi",
+        "làm cho tôi", "tạo cho tôi"
+    ]
+    duration_keywords = [
+        "trong 1 phút", "1 phút", "trong 2 phút", "2 phút", "trong 3 phút",
+        "30 giây", "30s", "60 giây", "60s", "120s", "nửa phút", "45s", "45 giây"
+    ]
+    if any(kw in t for kw in duration_keywords):
+        return True
+    for kw in intent_keywords:
+        if t.startswith(kw) or f" {kw} " in f" {t} ":
+            return True
+    return False
+
+
+def extract_target_duration_sec(text: str, default_dur: float = 60.0) -> float:
+    """
+    Trích xuất thời lượng mong muốn (giây) từ văn bản yêu cầu của người dùng.
+    Ví dụ: 'trong 1 phút' -> 60.0, '30 giây' -> 30.0, '2 phút' -> 120.0
+    """
+    import re
+    t = text.lower()
+    m_min = re.search(r'(\d+)\s*(phút|minute|m\b)', t)
+    if m_min:
+        return float(m_min.group(1)) * 60.0
+    m_sec = re.search(r'(\d+)\s*(giây|giay|second|sec|s\b)', t)
+    if m_sec:
+        return float(m_sec.group(1))
+    return default_dur
+
+
 class WhiteboardPipeline:
     """
     Hệ thống sản xuất video Whiteboard Animation tự động End-to-End:
@@ -89,10 +130,12 @@ class WhiteboardPipeline:
         context: Optional[PipelineContext] = None,
         job_id: Optional[str] = None,
         has_color: bool = True,
+        target_duration_sec: Optional[float] = None,
     ) -> PipelineResult:
         """
         Thực thi toàn bộ pipeline từ Input đầu vào tới file MP4 hoàn chỉnh.
-        Nếu input_mode == 'SCRIPT', userScript là Source of Truth.
+        Nếu input_mode == 'SCRIPT', userScript là Source of Truth (trừ khi phát hiện prompt/ý tưởng).
+        Nếu input_mode == 'IDEA' hoặc phát hiện lệnh tóm tắt, tự động kích hoạt Storyboard đa phân cảnh.
         """
         start_time = time.perf_counter()
         out_dir = Path(output_dir).resolve()
@@ -117,9 +160,20 @@ class WhiteboardPipeline:
                 speed=(voice_config.speed if voice_config else 1.0),
             )
 
+        # Trích xuất thời lượng và tự động nhận diện ý định của người dùng
+        user_text = (ctx.original_input or ctx.script or idea or script or "").strip()
+        effective_dur = target_duration_sec or extract_target_duration_sec(user_text, default_dur=60.0)
+
+        if ctx.input_mode == "SCRIPT" and is_idea_prompt(user_text):
+            logger.info(
+                f"[INTENT_AUTO_DETECT] Input '{user_text}' recognized as an IDEA/COMMAND prompt rather than "
+                f"literal voiceover narration. Auto-promoting to IDEA mode with target duration {effective_dur}s."
+            )
+            ctx.input_mode = "IDEA"
+
         logger.info(
             f"[CREATE_VIDEO_REQUEST] jobId={ctx.job_id} inputMode={ctx.input_mode} "
-            f"scriptHash={ctx.script_hash} script='{ctx.script}'"
+            f"targetDur={effective_dur}s scriptHash={ctx.script_hash} text='{user_text}'"
         )
 
         # -------------------------------------------------------------
@@ -148,13 +202,17 @@ class WhiteboardPipeline:
             )
         else:
             # Mode IDEA: AI Script Agent / Gemini Script Director tạo kịch bản từ ý tưởng
-            idea_text = ctx.original_input or ctx.script
+            idea_text = ctx.original_input or ctx.script or user_text
             if not idea_text.strip():
                 raise ValueError("Idea is required when input_mode is 'IDEA'.")
 
             from core.artwork.gemini_director import GeminiScriptDirector
             if GeminiScriptDirector.is_available():
-                sb_scenes = GeminiScriptDirector.create_storyboard(idea_text, target_scenes=3, has_color=has_color)
+                sb_scenes = GeminiScriptDirector.create_storyboard(
+                    idea=idea_text,
+                    target_duration_sec=effective_dur,
+                    has_color=has_color,
+                )
                 segments = [
                     ScriptSegment(
                         cue_index=s.scene_index,
@@ -171,7 +229,7 @@ class WhiteboardPipeline:
                 script_res = await self.script_agent.generate_script(
                     idea=idea_text,
                     language=ctx.language,
-                    target_duration_sec=5,
+                    target_duration_sec=int(effective_dur),
                 )
                 if not script_res.success:
                     raise RuntimeError(f"ScriptAgent failed: {script_res.error_message}")
@@ -182,7 +240,7 @@ class WhiteboardPipeline:
                     ScriptSegment(
                         cue_index=1,
                         text=script_text,
-                        estimated_duration_sec=5.0,
+                        estimated_duration_sec=effective_dur,
                         semantic_meaning=script_text,
                     )
                 ]
@@ -192,7 +250,7 @@ class WhiteboardPipeline:
                     ScriptSegment(
                         cue_index=1,
                         text=script_text,
-                        estimated_duration_sec=5.0,
+                        estimated_duration_sec=effective_dur,
                         semantic_meaning=script_text,
                     )
                 ]
@@ -286,17 +344,54 @@ class WhiteboardPipeline:
                 )
                 scene_clips.append(seg_final_mp4)
 
-            # 7. Ghép nối toàn bộ phân cảnh thành video hoàn chỉnh
+            # 7. Ghép nối toàn bộ phân cảnh thành video và audio hoàn chỉnh
             merged_final_mp4 = out_dir / f"{ctx.job_id}_final.mp4"
             from scripts.merge_scenes import _ffmpeg_concat_copy, _pyav_concat
             concat_ok = _ffmpeg_concat_copy(scene_clips, merged_final_mp4) or _pyav_concat(scene_clips, merged_final_mp4)
             final_video_out = merged_final_mp4 if (concat_ok and merged_final_mp4.exists()) else scene_clips[0]
 
+            merged_audio = out_dir / f"{ctx.job_id}_narration.wav"
+            try:
+                import wave
+                with wave.open(str(merged_audio), "wb") as outfile:
+                    for i, s_clip in enumerate(scene_clips):
+                        s_aud = out_dir / f"scene_{i+1}_narration.wav"
+                        if s_aud.exists():
+                            with wave.open(str(s_aud), "rb") as infile:
+                                if i == 0:
+                                    outfile.setparams(infile.getparams())
+                                outfile.writeframes(infile.readframes(infile.getnframes()))
+            except Exception as e_aud:
+                logger.warning(f"Error concatenating scene audios: {e_aud}")
+                merged_audio = out_dir / "scene_1_narration.wav"
+
+            segments_meta = [
+                {
+                    "segment_id": f"seg-{idx+1:02d}",
+                    "text": seg.text,
+                    "estimated_duration": seg.estimated_duration_sec,
+                    "semantic_meaning": seg.semantic_meaning,
+                    "keywords": list(SemanticValidator.extract_required_entities(seg.text)) or ["story"],
+                    "visual_prompt": getattr(seg, "visual_prompt", ""),
+                }
+                for idx, seg in enumerate(segments)
+            ]
+            scenes_meta = [
+                {
+                    "id": f"scene-{idx+1:02d}",
+                    "scene_index": idx + 1,
+                    "title": seg.semantic_meaning or f"Cảnh {idx+1}",
+                    "duration_ms": int(seg.estimated_duration_sec * 1000),
+                    "entities_count": 2,
+                }
+                for idx, seg in enumerate(segments)
+            ]
+
             total_exec_time = round(time.perf_counter() - start_time, 3)
             return PipelineResult(
                 idea=idea or ctx.original_input,
                 script_text=script_text,
-                audio_path=str(out_dir / "scene_1_narration.wav"),
+                audio_path=str(merged_audio),
                 image_path=str(first_image_path),
                 annotation_path=str(first_annot_path),
                 raw_video_path=str(scene_clips[0]),
@@ -315,6 +410,10 @@ class WhiteboardPipeline:
                     "has_color": has_color,
                     "scenes_count": len(scene_clips),
                     "script_hash": ctx.script_hash,
+                    "segments_meta": segments_meta,
+                    "scenes_meta": scenes_meta,
+                    "timeline_duration": sum(s.estimated_duration_sec for s in segments),
+                    "audio_duration": sum(s.estimated_duration_sec for s in segments),
                 },
             )
 

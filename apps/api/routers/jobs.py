@@ -203,6 +203,7 @@ class CreateJobRequest(BaseModel):
     visual_style: str = "notion_minimal"
     aspect_ratio: str = "16:9"
     has_color: bool = Field(default=True, description="Chế độ đổ màu (True: Ghibli anime watercolor, False: Comic ink line art)")
+    target_duration_sec: Optional[float] = Field(default=None, description="Thời lượng video mong muốn (giây), ví dụ: 60s cho kịch bản 1 phút")
     auto_run: bool = False
 
 
@@ -259,6 +260,7 @@ async def create_job(req: CreateJobRequest) -> ProductionJob:
             output_dir=output_dir,
             job_id=job.id,
             has_color=req.has_color,
+            target_duration_sec=req.target_duration_sec,
         )
 
         job.script = res.script_text
@@ -336,6 +338,28 @@ async def create_job(req: CreateJobRequest) -> ProductionJob:
         # Trích xuất keywords ngữ nghĩa thực tế từ kịch bản
         req_entities = list(SemanticValidator.extract_required_entities(res.script_text))
 
+        # Sử dụng segments và scenes từ metadata nếu có (Multi-Scene Storyboard)
+        segments_for_details = res.metadata.get("segments_meta") or [
+            {
+                "segment_id": "seg-01",
+                "text": res.script_text,
+                "estimated_duration": res.metadata.get("audio_duration", 5.0),
+                "semantic_meaning": f"Diễn họa trực quan cho kịch bản: {res.script_text}",
+                "keywords": req_entities or [e["name"] for e in entities_data],
+            }
+        ]
+        scenes_for_details = res.metadata.get("scenes_meta") or [
+            {
+                "id": res.metadata.get("scene_id", f"scene-{job.id}"),
+                "scene_index": 1,
+                "title": req.title,
+                "duration_ms": int(res.metadata.get("timeline_duration", 5.0) * 1000),
+                "entities_count": len(entities_data),
+            }
+        ]
+
+        total_audio_dur = res.metadata.get("audio_duration") or (res.media_report.duration_sec if res.media_report else 5.0)
+
         _JOB_DETAILS[job.id] = {
             "idea": req.prompt or raw_input,
             "language": req.language,
@@ -352,30 +376,14 @@ async def create_job(req: CreateJobRequest) -> ProductionJob:
             "script": {
                 "title": req.title,
                 "full_text": res.script_text,
-                "segments": [
-                    {
-                        "segment_id": "seg-01",
-                        "text": res.script_text,
-                        "estimated_duration": res.metadata.get("audio_duration", 5.0),
-                        "semantic_meaning": f"Diễn họa trực quan cho kịch bản: {res.script_text}",
-                        "keywords": req_entities or [e["name"] for e in entities_data],
-                    }
-                ],
+                "segments": segments_for_details,
             },
-            "scenes": [
-                {
-                    "id": res.metadata.get("scene_id", f"scene-{job.id}"),
-                    "scene_index": 1,
-                    "title": req.title,
-                    "duration_ms": int(res.metadata.get("timeline_duration", 5.0) * 1000),
-                    "entities_count": len(entities_data),
-                }
-            ],
+            "scenes": scenes_for_details,
             "visual_entities": entities_data,
             "narration": {
                 "voice_id": req.voice_id,
                 "speed": req.speed,
-                "duration_sec": res.metadata.get("audio_duration", 5.0),
+                "duration_sec": total_audio_dur,
                 "sample_rate": 24000,
                 "word_timings": [],
             },

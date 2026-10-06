@@ -21,6 +21,7 @@ interface CreateVideoViewProps {
     visual_style: string;
     aspect_ratio: string;
     has_color: boolean;
+    target_duration_sec?: number;
   }) => void;
   isGenerating: boolean;
 }
@@ -33,12 +34,31 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
   onGenerate,
   isGenerating,
 }) => {
-  // 1. Idea & Script Input
-  const [inputMode, setInputMode] = useState<"SCRIPT" | "IDEA">("SCRIPT");
+  // 1. Idea & Script Input - Mặc định IDEA để AI tự động sinh kịch bản & phân cảnh chuẩn
+  const [inputMode, setInputMode] = useState<"SCRIPT" | "IDEA">("IDEA");
+  const [targetDuration, setTargetDuration] = useState<number>(60); // Mặc định 60s (1 phút)
   const [title, setTitle] = useState(
     initialPrompt ? initialPrompt.slice(0, 30) : "Video Hoạt Hình Bảng Trắng"
   );
   const [prompt, setPrompt] = useState(initialPrompt || "");
+
+  // Tự động nhận diện thời lượng và chuyển mode khi người dùng gõ
+  const handlePromptChange = (val: string) => {
+    setPrompt(val);
+    const low = val.toLowerCase();
+    if (low.includes("1 phút") || low.includes("60s") || low.includes("60 giây")) {
+      setTargetDuration(60);
+      setInputMode("IDEA");
+    } else if (low.includes("2 phút") || low.includes("120s") || low.includes("120 giây")) {
+      setTargetDuration(120);
+      setInputMode("IDEA");
+    } else if (low.includes("30s") || low.includes("30 giây") || low.includes("nửa phút")) {
+      setTargetDuration(30);
+      setInputMode("IDEA");
+    } else if (low.startsWith("hãy") || low.includes("tóm tắt") || low.includes("kể về") || low.includes("cuộc đời") || low.includes("tiểu sử")) {
+      setInputMode("IDEA");
+    }
+  };
 
   // 2. Language
   const [language, setLanguage] = useState<string>("vi");
@@ -93,6 +113,7 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
       visual_style: visualStyle,
       aspect_ratio: aspectRatio,
       has_color: hasColor,
+      target_duration_sec: targetDuration,
     });
   };
 
@@ -179,35 +200,78 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
                 id="input-create-prompt"
                 rows={3}
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                onChange={(e) => handlePromptChange(e.target.value)}
                 placeholder={
                   inputMode === "SCRIPT"
                     ? "Nhập kịch bản chi tiết (ví dụ: Con chó đang chạy theo quả bóng...)"
-                    : "Mô tả ý tưởng ngắn gọn để AI phát triển kịch bản..."
+                    : "Mô tả ý tưởng ngắn gọn để AI phát triển kịch bản (ví dụ: hãy tóm tắt cuộc đời nghệ sĩ Trấn Thành trong 1 phút)..."
                 }
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed resize-none"
                 required
               />
             </div>
 
+            {/* Target Duration Selector (Thời lượng video) */}
+            <div className="pt-1 pb-1">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span>⏱️ Thời lượng video mong muốn:</span>
+                </label>
+                <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20 font-mono">
+                  {targetDuration === 60 ? "1 phút (60 giây - 4 cảnh)" : targetDuration === 120 ? "2 phút (120 giây - 6-8 cảnh)" : `${targetDuration} giây`}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { sec: 15, label: "⚡ Siêu tốc", desc: "~15 giây (2 cảnh)", color: "from-amber-500/20" },
+                  { sec: 30, label: "⏱️ Ngắn gọn", desc: "~30 giây (3 cảnh)", color: "from-blue-500/20" },
+                  { sec: 60, label: "🌟 Kịch bản 1 phút", desc: "~60 giây (4 cảnh - Chuẩn)", color: "from-indigo-500/20" },
+                  { sec: 120, label: "🎬 Chi tiết", desc: "~2 phút (6 cảnh)", color: "from-purple-500/20" },
+                ].map((item) => (
+                  <button
+                    key={item.sec}
+                    type="button"
+                    onClick={() => {
+                      setTargetDuration(item.sec);
+                      setInputMode("IDEA");
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                      targetDuration === item.sec
+                        ? "bg-indigo-600/20 border-indigo-500 text-white shadow-lg ring-1 ring-indigo-500 shadow-indigo-500/10"
+                        : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-300"
+                    }`}
+                  >
+                    <span className="text-xs font-bold text-white flex items-center justify-between">
+                      {item.label}
+                      {targetDuration === item.sec && <span className="text-indigo-400">✓</span>}
+                    </span>
+                    <span className="text-[11px] text-slate-400 mt-1">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Masterpiece Quick Presets (Phương án 2) */}
             <div className="pt-1">
               <div className="text-[11px] font-semibold text-slate-400 mb-2 flex items-center gap-1.5">
-                <span className="text-indigo-400">✨</span> Gợi ý kịch bản chuẩn Kiệt tác 1080p (Phương án 2):
+                <span className="text-indigo-400">✨</span> Gợi ý kịch bản chuẩn Kiệt tác 1080p:
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {[
-                  { icon: "🚀", title: "Phi hành gia Sao Hỏa", text: "Một phi hành gia bước ra khỏi tàu vũ trụ và đặt chân lên bề mặt đất đá Sao Hỏa." },
-                  { icon: "👩‍🏫", title: "Lớp học & Cô giáo", text: "Cô giáo đang giảng bài lịch sử bên bảng đen cho các học sinh chăm chú." },
-                  { icon: "💻", title: "Kỹ sư lập trình", text: "Một kỹ sư phần mềm làm việc bên laptop với các biểu đồ tăng trưởng phân tích." },
-                  { icon: "🩺", title: "Bác sĩ tư vấn", text: "Bác sĩ tận tình tư vấn kết quả khám sức khỏe cho bệnh nhân tại phòng khám." },
-                  { icon: "🐱", title: "Mèo leo cây cau", text: "Con mèo tinh nghịch đang leo thoăn thoắt lên cây cau vươn cao." },
-                  { icon: "🐶", title: "Chó đuổi bóng", text: "Con chó chạy thật nhanh trên sân cỏ đuổi theo quả bóng đang lăn." },
-                  { icon: "🐯", title: "Hổ và thỏ", text: "Cọp dũng mãnh và thỏ nhanh nhẹn cùng chạy trong khu rừng cổ thụ." },
-                  { icon: "🐟", title: "Đàn cá đại dương", text: "Đàn cá tung tăng bơi lội giữa rạn san hô dưới lòng đại dương xanh." },
-                  { icon: "👨‍🌾", title: "Nông dân gieo mầm", text: "Người nông dân cần mẫn chăm sóc mầm xanh bên bóng mát cây cổ thụ." },
-                  { icon: "🌍", title: "Trái đất & Mặt trời", text: "Trái Đất chuyển động trên quỹ đạo tỏa sáng xung quanh Mặt Trời." },
-                  { icon: "🐒", title: "Khỉ hái chuối", text: "Con khỉ đang trèo lên cây để lấy một quả chuối chín vàng." },
+                  { icon: "🌟", title: "Cuộc đời Trấn Thành (1 phút)", text: "hãy tóm tắt cuộc đời nghệ sĩ Trấn Thành trong 1 phút", duration: 60 },
+                  { icon: "🎭", title: "Cuộc đời Trường Giang (1 phút)", text: "hãy tóm tắt cuộc đời nghệ sĩ Trường Giang trong 1 phút", duration: 60 },
+                  { icon: "🐍", title: "Rắn săn mồi", text: "con rắn đang rình con mồi", duration: 15 },
+                  { icon: "🚀", title: "Phi hành gia Sao Hỏa", text: "Một phi hành gia bước ra khỏi tàu vũ trụ và đặt chân lên bề mặt đất đá Sao Hỏa.", duration: 30 },
+                  { icon: "👩‍🏫", title: "Lớp học & Cô giáo", text: "Cô giáo đang giảng bài lịch sử bên bảng đen cho các học sinh chăm chú.", duration: 30 },
+                  { icon: "💻", title: "Kỹ sư lập trình", text: "Một kỹ sư phần mềm làm việc bên laptop với các biểu đồ tăng trưởng phân tích.", duration: 30 },
+                  { icon: "🩺", title: "Bác sĩ tư vấn", text: "Bác sĩ tận tình tư vấn kết quả khám sức khỏe cho bệnh nhân tại phòng khám.", duration: 30 },
+                  { icon: "🐱", title: "Mèo leo cây cau", text: "Con mèo tinh nghịch đang leo thoăn thoắt lên cây cau vươn cao.", duration: 30 },
+                  { icon: "🐶", title: "Chó đuổi bóng", text: "Con chó chạy thật nhanh trên sân cỏ đuổi theo quả bóng đang lăn.", duration: 30 },
+                  { icon: "🐯", title: "Hổ và thỏ", text: "Cọp dũng mãnh và thỏ nhanh nhẹn cùng chạy trong khu rừng cổ thụ.", duration: 30 },
+                  { icon: "🐟", title: "Đàn cá đại dương", text: "Đàn cá tung tăng bơi lội giữa rạn san hô dưới lòng đại dương xanh.", duration: 30 },
+                  { icon: "👨‍🌾", title: "Nông dân gieo mầm", text: "Người nông dân cần mẫn chăm sóc mầm xanh bên bóng mát cây cổ thụ.", duration: 30 },
+                  { icon: "🌍", title: "Trái đất & Mặt trời", text: "Trái Đất chuyển động trên quỹ đạo tỏa sáng xung quanh Mặt Trời.", duration: 30 },
+                  { icon: "🐒", title: "Khỉ hái chuối", text: "Con khỉ đang trèo lên cây để lấy một quả chuối chín vàng.", duration: 30 },
                 ].map((item, idx) => (
                   <button
                     key={idx}
@@ -215,6 +279,8 @@ export const CreateVideoView: React.FC<CreateVideoViewProps> = ({
                     onClick={() => {
                       setTitle(item.title);
                       setPrompt(item.text);
+                      if (item.duration) setTargetDuration(item.duration);
+                      setInputMode("IDEA");
                     }}
                     className="px-2.5 py-1.5 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] text-slate-300 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-600/10 transition flex items-center gap-1.5"
                   >

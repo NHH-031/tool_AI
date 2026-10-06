@@ -52,14 +52,15 @@ class GeminiScriptDirector:
     def create_storyboard(
         cls,
         idea: str,
-        target_scenes: int = 3,
+        target_scenes: Optional[int] = None,
         target_duration_sec: float = 60.0,
         has_color: bool = True,
     ) -> List[StoryboardScene]:
         """
-        Phân tích một ý tưởng hoặc câu chuyện dài thành danh sách các phân cảnh độc lập.
+        Phân tích một ý tưởng hoặc câu chuyện thành danh sách các phân cảnh độc lập.
+        Tự động tính toán số phân cảnh (target_scenes) và độ dài lời thoại (words_per_scene)
+        dựa trên thời lượng mong muốn (ví dụ: 60s = 4 phân cảnh x 15s x ~38-42 từ).
         Mỗi phân cảnh gồm lời thoại thuyết minh tiếng Việt và visual prompt tiếng Anh tương ứng.
-        Hỗ trợ cả chế độ có đổ màu (Ghibli watercolor) và không đổ màu (Comic ink line art).
         """
         api_key = cls.get_api_key()
         if not api_key:
@@ -79,18 +80,49 @@ class GeminiScriptDirector:
             from google.genai import types
 
             client = genai.Client(api_key=api_key)
+
+            # 1. Tính toán số phân cảnh và số từ lời thoại chuẩn theo thời lượng
+            effective_dur = max(10.0, float(target_duration_sec))
+            if target_scenes is not None and target_scenes > 0:
+                scenes_count = target_scenes
+            else:
+                if effective_dur >= 100:
+                    scenes_count = max(5, int(effective_dur / 18))
+                elif effective_dur >= 50:
+                    scenes_count = 4  # 60 giây -> 4 cảnh x 15 giây
+                elif effective_dur >= 30:
+                    scenes_count = 3  # 30-45 giây -> 3 cảnh
+                else:
+                    scenes_count = 2  # 15-25 giây -> 2 cảnh
+
+            dur_per_scene = effective_dur / scenes_count
+            # Tốc độ đọc tiếng Việt tự nhiên là ~2.6 - 2.8 từ/giây
+            words_per_scene = max(15, int(dur_per_scene * 2.7))
+
             style_guide = (
                 "video vẽ hoạt họa minh họa đỉnh cao (Masterpiece Whiteboard Storybook Watercolor & Ink Animation).\n"
                 "visual_prompt: prompt tiếng Anh mô tả chi tiết tác phẩm mỹ thuật với NÉT MỰC ĐEN RÕ RÀNG (crisp dark ink contours) "
                 "và MÀU SẮC NƯỚC RỰC RỠ HÀI HÒA (rich vibrant watercolor color fills) trên nền giấy kem ấm cổ điển #F5EBD7.\n"
-                "Cấu trúc bắt buộc: 'Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7. [Mô tả chi tiết nhân vật/sinh vật, con mồi nếu có hành động săn mồi, bối cảnh tự nhiên và ánh sáng]. Clear distinct contour lines, smooth connected ink outlines, rich watercolor fills, high detail, 1080p widescreen, no text'"
+                "Cấu trúc bắt buộc: 'Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7. [Mô tả chi tiết nhân vật/sinh vật/bối cảnh và ánh sáng]. Clear distinct contour lines, smooth connected ink outlines, rich watercolor fills, high detail, 1080p widescreen, no text'"
             )
 
             system_instruction = (
                 f"Bạn là đạo diễn kịch bản storyboard chuyên nghiệp cho {style_guide}\n"
-                f"Nhiệm vụ: Phân tích ý tưởng hoặc câu chuyện thành chính xác {target_scenes} phân cảnh liền mạch, "
-                f"tổng thời lượng khoảng {target_duration_sec} giây.\n"
-                "QUAN TRỌNG VỀ TÍNH ĂN KHỚP NỘI DUNG VÀ GIẢI PHẪU CHÍNH XÁC:\n"
+                f"Nhiệm vụ: Phân tích ý tưởng hoặc câu chuyện thành chính xác {scenes_count} phân cảnh liền mạch, "
+                f"tổng thời lượng video đạt chính xác khoảng {effective_dur:.0f} giây.\n"
+                f"QUY ĐỊNH ĐỘ DÀI LỜI THOẠI (NARRATION):\n"
+                f"- Mỗi phân cảnh kéo dài khoảng {dur_per_scene:.0f} giây.\n"
+                f"- Lời thuyết minh (narration) tiếng Việt của MỖI phân cảnh BẮT BUỘC DÀI KHOẢNG {words_per_scene} từ "
+                f"(dao động từ {max(10, words_per_scene - 5)} đến {words_per_scene + 5} từ) "
+                f"để khi người đọc thuyết minh diễn cảm sẽ đạt đúng {dur_per_scene:.0f} giây.\n"
+                f"- Tổng lời thuyết minh của toàn bộ {scenes_count} phân cảnh phải đạt khoảng {int(effective_dur * 2.7)} từ.\n\n"
+                "QUAN TRỌNG VỀ TÍNH ĂN KHỚP NỘI DUNG VÀ NHÂN VẬT:\n"
+                "- Nếu chủ đề về tiểu sử / cuộc đời nhân vật nghệ sĩ (như Trấn Thành, Trường Giang, hoặc người nổi tiếng):\n"
+                "  + Kịch bản PHẢI tóm tắt đúng cuộc đời thật của nhân vật qua các cột mốc: "
+                "Cảnh 1 (khởi đầu gian khó & đam mê nghệ thuật), Cảnh 2 (bứt phá thành danh MC/hài kịch quốc dân), "
+                "Cảnh 3 (đỉnh cao đạo diễn phim trăm tỷ / tác phẩm điện ảnh để đời), Cảnh 4 (biểu tượng cống hiến & tri ân khán giả).\n"
+                "  + Visual prompt: Phải mô tả nhân vật người nghệ sĩ Việt Nam lịch lãm, tài hoa, đang biểu diễn với micro trên sân khấu rực rỡ ánh đèn, "
+                "hoặc đứng chỉ đạo sau máy quay điện ảnh chuyên nghiệp, hoặc nhận tràng pháo tay tri ân của khán giả.\n"
                 "- Nếu câu chuyện có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog, toad, or amphibian limbs or wide amphibian mouth'.\n"
                 "- Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', tuyệt đối KHÔNG mô tả con mồi là ếch để tránh nhầm lẫn hình thể.\n"
                 "- Nếu có hổ/thỏ hoặc các loài khác: mô tả chính xác tương tác đối kháng kịch tính.\n"
@@ -98,21 +130,21 @@ class GeminiScriptDirector:
                 "Yêu cầu xuất ra định dạng JSON mảng các object với các trường:\n"
                 "- scene_index: số nguyên thứ tự (1, 2, 3...)\n"
                 "- title: tiêu đề súc tích của cảnh (tiếng Việt)\n"
-                "- narration: lời thuyết minh tiếng Việt tự nhiên, truyền cảm, hào hùng hoặc sâu lắng (1-2 câu vừa đủ đọc trong 4-6 giây)\n"
+                f"- narration: lời thuyết minh tiếng Việt tự nhiên, truyền cảm (đủ độ dài {words_per_scene} từ để đọc trong {dur_per_scene:.0f} giây)\n"
                 "- visual_prompt: prompt tiếng Anh mô tả theo cấu trúc bắt buộc ở trên.\n"
                 "Chỉ trả về duy nhất chuỗi JSON hợp lệ, không bọc trong markdown hay thêm lời giải thích."
             )
 
             prompt_text = f"Ý tưởng / Kịch bản: {idea}"
             candidate_models = [
-                "gemini-3.5-flash-lite",
-                "gemini-3.6-flash",
-                "gemini-3.7-flash",
-                "gemini-3-flash-preview",
-                "gemini-flash-lite-latest",
                 "gemini-3.5-flash",
+                "gemini-flash-latest",
+                "gemini-3.1-flash-lite",
+                "gemini-flash-lite-latest",
+                "gemini-3-flash-preview",
+                "gemini-3.8-flash",
             ]
-            
+
             raw_text = None
             for model_name in candidate_models:
                 try:
@@ -134,7 +166,7 @@ class GeminiScriptDirector:
             scenes: List[StoryboardScene] = []
             for item in data:
                 narr = item.get("narration", "").strip()
-                est_dur = max(4.0, round(len(narr.split()) / 2.8, 1))
+                est_dur = max(4.0, round(len(narr.split()) / 2.7, 1))
                 scene = StoryboardScene(
                     scene_index=item.get("scene_index", len(scenes) + 1),
                     title=item.get("title", f"Cảnh {len(scenes) + 1}"),
@@ -144,7 +176,7 @@ class GeminiScriptDirector:
                 )
                 scenes.append(scene)
 
-            logger.info(f"[GeminiScriptDirector] Generated {len(scenes)} storyboard scenes for idea: '{idea[:50]}...'")
+            logger.info(f"[GeminiScriptDirector] Generated {len(scenes)} storyboard scenes for idea: '{idea[:50]}...' (total ~{sum(s.estimated_duration_sec for s in scenes):.1f}s)")
             return scenes
 
         except Exception as e:
@@ -187,7 +219,7 @@ class GeminiScriptDirector:
                 "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
                 f"Câu văn: {scene_text}"
             )
-            for m in ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash-preview", "gemini-flash-lite-latest", "gemini-3.5-flash"]:
+            for m in ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-3.8-flash"]:
                 try:
                     resp = client.models.generate_content(model=m, contents=prompt)
                     desc_en = resp.text.strip().replace("\n", " ")

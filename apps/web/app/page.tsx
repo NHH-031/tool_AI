@@ -122,6 +122,7 @@ export default function Home() {
     visual_style: string;
     aspect_ratio: string;
     has_color?: boolean;
+    target_duration_sec?: number;
   }) => {
     setActiveJob(null);
     setReviewData(null);
