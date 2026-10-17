@@ -331,8 +331,8 @@ export const ScriptStep: React.FC<ScriptStepProps> = ({
                     {/* Prompt Preview */}
                     <div>
                       <div className="text-[10px] uppercase font-bold text-slate-500 flex items-center justify-between">
-                        <span>Prompt ảnh (SKILL.md):</span>
-                        <span className="text-[9px] text-emerald-400/80 font-mono">#F5EBD7 ink</span>
+                        <span>Prompt ảnh 2D Comic (SKILL.md):</span>
+                        <span className="text-[9px] text-amber-300/90 font-mono bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">2D Comic • #F5EBD7</span>
                       </div>
                       <textarea
                         rows={2}

@@ -83,9 +83,9 @@ class PollinationsArtProvider(ImageGeneratorProvider):
                         f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
                     )
         else:
-            if scene_ctx and any(k in scene_ctx.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+            if scene_ctx and any(k in scene_ctx.lower() for k in ["comic", "graphic novel", "lianhuanhua", "manhua", "illustration"]):
                 refined_prompt = scene_ctx
-            elif full_p and any(k in full_p.lower() for k in ["storybook", "ghibli", "illustration", "anime", "watercolor"]):
+            elif full_p and any(k in full_p.lower() for k in ["comic", "graphic novel", "lianhuanhua", "manhua", "illustration"]):
                 refined_prompt = full_p
             else:
                 try:
@@ -94,15 +94,15 @@ class PollinationsArtProvider(ImageGeneratorProvider):
                         refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx, has_color=True)
                     else:
                         refined_prompt = (
-                            f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                            f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                            f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+                            f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, "
+                            f"{prompt.subject}. {prompt.action}. Clear distinct 2D contour lines, muted vintage watercolor wash, flat matte coloring on warm vintage cream paper #F5EBD7, "
+                            f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, 1080p widescreen, no text, no watermark"
                         )
                 except Exception:
                     refined_prompt = (
-                        f"Vibrant Studio Ghibli inspired anime watercolor storybook illustration, clear clean dark ink outlines and rich warm harmonious colors. "
-                        f"{prompt.subject}. {prompt.action}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-                        f"harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen"
+                        f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, "
+                        f"{prompt.subject}. {prompt.action}. Clear distinct 2D contour lines, muted vintage watercolor wash, flat matte coloring on warm vintage cream paper #F5EBD7, "
+                        f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, 1080p widescreen, no text, no watermark"
                     )
 
         logger.info(f"[PollinationsArtProvider] Requesting image for prompt: '{refined_prompt[:80]}...'")

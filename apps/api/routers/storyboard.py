@@ -32,21 +32,39 @@ class GenerateImageResponse(BaseModel):
 
 
 def _ensure_skill_md_prompt_gate(prompt_text: str) -> str:
-    """Đảm bảo prompt tuân thủ nghiêm ngặt chuẩn SKILL.md (Decision #6 & #8)."""
+    """Đảm bảo prompt tuân thủ nghiêm ngặt chuẩn SKILL.md và phong cách truyện tranh 2D (cấm 3D)."""
     p_lower = prompt_text.lower()
+    prefix_parts = []
     suffix_parts = []
+
+    # 1. Bắt buộc phong cách truyện tranh 2D / graphic novel
+    if not any(k in p_lower for k in ["comic", "graphic novel", "2d", "lianhuanhua", "manhua"]):
+        prefix_parts.append("Masterpiece 2D vintage comic book illustration, traditional graphic novel art")
+
+    # 2. Quy chuẩn nền giấy kem ấm cổ #F5EBD7 theo SKILL.md
     if "#f5ebd7" not in p_lower and "cream paper" not in p_lower:
         suffix_parts.append("on warm vintage cream paper #F5EBD7")
-    if "ink" not in p_lower and "contour" not in p_lower:
-        suffix_parts.append("crisp clean dark ink contour outlines")
-    if "whiteboard" not in p_lower and "doodle" not in p_lower:
-        suffix_parts.append("whiteboard doodle illustration")
-    if "no text" not in p_lower:
-        suffix_parts.append("masterpiece quality, 1080p widescreen, no text, no watermark")
 
+    # 3. Nét viền mực và đánh bóng gạch nét bút sắt
+    if "ink" not in p_lower and "contour" not in p_lower:
+        suffix_parts.append("crisp expressive dark ink contour outlines with fine line cross-hatching")
+
+    # 4. Màu phẳng mờ (flat matte wash), không bóng 3D
+    if "matte" not in p_lower and "watercolor" not in p_lower and "cel" not in p_lower:
+        suffix_parts.append("flat matte muted vintage watercolor wash")
+
+    # 5. Nghiêm cấm 3D, CGI và chữ
+    if "no 3d" not in p_lower:
+        suffix_parts.append("strictly 2D flat art, NO 3D render, NO CGI, NO plastic gloss, NO 3D models")
+    if "no text" not in p_lower:
+        suffix_parts.append("masterpiece quality, 1080p widescreen, no text, no speech bubbles, no watermark")
+
+    result = prompt_text.rstrip(". ")
+    if prefix_parts:
+        result = f"{', '.join(prefix_parts)}, {result}"
     if suffix_parts:
-        return f"{prompt_text.rstrip('. ')}, {', '.join(suffix_parts)}"
-    return prompt_text
+        result = f"{result}, {', '.join(suffix_parts)}"
+    return result
 
 
 @router.get("/{project_id}", response_model=list[GenerateImageResponse])

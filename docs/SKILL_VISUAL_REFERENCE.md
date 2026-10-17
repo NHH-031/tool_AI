@@ -37,7 +37,7 @@ Whiteboard Animation chất lượng cao là sự kết hợp chặt chẽ giữ
 
 ### 2.3. Điều cấm kỵ tuyệt đối (Strict Negative Constraints)
 - **KHÔNG chữ / typography**: Nghiêm cấm tạo chữ, nhãn, số, ký tự trong hình minh họa cảnh (trừ trường hợp logo trên thân bút `drawing-hand.png`).
-- **KHÔNG phong cách 3D / Realistic**: Nghiêm cấm ảnh chụp tả thực, bóng đổ 3D phức tạp, kết cấu sơn dầu/màu nước loang lổ.
+- **KHÔNG phong cách 3D / Realistic / CGI**: Nghiêm cấm tuyệt đối 3D render, mô hình 3D, CGI, Octane/Unreal shading, bề mặt nhựa bóng (plastic sheen), raytracing hoặc ảnh chụp tả thực. Định hướng mỹ học bắt buộc là **Tranh truyện tranh 2D truyền thống (2D Graphic Novel / Historical Comic Book / Liên hoàn họa)** với nét viền mực đen dứt khoát, gạch bóng bút sắt (cross-hatching) và màu nước mờ phẳng (flat matte wash) trên nền giấy kem ấm `#F5EBD7`.
 - **KHÔNG chi tiết rác / Watermark**: Không có watermark, ký hiệu vô nghĩa, nét thừa chồng chéo.
 
 ---

@@ -52,10 +52,10 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span className="text-emerald-400">Bước 2:</span> Tạo Ảnh Storyboard Vẽ Tay (AI FLUX.2 Klein)
+              <span className="text-emerald-400">Bước 2:</span> Tạo Ảnh Storyboard Truyện Tranh 2D (Graphic Novel)
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Mỗi cảnh được tạo 1 hình ảnh vẽ nét mực trên nền giấy kem <span className="text-amber-300 font-mono">#F5EBD7</span>. Bạn có thể chỉnh sửa prompt hoặc vẽ lại từng cảnh.
+              Mỗi cảnh được tạo 1 tác phẩm truyện tranh 2D nét mực trên nền giấy kem cổ điển <span className="text-amber-300 font-mono">#F5EBD7</span> (chuẩn <span className="text-emerald-400 font-medium">SKILL.md</span>, triệt tiêu hoàn toàn hiệu ứng 3D CGI).
             </p>
           </div>
 

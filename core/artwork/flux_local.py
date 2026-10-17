@@ -25,8 +25,9 @@ class FluxLocalArtProvider(ImageGeneratorProvider):
     - Tự động fallback sang Cloud / PollinationsArtProvider nếu ComfyUI offline.
     """
     PROMPT_QUALITY_SUFFIX = (
-        "crisp clean dark ink contour outlines on warm vintage cream paper #F5EBD7, "
-        "whiteboard doodle illustration, high detail, masterpiece quality, 1080p widescreen, no text, no watermark"
+        "Masterpiece 2D vintage comic book illustration, traditional graphic novel art, crisp expressive dark ink contour outlines with fine line cross-hatching, "
+        "muted vintage watercolor wash on warm vintage cream paper #F5EBD7, strictly 2D flat art, NO 3D render, NO CGI, NO plastic gloss, "
+        "1080p widescreen, no text, no watermark"
     )
 
     def __init__(

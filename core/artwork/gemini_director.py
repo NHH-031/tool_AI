@@ -27,9 +27,11 @@ class GeminiScriptDirector:
     """
 
     DEFAULT_STYLE_SUFFIX = (
-        "Vibrant storybook comic illustration with clear clean ink outlines and beautiful harmonious colors. "
-        "{scene_description}. Clear distinct contour lines, rich watercolor and cel-shaded color fills, "
-        "harmonious lighting, high detail, masterpiece, 1080p"
+        "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, "
+        "crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, "
+        "and muted vintage watercolor and gouache wash on warm vintage cream paper #F5EBD7. "
+        "{scene_description}. Clean distinct 2D linework, flat matte coloring, dynamic comic composition, "
+        "strictly no 3D rendering, no CGI, widescreen 16:9, no text, no watermark"
     )
 
     @classmethod
@@ -100,10 +102,13 @@ class GeminiScriptDirector:
             words_per_scene = max(15, int(dur_per_scene * 2.7))
 
             style_guide = (
-                "video vẽ hoạt họa minh họa đỉnh cao (Masterpiece Whiteboard Storybook Watercolor & Ink Animation).\n"
-                "visual_prompt: prompt tiếng Anh mô tả chi tiết tác phẩm mỹ thuật với NÉT MỰC ĐEN RÕ RÀNG (crisp dark ink contours) "
-                "và MÀU SẮC NƯỚC RỰC RỠ HÀI HÒA (rich vibrant watercolor color fills) trên nền giấy kem ấm cổ điển #F5EBD7.\n"
-                "Cấu trúc bắt buộc: 'Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7. [Mô tả chi tiết nhân vật/sinh vật/bối cảnh và ánh sáng]. Clear distinct contour lines, smooth connected ink outlines, rich watercolor fills, high detail, 1080p widescreen, no text'"
+                "video hoạt họa vẽ tay 2D phong cách truyện tranh lịch sử / graphic novel cổ điển đỉnh cao "
+                "(Masterpiece 2D Vintage Comic Book & Graphic Novel Illustration on warm vintage cream paper #F5EBD7).\n"
+                "visual_prompt: prompt tiếng Anh mô tả chi tiết tác phẩm tranh vẽ 2D TRUYỆN TRANH với NÉT MỰC ĐEN RÕ RÀNG (crisp dark ink contours), "
+                "ĐÁNH NÉT GẠCH BÓNG TRUYỆN TRANH (fine pen-and-ink cross-hatching), "
+                "và PHỦ MÀU NƯỚC CỔ ĐIỂN MỘC MẠC (muted earthy vintage watercolor and flat matte gouache wash) trên nền giấy kem ấm cổ điển #F5EBD7.\n"
+                "TUYỆT ĐỐI KHÔNG 3D, KHÔNG CGI, KHÔNG ĐỔ BÓNG KHỐI NHỰA (strictly NO 3D render, NO CGI, NO 3D models, NO plastic gloss).\n"
+                "Cấu trúc bắt buộc: 'Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, muted earthy vintage watercolor wash on warm vintage cream paper #F5EBD7. [Mô tả chi tiết nhân vật/sinh vật/bối cảnh và hành động tương tác]. Distinct 2D comic linework, flat matte coloring, dynamic composition, strictly no 3D effects, 1080p widescreen, no text, no watermark'"
             )
 
             system_instruction = (
@@ -203,8 +208,10 @@ class GeminiScriptDirector:
         """
         api_key = cls.get_api_key()
         base_style_template = (
-            "Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7. "
-            "{content}. Clear distinct contour lines, smooth connected outlines, rich watercolor fills, harmonious lighting, high detail, 1080p widescreen, no text"
+            "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, "
+            "crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, "
+            "and muted vintage watercolor wash on warm vintage cream paper #F5EBD7. "
+            "{content}. Distinct 2D comic linework, flat matte coloring, strictly no 3D rendering, no CGI, 1080p widescreen, no text, no watermark"
         )
         if not api_key:
             return base_style_template.format(content=scene_text)

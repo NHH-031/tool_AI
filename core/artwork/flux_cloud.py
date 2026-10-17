@@ -85,6 +85,9 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
                 logger.warning(f"[FluxCloudArtProvider] Gemini translation fallback: {e_gem}")
 
         for bp in [
+            "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, muted earthy vintage watercolor wash on warm vintage cream paper #F5EBD7.",
+            "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, and muted vintage watercolor and gouache wash on warm vintage cream paper #F5EBD7.",
+            "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, and muted vintage watercolor wash on warm vintage cream paper #F5EBD7.",
             "Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7.",
             "Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures.",
             "Whiteboard doodle illustration representing:",
@@ -93,6 +96,9 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             if clean_desc.startswith(bp):
                 clean_desc = clean_desc[len(bp):].strip()
         for sf in [
+            "Distinct 2D comic linework, flat matte coloring, dynamic composition, strictly no 3D effects, 1080p widescreen, no text, no watermark",
+            "Distinct 2D comic linework, flat matte coloring, strictly no 3D rendering, no CGI, 1080p widescreen, no text, no watermark",
+            "Clean distinct 2D linework, flat matte coloring, dynamic comic composition, strictly no 3D rendering, no CGI, widescreen 16:9, no text, no watermark",
             "Clear distinct contour lines, smooth connected outlines, rich watercolor fills, harmonious lighting, high detail, 1080p widescreen, no text",
             "Clear distinct contour lines, rich watercolor and cel-shaded color fills, harmonious soft sunny lighting, high detail, masterpiece, 1080p widescreen",
             "masterpiece quality, 1080p widescreen, no text, no watermark",
@@ -107,15 +113,15 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
 
         if not is_color:
             flux_prompt = (
-                f"Minimalist Notion style vector doodle illustration, pristine black ink line art on warm vintage cream paper #F5EBD7. "
-                f"{desc}. Simple clean dark ink contour outlines, generous negative space, absolutely NO colors, "
-                f"flat vector 2D doodle sketch, masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
+                f"Masterpiece 2D vintage comic book ink line art illustration, pristine black ink drawing on warm vintage cream paper #F5EBD7. "
+                f"{desc}. Crisp expressive dark ink contour outlines with fine line cross-hatching, generous negative space, absolutely NO colors, "
+                f"strictly 2D flat line art, NO 3D render, NO CGI, masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
             )
         else:
             flux_prompt = (
-                f"Minimalist Notion style vector doodle illustration, clean line art on warm vintage cream paper #F5EBD7. "
-                f"{desc}. Simple clean dark ink contour outlines, generous negative space, subtle pastel orange and blue accents, "
-                f"flat vector 2D doodle aesthetic, masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
+                f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art on warm vintage cream paper #F5EBD7. "
+                f"{desc}. Crisp dark ink contour outlines with fine line cross-hatching, muted vintage watercolor wash, flat matte coloring, "
+                f"strictly 2D flat art, NO 3D render, NO CGI, NO plastic gloss, masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
             )
 
         logger.info(f"[FluxCloudArtProvider] Requesting AI line-art for: '{flux_prompt[:80]}...'")
