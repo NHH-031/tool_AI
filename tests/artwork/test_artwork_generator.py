@@ -8,6 +8,7 @@ from core.artwork.generator import (
     ArtworkGeneratorFactory,
     FluxCloudArtProvider,
     HighFidelityArtProvider,
+    HybridFluxArtProvider,
     ImageGeneratorProvider,
     PollinationsArtProvider,
 )
@@ -84,22 +85,27 @@ def test_artwork_generator_factory(monkeypatch):
     assert isinstance(provider_curated, ImageGeneratorProvider)
     assert isinstance(provider_curated, HighFidelityArtProvider)
 
+    monkeypatch.setenv("IMAGE_GENERATOR_PROVIDER", "flux_cloud")
+    provider_cloud = ArtworkGeneratorFactory.create()
+    assert isinstance(provider_cloud, ImageGeneratorProvider)
+    assert isinstance(provider_cloud, FluxCloudArtProvider)
+
     monkeypatch.setenv("IMAGE_GENERATOR_PROVIDER", "flux")
     provider_flux = ArtworkGeneratorFactory.create()
     assert isinstance(provider_flux, ImageGeneratorProvider)
-    assert isinstance(provider_flux, FluxCloudArtProvider)
+    assert isinstance(provider_flux, HybridFluxArtProvider)
 
     monkeypatch.setenv("IMAGE_GENERATOR_PROVIDER", "pollinations")
     provider_pol = ArtworkGeneratorFactory.create()
     assert isinstance(provider_pol, ImageGeneratorProvider)
     assert isinstance(provider_pol, PollinationsArtProvider)
 
-    # Default without explicit env should be PollinationsArtProvider
+    # Default without explicit env should be HybridFluxArtProvider
     monkeypatch.delenv("IMAGE_GENERATOR_PROVIDER", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     provider_default = ArtworkGeneratorFactory.create()
-    assert isinstance(provider_default, PollinationsArtProvider)
+    assert isinstance(provider_default, HybridFluxArtProvider)
 
 
 @pytest.mark.asyncio

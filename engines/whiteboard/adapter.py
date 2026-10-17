@@ -33,8 +33,8 @@ class WhiteboardRenderConfig:
     custom_hand_path: Optional[Path] = None
     total_ms: Optional[int] = None
     has_color: bool = True
-    draw_ratio: float = 0.40
-    max_draw_ms: int = 2500
+    draw_ratio: float = 0.85
+    max_draw_ms: int = 15000
 
 
 class WhiteboardEngineAdapter:

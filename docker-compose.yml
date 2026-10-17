@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: whiteboard-studio-api
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HF_TOKEN=${HF_TOKEN:-}
+      - IMAGE_GENERATOR_PROVIDER=${IMAGE_GENERATOR_PROVIDER:-hybrid_flux}
+      - COMFYUI_URL=${COMFYUI_URL:-http://host.docker.internal:8188}
+      - VIDEO_ARCHIVE_ROOT=/app/data/archive
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./assets:/app/assets
+    restart: unless-stopped
+    networks:
+      - whiteboard-network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: whiteboard-studio-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - whiteboard-network
+
+networks:
+  whiteboard-network:
+    driver: bridge

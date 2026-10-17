@@ -519,10 +519,10 @@ def _parse_args(argv=None):
     p.add_argument("--brush-radius", type=int, default=None)
     p.add_argument("--cap-long-edge", type=int, default=None,
                    help="输出长边像素上限（预览可调小加速，默认 1080）")
-    p.add_argument("--draw-ratio", type=float, default=0.40,
-                   help="Tỉ lệ thời gian vẽ tay trên tổng thời lượng cảnh (mặc định 0.40 = vẽ xong trong 40% đầu)")
-    p.add_argument("--max-draw-ms", type=int, default=2500,
-                   help="Thời gian vẽ tay tối đa cho một phân cảnh (ms, mặc định 2500ms)")
+    p.add_argument("--draw-ratio", type=float, default=0.85,
+                   help="Tỉ lệ thời gian vẽ tay trên tổng thời lượng cảnh (mặc định 0.85 = vẽ chậm rãi trong 85% thời lượng)")
+    p.add_argument("--max-draw-ms", type=int, default=15000,
+                   help="Thời gian vẽ tay tối đa cho một phân cảnh (ms, mặc định 15000ms)")
     return p.parse_args(argv)
 
 

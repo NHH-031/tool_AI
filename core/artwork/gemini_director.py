@@ -117,15 +117,18 @@ class GeminiScriptDirector:
                 f"để khi người đọc thuyết minh diễn cảm sẽ đạt đúng {dur_per_scene:.0f} giây.\n"
                 f"- Tổng lời thuyết minh của toàn bộ {scenes_count} phân cảnh phải đạt khoảng {int(effective_dur * 2.7)} từ.\n\n"
                 "QUAN TRỌNG VỀ TÍNH ĂN KHỚP NỘI DUNG VÀ NHÂN VẬT:\n"
+                "- Mỗi phân cảnh PHẢI phản ánh chính xác 100% cốt truyện, bối cảnh không gian, nhân vật và hành động trong phân cảnh đó.\n"
+                "- TUYỆT ĐỐI KHÔNG tự tiện vẽ thêm các loài động vật (như cá, tôm, chó, gà) trừ phi câu chuyện gốc trực tiếp đề cập đến chúng.\n"
+                "- Với câu chuyện đời sống, sinh viên, người lao động, tiệm tạp hóa: Visual prompt PHẢI tập trung vào con người thật, biểu cảm sống động, căn phòng trọ, cửa tiệm tạp hóa, ổ bánh mì, các hành động cụ thể.\n"
                 "- Nếu chủ đề về tiểu sử / cuộc đời nhân vật nghệ sĩ (như Trấn Thành, Trường Giang, hoặc người nổi tiếng):\n"
                 "  + Kịch bản PHẢI tóm tắt đúng cuộc đời thật của nhân vật qua các cột mốc: "
                 "Cảnh 1 (khởi đầu gian khó & đam mê nghệ thuật), Cảnh 2 (bứt phá thành danh MC/hài kịch quốc dân), "
-                "Cảnh 3 (đỉnh cao đạo diễn phim trăm tỷ / tác phẩm điện ảnh để đời), Cảnh 4 (biểu tượng cống hiến & tri ân khán giả).\n"
+                "Cảnh 3 (đỉnh cao đạo diễn phim trăm tỷ / tác phẩm điện ảnh để đời), Cảnh 4 (biểu tượng cống hiến & triân khán giả).\n"
                 "  + Visual prompt: Phải mô tả nhân vật người nghệ sĩ Việt Nam lịch lãm, tài hoa, đang biểu diễn với micro trên sân khấu rực rỡ ánh đèn, "
                 "hoặc đứng chỉ đạo sau máy quay điện ảnh chuyên nghiệp, hoặc nhận tràng pháo tay tri ân của khán giả.\n"
                 "- Nếu câu chuyện có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog, toad, or amphibian limbs or wide amphibian mouth'.\n"
                 "- Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', tuyệt đối KHÔNG mô tả con mồi là ếch để tránh nhầm lẫn hình thể.\n"
-                "- Nếu có hổ/thỏ hoặc các loài khác: mô tả chính xác tương tác đối kháng kịch tính.\n"
+                "- Nếu có chuột hoặc mèo: mô tả đúng hành động trong bối cảnh gian phòng/kho hàng.\n"
                 "Mỗi phân cảnh PHẢI có một nội dung hình ảnh riêng biệt, ăn khớp 100% với lời thuyết minh của phân cảnh đó.\n"
                 "Yêu cầu xuất ra định dạng JSON mảng các object với các trường:\n"
                 "- scene_index: số nguyên thứ tự (1, 2, 3...)\n"
@@ -137,12 +140,13 @@ class GeminiScriptDirector:
 
             prompt_text = f"Ý tưởng / Kịch bản: {idea}"
             candidate_models = [
-                "gemini-3.5-flash",
-                "gemini-flash-latest",
+                "gemini-3.8-flash",
+                "gemini-3.5-flash-lite",
                 "gemini-3.1-flash-lite",
                 "gemini-flash-lite-latest",
                 "gemini-3-flash-preview",
-                "gemini-3.8-flash",
+                "gemini-3.5-flash",
+                "gemini-flash-latest",
             ]
 
             raw_text = None
@@ -219,7 +223,7 @@ class GeminiScriptDirector:
                 "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
                 f"Câu văn: {scene_text}"
             )
-            for m in ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-3.8-flash"]:
+            for m in ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-flash-latest"]:
                 try:
                     resp = client.models.generate_content(model=m, contents=prompt)
                     desc_en = resp.text.strip().replace("\n", " ")

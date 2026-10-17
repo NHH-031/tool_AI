@@ -34,9 +34,14 @@ __all__ = [
     "ResilientTTSProvider",
 ]
 
-# EdgeTTSProvider is exported conditionally if edge_tts is available
 try:
     from .edge import EdgeTTSProvider
     __all__.append("EdgeTTSProvider")
+except ImportError:
+    pass
+
+try:
+    from .local import LocalTTSProvider
+    __all__.append("LocalTTSProvider")
 except ImportError:
     pass

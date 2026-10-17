@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.git
+.github
+apps/web/node_modules
+apps/web/.next
+output/*.mp4
+data/*.db*
+scratch

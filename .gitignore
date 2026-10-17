@@ -30,3 +30,12 @@ dist/
 
 # Scratch & Temporary
 scratch/
+test_*.png
+test_*.jpg
+
+# Databases & local state
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.sqlite
+

@@ -19,7 +19,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
-# In-memory stores
+from core.storage.job_store import global_job_store
+
+# In-memory stores (with SQLite sync)
 _JOBS_DB: Dict[str, ProductionJob] = {}
 _JOB_DETAILS: Dict[str, Dict[str, Any]] = {}
 
@@ -403,18 +405,35 @@ async def create_job(req: CreateJobRequest) -> ProductionJob:
         }
 
     _JOBS_DB[job.id] = job
+    global_job_store.save_production_job(job.id, job.model_dump(), details=_JOB_DETAILS.get(job.id))
     return job
 
 
 @router.get("", response_model=List[ProductionJob])
 async def list_jobs() -> List[ProductionJob]:
-    """Liệt kê danh sách các Production Jobs."""
-    return list(_JOBS_DB.values())
+    """Liệt kê danh sách các Production Jobs (hợp nhất in-memory và SQLite)."""
+    jobs_map = dict(_JOBS_DB)
+    # Lấy các jobs lưu trong SQLite chưa nạp vào memory
+    for saved in global_job_store.list_production_jobs():
+        jid = saved.get("id")
+        if jid and jid not in jobs_map:
+            try:
+                jobs_map[jid] = ProductionJob.model_validate(saved)
+            except Exception:
+                pass
+    return list(jobs_map.values())
 
 
 @router.get("/{job_id}", response_model=ProductionJob)
 async def get_job(job_id: str) -> ProductionJob:
     """Lấy thông tin chi tiết một Production Job theo id."""
+    if job_id not in _JOBS_DB:
+        saved = global_job_store.get_production_job(job_id)
+        if saved:
+            try:
+                _JOBS_DB[job_id] = ProductionJob.model_validate(saved)
+            except Exception:
+                pass
     if job_id not in _JOBS_DB:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -427,11 +446,22 @@ async def get_job(job_id: str) -> ProductionJob:
 async def get_job_review(job_id: str) -> Dict[str, Any]:
     """Lấy toàn bộ dữ liệu chi tiết màn hình Review cho Job."""
     if job_id not in _JOBS_DB:
+        saved = global_job_store.get_production_job(job_id)
+        if saved:
+            try:
+                _JOBS_DB[job_id] = ProductionJob.model_validate(saved)
+            except Exception:
+                pass
+    if job_id not in _JOBS_DB:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job with ID '{job_id}' not found",
         )
     job = _JOBS_DB[job_id]
+    if job_id not in _JOB_DETAILS:
+        det = global_job_store.get_production_job_details(job_id)
+        if det:
+            _JOB_DETAILS[job_id] = det
     if job_id not in _JOB_DETAILS:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

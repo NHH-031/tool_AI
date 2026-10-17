@@ -2,206 +2,549 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  ActiveTab,
-  AssetCatalogItem,
-  GenerationState,
-  MasterpieceItem,
+  AudioResult,
   MusicTrackItem,
-  ProductionJob,
   ProjectSummary,
-  RegenerateTarget,
-  ReviewData,
+  ProjectWorkflow,
+  Scene,
+  StoryboardImage,
   TemplateItem,
   VoiceItem,
+  WizardStep,
 } from "./types";
 import {
+  analyzeScript,
   checkBackendHealth,
-  createProductionJob,
-  DEFAULT_REVIEW_DATA,
-  fetchAssets,
-  fetchJobReview,
-  fetchJobs,
-  fetchMasterpieces,
   fetchMusic,
   fetchProjects,
+  fetchStoryboard,
   fetchTemplates,
   fetchVoices,
-  regenerateJobComponent,
+  generateStoryboardImage,
+  getExportStatus,
+  subscribeExportProgress,
+  renderExport,
+  synthesizeVoice,
+  fetchArchiveStats,
 } from "./api-client";
-import { Navbar } from "./components/Navbar";
-import { DashboardView } from "./components/DashboardView";
-import { CreateVideoView } from "./components/CreateVideoView";
-import { ReviewScreenView } from "./components/ReviewScreenView";
-import { TemplatesView } from "./components/TemplatesView";
-import { AssetsView } from "./components/AssetsView";
-import { VoicesView } from "./components/VoicesView";
-import { MusicView } from "./components/MusicView";
-import { JobsView } from "./components/JobsView";
+import { StudioHeader } from "./components/StudioHeader";
+import { StepProgressBar } from "./components/StepProgressBar";
+import { ScriptStep } from "./components/steps/ScriptStep";
+import { StoryboardStep } from "./components/steps/StoryboardStep";
+import { VoiceStep } from "./components/steps/VoiceStep";
+import { ExportStep } from "./components/steps/ExportStep";
+import { ArchiveVaultModal } from "./components/ArchiveVaultModal";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [backendHealthy, setBackendHealthy] = useState<boolean>(false);
 
-  // Studio Data
+  // Global Studio Data
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
-  const [assets, setAssets] = useState<AssetCatalogItem[]>([]);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [musicTracks, setMusicTracks] = useState<MusicTrackItem[]>([]);
-  const [jobs, setJobs] = useState<ProductionJob[]>([]);
-  const [masterpieces, setMasterpieces] = useState<MasterpieceItem[]>([]);
 
-  // Active Job & Review State
-  const [activeJob, setActiveJob] = useState<ProductionJob | null>(null);
-  const [reviewData, setReviewData] = useState<ReviewData | null>(DEFAULT_REVIEW_DATA);
-  const [generationState, setGenerationState] = useState<GenerationState>("completed");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Video Archive Vault State
+  const [isArchiveVaultOpen, setIsArchiveVaultOpen] = useState<boolean>(false);
+  const [archiveVideosCount, setArchiveVideosCount] = useState<number>(0);
 
-  // Quick prompt prefill
-  const [prefilledPrompt, setPrefilledPrompt] = useState<string>("");
+  // Current Active Project Workflow State
+  const [workflow, setWorkflow] = useState<ProjectWorkflow>({
+    projectId: "proj-solar-panels-01",
+    projectName: "Pin năng lượng mặt trời hoạt động thế nào?",
+    currentStep: 1,
+    completedSteps: [],
+    script: {
+      rawText:
+        "Pin năng lượng mặt trời hấp thụ photon từ ánh sáng mặt trời. Các photon này giải phóng electron bên trong tinh thể silic, tạo ra dòng điện một chiều. Bộ biến tần inverter sau đó chuyển đổi thành dòng điện xoay chiều để thắp sáng ngôi nhà bạn.",
+      inputMode: "text",
+      scenes: [],
+      status: "idle",
+    },
+    storyboard: {
+      images: [],
+      status: "idle",
+    },
+    voice: {
+      voiceId: "vi-VN-Standard-B",
+      speed: 1.0,
+      musicId: "whimsical_play",
+      musicVolume: 0.15,
+      audios: [],
+      status: "idle",
+    },
+    export: {
+      videoUrl: null,
+      status: "idle",
+      progress: 0,
+    },
+    updatedAt: new Date().toISOString(),
+  });
 
+  // Step 1: Script state
+  const [isAnalyzingScript, setIsAnalyzingScript] = useState<boolean>(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("notion_minimal");
+
+  // Step 2: Storyboard state
+  const [isGeneratingAllImages, setIsGeneratingAllImages] = useState<boolean>(false);
+  const [generatingSceneId, setGeneratingSceneId] = useState<string | null>(null);
+
+  // Step 3: Voice state
+  const [isSynthesizingAllVoices, setIsSynthesizingAllVoices] = useState<boolean>(false);
+  const [synthesizingSceneId, setSynthesizingSceneId] = useState<string | null>(null);
+
+  // Step 4: Export state
+  const [isRenderingVideo, setIsRenderingVideo] = useState<boolean>(false);
+  const [renderProgress, setRenderProgress] = useState<number>(0);
+  const [renderStage, setRenderStage] = useState<string>("");
+  const [renderErrorMessage, setRenderErrorMessage] = useState<string | null>(null);
+
+  // Initialize studio data
   useEffect(() => {
     async function initStudio() {
       const health = await checkBackendHealth();
       setBackendHealthy(health.ok);
 
-      const [tpls, asts, msts, vcs, msc, projs, jbs] = await Promise.all([
+      const [tpls, vcs, msc, projs] = await Promise.all([
         fetchTemplates(),
-        fetchAssets(),
-        fetchMasterpieces(),
         fetchVoices(),
         fetchMusic(),
         fetchProjects(),
-        fetchJobs(),
       ]);
 
       setTemplates(tpls);
-      setAssets(asts);
-      setMasterpieces(msts);
       setVoices(vcs);
       setMusicTracks(msc);
       setProjects(projs);
-      setJobs(jbs);
 
-      if (jbs.length > 0) {
-        setActiveJob(jbs[0]);
-        try {
-          const rev = await fetchJobReview(jbs[0].id);
-          setReviewData(rev);
-        } catch (e) {
-          console.warn("Failed to init job review:", e);
-        }
-      }
+      // Tải số lượng video trong kho lưu trữ ổ D
+      fetchArchiveStats().then((st) => {
+        if (st) setArchiveVideosCount(st.total_videos);
+      });
     }
 
     initStudio();
   }, []);
 
-  // Quick generate from Dashboard
-  const handleQuickGenerate = (promptText: string) => {
-    setPrefilledPrompt(promptText);
-    setActiveTab("create");
+  // Auto-sync existing storyboard images when arriving at Step 2
+  useEffect(() => {
+    if (workflow.currentStep === 2 && workflow.script.scenes.length > 0) {
+      fetchStoryboard(workflow.projectId).then((existingImgs) => {
+        if (existingImgs && existingImgs.length > 0) {
+          setWorkflow((prev) => {
+            const nextScenes = prev.script.scenes.map((sc) => {
+              const match = existingImgs.find(
+                (img) => img.scene_index === sc.scene_index || img.scene_id === sc.id
+              );
+              if (match) {
+                return { ...sc, image_url: match.image_url, image_status: "completed" as const };
+              }
+              return sc;
+            });
+            return {
+              ...prev,
+              script: { ...prev.script, scenes: nextScenes },
+              storyboard: { ...prev.storyboard, images: existingImgs },
+            };
+          });
+        }
+      });
+    }
+  }, [workflow.currentStep, workflow.projectId, workflow.script.scenes.length]);
+
+  // Handler: Switch Step
+  const handleStepClick = (step: WizardStep) => {
+    setWorkflow((prev) => ({
+      ...prev,
+      currentStep: step,
+    }));
   };
 
-  const handleSelectMasterpiece = (item: MasterpieceItem) => {
-    setPrefilledPrompt(item.description);
-    setActiveTab("create");
+  // Handler: Switch Project
+  const handleSelectProject = (projectId: string) => {
+    const proj = projects.find((p) => p.id === projectId);
+    if (!proj) return;
+
+    setWorkflow({
+      projectId: proj.id,
+      projectName: proj.title,
+      currentStep: proj.status === "completed" ? 4 : 1,
+      completedSteps: proj.status === "completed" ? [1, 2, 3, 4] : [],
+      script: {
+        rawText: proj.description || proj.title,
+        inputMode: "text",
+        scenes: [],
+        status: proj.status === "completed" ? "completed" : "idle",
+      },
+      storyboard: {
+        images: [],
+        status: proj.status === "completed" ? "completed" : "idle",
+      },
+      voice: {
+        voiceId: "vi-VN-Standard-B",
+        speed: 1.0,
+        musicId: "whimsical_play",
+        musicVolume: 0.15,
+        audios: [],
+        status: proj.status === "completed" ? "completed" : "idle",
+      },
+      export: {
+        videoUrl: proj.video_url,
+        status: proj.status === "completed" ? "completed" : "idle",
+        progress: proj.status === "completed" ? 100 : 0,
+      },
+      updatedAt: new Date().toISOString(),
+    });
   };
 
-  // Create Video & Generate Pipeline
-  const handleCreateVideo = async (config: {
-    title: string;
-    prompt: string;
-    script?: string;
-    input_mode?: string;
-    language: string;
-    voice_id: string;
-    speed: number;
-    music_id: string;
-    music_volume: number;
-    visual_style: string;
-    aspect_ratio: string;
-    has_color?: boolean;
-    target_duration_sec?: number;
-  }) => {
-    setActiveJob(null);
-    setReviewData(null);
-    setGenerationState("generating");
-    setErrorMessage(null);
-    setActiveTab("review");
+  // Handler: New Project
+  const handleNewProject = () => {
+    const newId = `proj-${Date.now()}`;
+    const newTitle = "Dự án kịch bản mới";
+    setWorkflow({
+      projectId: newId,
+      projectName: newTitle,
+      currentStep: 1,
+      completedSteps: [],
+      script: {
+        rawText: "",
+        inputMode: "text",
+        scenes: [],
+        status: "idle",
+      },
+      storyboard: {
+        images: [],
+        status: "idle",
+      },
+      voice: {
+        voiceId: "vi-VN-Standard-B",
+        speed: 1.0,
+        musicId: "whimsical_play",
+        musicVolume: 0.15,
+        audios: [],
+        status: "idle",
+      },
+      export: {
+        videoUrl: null,
+        status: "idle",
+        progress: 0,
+      },
+      updatedAt: new Date().toISOString(),
+    });
+  };
 
+  // =========================================================================
+  // STEP 1: SCRIPT LOGIC
+  // =========================================================================
+  const handleAnalyzeScript = async (
+    text: string,
+    mode: "text" | "srt",
+    targetScenes?: number
+  ) => {
+    setIsAnalyzingScript(true);
     try {
-      const newJob = await createProductionJob(config);
-      setActiveJob(newJob);
-
-      // Refresh jobs list
-      const updatedJobs = await fetchJobs();
-      setJobs(updatedJobs);
-
-      // Fetch authentic review data from the backend pipeline
-      const rev = await fetchJobReview(newJob.id);
-      setReviewData(rev);
-
-      setGenerationState("completed");
-    } catch (err: any) {
-      setGenerationState("failed");
-      setErrorMessage(err?.message || "Lỗi trong quá trình tạo kịch bản và kết xuất.");
+      const res = await analyzeScript(text, mode, targetScenes);
+      setWorkflow((prev) => ({
+        ...prev,
+        projectName: prev.projectName === "Dự án kịch bản mới" || !prev.projectName ? res.title : prev.projectName,
+        script: {
+          ...prev.script,
+          rawText: text,
+          inputMode: mode,
+          scenes: res.scenes,
+          status: "completed",
+        },
+      }));
+    } catch (e) {
+      console.error("Lỗi phân tích kịch bản:", e);
+    } finally {
+      setIsAnalyzingScript(false);
     }
   };
 
-  // Inspect Project from Dashboard
-  const handleOpenProject = async (projectId: string) => {
-    const matchedJob = jobs.find((j) => j.id === projectId) || jobs[0];
-    if (matchedJob) {
-      setActiveJob(matchedJob);
-      try {
-        const rev = await fetchJobReview(matchedJob.id);
-        setReviewData(rev);
-      } catch (err: any) {
-        console.error("Failed to load review data for project:", err);
+  const handleNextFromScript = () => {
+    setWorkflow((prev) => ({
+      ...prev,
+      currentStep: 2,
+      completedSteps: Array.from(new Set([...prev.completedSteps, 1 as WizardStep])),
+    }));
+  };
+
+  // =========================================================================
+  // STEP 2: STORYBOARD LOGIC
+  // =========================================================================
+  const handleUpdateScenePrompt = (index: number, newPrompt: string) => {
+    setWorkflow((prev) => {
+      const updatedScenes = [...prev.script.scenes];
+      if (updatedScenes[index]) {
+        updatedScenes[index] = { ...updatedScenes[index], prompt: newPrompt };
       }
-    }
-    setGenerationState("completed");
-    setActiveTab("review");
+      return {
+        ...prev,
+        script: { ...prev.script, scenes: updatedScenes },
+      };
+    });
   };
 
-  // Inspect Job from Production Jobs
-  const handleInspectJob = async (jobId: string) => {
-    const matched = jobs.find((j) => j.id === jobId);
-    if (matched) {
-      setActiveJob(matched);
-      const rev = await fetchJobReview(jobId);
-      setReviewData(rev);
-      setGenerationState(matched.status === "completed" ? "completed" : "generating");
-      setActiveTab("review");
+  const handleGenerateSingleImage = async (scene: Scene) => {
+    setGeneratingSceneId(scene.id);
+    try {
+      const img = await generateStoryboardImage(
+        scene.id,
+        scene.scene_index,
+        scene.prompt,
+        workflow.projectId,
+        true
+      );
+      setWorkflow((prev) => {
+        const nextImages = prev.storyboard.images.filter((i) => i.scene_id !== scene.id);
+        nextImages.push(img);
+        const updatedScenes = prev.script.scenes.map((sc) =>
+          sc.id === scene.id ? { ...sc, image_url: img.image_url, image_status: "completed" as const } : sc
+        );
+        return {
+          ...prev,
+          script: { ...prev.script, scenes: updatedScenes },
+          storyboard: { ...prev.storyboard, images: nextImages },
+        };
+      });
+    } catch (e) {
+      console.error("Lỗi sinh ảnh:", e);
+    } finally {
+      setGeneratingSceneId(null);
     }
   };
 
-  // Regenerate Component
-  const handleRegenerate = async (target: RegenerateTarget, instructions?: string) => {
-    if (!activeJob) return;
-    setGenerationState("retrying");
+  const handleGenerateAllImages = async () => {
+    setIsGeneratingAllImages(true);
+    try {
+      for (const scene of workflow.script.scenes) {
+        setGeneratingSceneId(scene.id);
+        const img = await generateStoryboardImage(
+          scene.id,
+          scene.scene_index,
+          scene.prompt,
+          workflow.projectId
+        );
+        setWorkflow((prev) => {
+          const nextImages = prev.storyboard.images.filter((i) => i.scene_id !== scene.id);
+          nextImages.push(img);
+          const updatedScenes = prev.script.scenes.map((sc) =>
+            sc.id === scene.id ? { ...sc, image_url: img.image_url, image_status: "completed" as const } : sc
+          );
+          return {
+            ...prev,
+            script: { ...prev.script, scenes: updatedScenes },
+            storyboard: { ...prev.storyboard, images: nextImages },
+          };
+        });
+      }
+    } finally {
+      setGeneratingSceneId(null);
+      setIsGeneratingAllImages(false);
+    }
+  };
+
+  const handleNextFromStoryboard = () => {
+    setWorkflow((prev) => ({
+      ...prev,
+      currentStep: 3,
+      completedSteps: Array.from(new Set([...prev.completedSteps, 2 as WizardStep])),
+    }));
+  };
+
+  // =========================================================================
+  // STEP 3: VOICE LOGIC
+  // =========================================================================
+  const handleSynthesizeSingleVoice = async (scene: Scene) => {
+    setSynthesizingSceneId(scene.id);
+    try {
+      const audio = await synthesizeVoice(
+        scene.id,
+        scene.scene_index,
+        scene.text,
+        workflow.voice.voiceId,
+        workflow.voice.speed,
+        workflow.projectId
+      );
+      setWorkflow((prev) => {
+        const nextAudios = prev.voice.audios.filter((a) => a.scene_id !== scene.id);
+        nextAudios.push(audio);
+        const updatedScenes = prev.script.scenes.map((sc) =>
+          sc.id === scene.id ? { ...sc, audio_url: audio.audio_url, audio_status: "completed" as const } : sc
+        );
+        return {
+          ...prev,
+          script: { ...prev.script, scenes: updatedScenes },
+          voice: { ...prev.voice, audios: nextAudios },
+        };
+      });
+    } catch (e) {
+      console.error("Lỗi thu âm cảnh:", e);
+    } finally {
+      setSynthesizingSceneId(null);
+    }
+  };
+
+  const handleSynthesizeAllVoices = async () => {
+    setIsSynthesizingAllVoices(true);
+    try {
+      for (const scene of workflow.script.scenes) {
+        setSynthesizingSceneId(scene.id);
+        const audio = await synthesizeVoice(
+          scene.id,
+          scene.scene_index,
+          scene.text,
+          workflow.voice.voiceId,
+          workflow.voice.speed,
+          workflow.projectId
+        );
+        setWorkflow((prev) => {
+          const nextAudios = prev.voice.audios.filter((a) => a.scene_id !== scene.id);
+          nextAudios.push(audio);
+          const updatedScenes = prev.script.scenes.map((sc) =>
+            sc.id === scene.id ? { ...sc, audio_url: audio.audio_url, audio_status: "completed" as const } : sc
+          );
+          return {
+            ...prev,
+            script: { ...prev.script, scenes: updatedScenes },
+            voice: { ...prev.voice, audios: nextAudios },
+          };
+        });
+      }
+    } finally {
+      setSynthesizingSceneId(null);
+      setIsSynthesizingAllVoices(false);
+    }
+  };
+
+  const handleNextFromVoice = () => {
+    setWorkflow((prev) => ({
+      ...prev,
+      currentStep: 4,
+      completedSteps: Array.from(new Set([...prev.completedSteps, 3 as WizardStep])),
+    }));
+  };
+
+  // =========================================================================
+  // STEP 4: EXPORT LOGIC
+  // =========================================================================
+  const handleStartRender = async () => {
+    setIsRenderingVideo(true);
+    setRenderProgress(10);
+    setRenderStage("Bắt đầu xử lý nét vẽ và overlay bàn tay marker...");
+    setRenderErrorMessage(null);
 
     try {
-      await regenerateJobComponent(activeJob.id, target, instructions);
-      const rev = await fetchJobReview(activeJob.id);
-      setReviewData(rev);
-      setGenerationState("completed");
-    } catch {
-      setGenerationState("failed");
-      setErrorMessage(`Không thể tái tạo thành phần ${target}`);
+      const res = await renderExport({
+        projectId: workflow.projectId,
+        title: workflow.projectName,
+        scenes: workflow.script.scenes,
+        voiceId: workflow.voice.voiceId,
+        speed: workflow.voice.speed,
+        musicId: workflow.voice.musicId,
+        musicVolume: workflow.voice.musicVolume,
+        hasColor: true,
+      });
+
+      if (res.videoUrl) {
+        setWorkflow((prev) => ({
+          ...prev,
+          export: {
+            ...prev.export,
+            videoUrl: res.videoUrl,
+            status: "completed",
+            progress: 100,
+          },
+          completedSteps: Array.from(new Set([...prev.completedSteps, 4 as WizardStep])),
+        }));
+        setRenderProgress(100);
+        setRenderStage("Hoàn thành kết xuất video!");
+        setIsRenderingVideo(false);
+      } else {
+        // Cập nhật tiến độ thời gian thực qua Server-Sent Events (SSE) kèm polling fallback
+        let isDone = false;
+        const handleStatusUpdate = (statusData: {
+          status: string;
+          progressPercent: number;
+          stage: string;
+          videoUrl: string | null;
+          errorMessage?: string;
+          qaReport?: any;
+        }) => {
+          if (statusData.progressPercent >= 0) {
+            setRenderProgress(statusData.progressPercent);
+            setRenderStage(statusData.stage);
+          }
+          if (statusData.status === "completed" && statusData.videoUrl) {
+            isDone = true;
+            setWorkflow((prev) => ({
+              ...prev,
+              export: {
+                ...prev.export,
+                videoUrl: statusData.videoUrl,
+                status: "completed",
+                progress: 100,
+                qaReport: statusData.qaReport,
+              },
+              completedSteps: Array.from(new Set([...prev.completedSteps, 4 as WizardStep])),
+            }));
+            setIsRenderingVideo(false);
+          } else if (statusData.status === "failed") {
+            isDone = true;
+            setRenderErrorMessage(statusData.errorMessage || "Kết xuất video thất bại");
+            setIsRenderingVideo(false);
+          }
+        };
+
+        const startPollingFallback = () => {
+          const pollInterval = setInterval(async () => {
+            if (isDone) {
+              clearInterval(pollInterval);
+              return;
+            }
+            try {
+              const statusData = await getExportStatus(res.jobId);
+              handleStatusUpdate(statusData);
+              if (isDone) {
+                clearInterval(pollInterval);
+              }
+            } catch (pollErr) {
+              console.warn("[Export Polling] Lỗi thăm dò tiến trình:", pollErr);
+            }
+          }, 3000);
+        };
+
+        // Đăng ký SSE Stream
+        try {
+          subscribeExportProgress(
+            res.jobId,
+            (eventData) => {
+              handleStatusUpdate(eventData);
+            },
+            () => {
+              if (!isDone) {
+                startPollingFallback();
+              }
+            }
+          );
+        } catch {
+          startPollingFallback();
+        }
+      }
+    } catch (e: any) {
+      setRenderErrorMessage(e.message || "Lỗi trong quá trình render video");
+      setIsRenderingVideo(false);
     }
   };
 
-  // Export MP4
-  const handleExportMP4 = () => {
-    const videoUrl =
-      reviewData?.video_url ||
-      (activeJob ? `http://127.0.0.1:8000/media/${activeJob.id}/scene_default_final.mp4` : "");
-    if (!videoUrl) return;
+  const handleDownloadMP4 = () => {
+    const url = workflow.export.videoUrl;
+    if (!url) return;
     const a = document.createElement("a");
-    a.href = videoUrl;
-    a.download = `whiteboard_video_${activeJob?.id || "studio"}.mp4`;
+    a.href = url;
+    a.download = `${workflow.projectName || "whiteboard_video"}.mp4`;
     a.target = "_blank";
     document.body.appendChild(a);
     a.click();
@@ -210,78 +553,152 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Top Navbar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+      {/* 1. Header with Project Selector & New Script */}
+      <StudioHeader
+        currentProjectTitle={workflow.projectName}
+        projects={projects}
+        onSelectProject={handleSelectProject}
+        onNewProject={handleNewProject}
         backendHealthy={backendHealthy}
+        archiveCount={archiveVideosCount}
+        onOpenArchiveVault={() => setIsArchiveVaultOpen(true)}
       />
 
-      {/* Main Content Workspace */}
+      {/* 2. Step Progress Bar (4 Linear Steps) */}
+      <StepProgressBar
+        currentStep={workflow.currentStep}
+        completedSteps={workflow.completedSteps}
+        onStepClick={handleStepClick}
+      />
+
+      {/* 3. Main Step Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {activeTab === "dashboard" && (
-          <DashboardView
-            projects={projects}
-            onOpenProject={handleOpenProject}
-            onQuickGenerate={handleQuickGenerate}
-            setActiveTab={setActiveTab}
+        <ErrorBoundary>
+        {workflow.currentStep === 1 && (
+          <ScriptStep
+            projectTitle={workflow.projectName}
+            onUpdateTitle={(title) =>
+              setWorkflow((prev) => ({ ...prev, projectName: title }))
+            }
+            rawText={workflow.script.rawText}
+            onUpdateRawText={(text) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                script: { ...prev.script, rawText: text },
+              }))
+            }
+            inputMode={workflow.script.inputMode}
+            onUpdateInputMode={(mode) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                script: { ...prev.script, inputMode: mode },
+              }))
+            }
+            scenes={workflow.script.scenes}
+            onUpdateScenes={(scenes) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                script: { ...prev.script, scenes },
+              }))
+            }
+            templates={templates}
+            selectedTemplateId={selectedTemplateId}
+            onSelectTemplate={setSelectedTemplateId}
+            onAnalyze={handleAnalyzeScript}
+            isAnalyzing={isAnalyzingScript}
+            onNextStep={handleNextFromScript}
           />
         )}
 
-        {activeTab === "create" && (
-          <CreateVideoView
-            initialPrompt={prefilledPrompt}
+        {workflow.currentStep === 2 && (
+          <StoryboardStep
+            scenes={workflow.script.scenes}
+            images={workflow.storyboard.images}
+            onUpdateScenePrompt={handleUpdateScenePrompt}
+            onGenerateSingleImage={handleGenerateSingleImage}
+            onGenerateAllImages={handleGenerateAllImages}
+            isGeneratingAll={isGeneratingAllImages}
+            generatingSceneId={generatingSceneId}
+            onBackStep={() => handleStepClick(1)}
+            onNextStep={handleNextFromStoryboard}
+          />
+        )}
+
+        {workflow.currentStep === 3 && (
+          <VoiceStep
+            scenes={workflow.script.scenes}
+            audios={workflow.voice.audios}
             voices={voices}
+            selectedVoiceId={workflow.voice.voiceId}
+            onSelectVoice={(id) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: { ...prev.voice, voiceId: id },
+              }))
+            }
+            speed={workflow.voice.speed}
+            onUpdateSpeed={(s) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: { ...prev.voice, speed: s },
+              }))
+            }
             musicTracks={musicTracks}
-            templates={templates}
-            onGenerate={handleCreateVideo}
-            isGenerating={generationState === "generating"}
+            selectedMusicId={workflow.voice.musicId}
+            onSelectMusic={(id) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: { ...prev.voice, musicId: id },
+              }))
+            }
+            musicVolume={workflow.voice.musicVolume}
+            onUpdateMusicVolume={(v) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: { ...prev.voice, musicVolume: v },
+              }))
+            }
+            onSynthesizeSingle={handleSynthesizeSingleVoice}
+            onSynthesizeAll={handleSynthesizeAllVoices}
+            isSynthesizing={isSynthesizingAllVoices}
+            synthesizingSceneId={synthesizingSceneId}
+            onBackStep={() => handleStepClick(2)}
+            onNextStep={handleNextFromVoice}
           />
         )}
 
-        {activeTab === "review" && (
-          <ReviewScreenView
-            job={activeJob}
-            reviewData={reviewData}
-            generationState={generationState}
-            errorMessage={errorMessage}
-            onRetry={() => setGenerationState("completed")}
-            onRegenerate={handleRegenerate}
-            onExportMP4={handleExportMP4}
+        {workflow.currentStep === 4 && (
+          <ExportStep
+            workflow={workflow}
+            scenes={workflow.script.scenes}
+            videoUrl={workflow.export.videoUrl}
+            isRendering={isRenderingVideo}
+            renderProgress={renderProgress}
+            renderStage={renderStage}
+            errorMessage={renderErrorMessage}
+            qaReport={workflow.export.qaReport}
+            onStartRender={handleStartRender}
+            onDownloadMP4={handleDownloadMP4}
+            onBackStep={() => handleStepClick(3)}
+            onOpenArchiveVault={() => setIsArchiveVaultOpen(true)}
           />
         )}
-
-        {activeTab === "templates" && (
-          <TemplatesView
-            templates={templates}
-            onSelectTemplate={(tplId) => {
-              // Preselect template
-            }}
-            setActiveTab={setActiveTab}
-          />
-        )}
-
-        {activeTab === "assets" && (
-          <AssetsView
-            assets={assets}
-            masterpieces={masterpieces}
-            onSelectMasterpiece={handleSelectMasterpiece}
-          />
-        )}
-
-        {activeTab === "voices" && <VoicesView voices={voices} />}
-
-        {activeTab === "music" && <MusicView musicTracks={musicTracks} />}
-
-        {activeTab === "jobs" && (
-          <JobsView jobs={jobs} onInspectJob={handleInspectJob} />
-        )}
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950/80 py-6 mt-12 text-center text-xs text-slate-500">
-        <p>AI Whiteboard Video Production Studio · Phase 10 Studio UI</p>
+        <p>Whiteboard Studio · 4-Step Production Pipeline · SKILL.md High Fidelity</p>
       </footer>
+
+      {/* Video Archive Vault Modal (Kho Lưu Trữ Ổ D) */}
+      <ArchiveVaultModal
+        isOpen={isArchiveVaultOpen}
+        onClose={() => {
+          setIsArchiveVaultOpen(false);
+          fetchArchiveStats().then((st) => st && setArchiveVideosCount(st.total_videos));
+        }}
+      />
     </div>
   );
 }

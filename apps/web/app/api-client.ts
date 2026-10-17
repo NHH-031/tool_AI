@@ -1,5 +1,6 @@
 import {
   AssetCatalogItem,
+  AudioResult,
   JobStageProgress,
   MasterpieceItem,
   MediaQAReport,
@@ -7,11 +8,15 @@ import {
   ProductionJob,
   ProjectSummary,
   ReviewData,
+  Scene,
+  StoryboardImage,
   TemplateItem,
   VoiceItem,
+  ArchivedVideo,
+  ArchiveStats,
 } from "./types";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 // Fallback demo review data
 export const DEFAULT_REVIEW_DATA: ReviewData = {
@@ -558,3 +563,415 @@ export async function regenerateJobComponent(
   } catch {}
   return true;
 }
+
+// ==========================================
+// 4-STEP WIZARD API CLIENT FUNCTIONS
+// ==========================================
+
+export async function analyzeScript(
+  text: string,
+  inputMode: "text" | "srt" = "text",
+  targetScenes?: number,
+  targetDurationSec: number = 60.0
+): Promise<{ title: string; scenes: Scene[] }> {
+  try {
+    const res = await fetch(`${API_BASE}/scripts/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        input_mode: inputMode.toUpperCase(),
+        target_scenes: targetScenes,
+        target_duration_sec: targetDurationSec,
+        has_color: true,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        title: data.title,
+        scenes: data.scenes.map((s: any) => ({
+          id: s.id,
+          scene_index: s.scene_index,
+          text: s.text,
+          prompt: s.prompt,
+          duration_sec: s.duration_sec,
+          image_status: "idle",
+          audio_status: "idle",
+        })),
+      };
+    }
+  } catch (e) {
+    console.warn("[analyzeScript] Backend API unavailable or timed out, falling back to local client parsing:", e);
+  }
+
+  // Fallback client-side sentence splitter
+  const sentences = text
+    .split(/[.!?\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const total = sentences.length || 1;
+  const count = targetScenes || Math.max(1, Math.ceil(total / 2));
+  const chunkSize = Math.max(1, Math.ceil(total / count));
+
+  const fallbackScenes: Scene[] = [];
+  for (let i = 0; i < count; i++) {
+    const chunk = sentences.slice(i * chunkSize, (i + 1) * chunkSize);
+    if (chunk.length === 0) break;
+    const sceneText = chunk.join(". ") + ".";
+    fallbackScenes.push({
+      id: `scene-${i + 1}`,
+      scene_index: i + 1,
+      text: sceneText,
+      prompt: `Whiteboard doodle illustration representing: ${sceneText.slice(0, 70)}, crisp clean dark ink contour outlines on warm vintage cream paper #F5EBD7, 1080p widescreen, no text`,
+      duration_sec: Math.max(3.5, Math.round(sceneText.split(/\s+/).length / 2.6)),
+      image_status: "idle",
+      audio_status: "idle",
+    });
+  }
+
+  return {
+    title: text.slice(0, 30) + "...",
+    scenes: fallbackScenes,
+  };
+}
+
+export async function fetchStoryboard(projectId: string = "default"): Promise<StoryboardImage[]> {
+  try {
+    const res = await fetch(`${API_BASE}/storyboard/${projectId}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.map((item: any) => ({
+        ...item,
+        image_url: item.image_url.startsWith("http") ? item.image_url : `${API_BASE}${item.image_url}`,
+      }));
+    }
+  } catch (e) {
+    console.warn("[fetchStoryboard] API error:", e);
+  }
+  return [];
+}
+
+export async function generateStoryboardImage(
+  sceneId: string,
+  sceneIndex: number,
+  prompt: string,
+  projectId: string = "default",
+  forceRegenerate: boolean = false
+): Promise<StoryboardImage> {
+  try {
+    const res = await fetch(`${API_BASE}/storyboard/generate-image`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scene_id: sceneId,
+        scene_index: sceneIndex,
+        prompt,
+        project_id: projectId,
+        force_regenerate: forceRegenerate,
+      }),
+      signal: AbortSignal.timeout(120000),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const imageUrl = data.image_url.startsWith("http")
+        ? data.image_url
+        : `${API_BASE}${data.image_url}`;
+      return {
+        scene_id: sceneId,
+        scene_index: sceneIndex,
+        prompt,
+        image_url: imageUrl,
+        status: "completed",
+      };
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Lỗi sinh ảnh AI (HTTP ${res.status})`);
+    }
+  } catch (e: any) {
+    console.error("[generateStoryboardImage] API call error:", e);
+    throw e;
+  }
+}
+
+export async function synthesizeVoice(
+  sceneId: string,
+  sceneIndex: number,
+  text: string,
+  voiceId: string = "vi-VN-Standard-B",
+  speed: number = 1.0,
+  projectId: string = "default"
+): Promise<AudioResult> {
+  try {
+    const res = await fetch(`${API_BASE}/voices/synthesize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scene_id: sceneId,
+        scene_index: sceneIndex,
+        text,
+        voice_id: voiceId,
+        speed,
+        project_id: projectId,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const audioUrl = data.audio_url.startsWith("http")
+        ? data.audio_url
+        : `${API_BASE}${data.audio_url}`;
+      return {
+        scene_id: sceneId,
+        scene_index: sceneIndex,
+        audio_url: audioUrl,
+        duration_sec: data.duration_sec,
+        voice_id: voiceId,
+        status: "completed",
+      };
+    } else {
+      const errText = await res.text();
+      throw new Error(`TTS API failed (${res.status}): ${errText}`);
+    }
+  } catch (e: any) {
+    console.error("[synthesizeVoice] Lỗi gọi API:", e);
+    throw new Error(e?.message || "Không thể thu âm phân cảnh qua TTS API");
+  }
+}
+
+export async function renderExport(payload: {
+  projectId: string;
+  title: string;
+  scenes: Scene[];
+  voiceId: string;
+  speed: number;
+  musicId: string;
+  musicVolume: number;
+  hasColor?: boolean;
+}): Promise<{ jobId: string; status: string; videoUrl: string | null; stage: string }> {
+  const res = await fetch(`${API_BASE}/export/render`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_id: payload.projectId,
+      title: payload.title,
+      scenes: payload.scenes,
+      voice_id: payload.voiceId,
+      speed: payload.speed,
+      music_id: payload.musicId,
+      music_volume: payload.musicVolume,
+      has_color: payload.hasColor !== undefined ? payload.hasColor : true,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    return {
+      jobId: data.job_id,
+      status: data.status,
+      videoUrl: data.video_url
+        ? data.video_url.startsWith("http")
+          ? data.video_url
+          : `${API_BASE}${data.video_url}`
+        : null,
+      stage: data.stage,
+    };
+  }
+
+  const errText = await res.text();
+  throw new Error(`Lỗi khởi tạo Render Video (${res.status}): ${errText}`);
+}
+
+export async function getExportStatus(jobId: string): Promise<{
+  jobId: string;
+  status: string;
+  progressPercent: number;
+  stage: string;
+  videoUrl: string | null;
+  errorMessage?: string;
+  qaReport?: any;
+}> {
+  try {
+    const res = await fetch(`${API_BASE}/export/status/${jobId}`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        jobId: data.job_id,
+        status: data.status,
+        progressPercent: data.progress_percent,
+        stage: data.stage,
+        videoUrl: data.video_url
+          ? data.video_url.startsWith("http")
+            ? data.video_url
+            : `${API_BASE}${data.video_url}`
+          : null,
+        errorMessage: data.error_message,
+        qaReport: data.qa_report,
+      };
+    }
+  } catch (e) {
+    console.warn(`[getExportStatus] Lỗi polling tạm thời cho job ${jobId}:`, e);
+  }
+
+  // Fallback tạm thời nếu mạng giật/timeout trong lúc render để lần poll sau tiếp tục
+  return {
+    jobId,
+    status: "running",
+    progressPercent: -1,
+    stage: "Đang đồng bộ tiến trình render...",
+    videoUrl: null,
+  };
+}
+
+export interface ExportProgressEvent {
+  jobId: string;
+  status: string;
+  progressPercent: number;
+  stage: string;
+  videoUrl: string | null;
+  errorMessage?: string;
+  qaReport?: any;
+}
+
+/**
+ * Đăng ký nhận luồng dữ liệu tiến độ render video qua Server-Sent Events (SSE) theo thời gian thực.
+ * Trả về hàm cleanup () => void để hủy kết nối khi unmount.
+ */
+export function subscribeExportProgress(
+  jobId: string,
+  onProgress: (data: ExportProgressEvent) => void,
+  onError?: (err: any) => void
+): () => void {
+  const url = `${API_BASE}/export/stream/${jobId}`;
+  const es = new EventSource(url);
+
+  es.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      const formatted: ExportProgressEvent = {
+        jobId: data.job_id,
+        status: data.status,
+        progressPercent: data.progress_percent,
+        stage: data.stage,
+        videoUrl: data.video_url
+          ? data.video_url.startsWith("http")
+            ? data.video_url
+            : `${API_BASE}${data.video_url}`
+          : null,
+        errorMessage: data.error_message,
+        qaReport: data.qa_report,
+      };
+      onProgress(formatted);
+      if (data.status === "completed" || data.status === "failed") {
+        es.close();
+      }
+    } catch (e) {
+      console.warn("[subscribeExportProgress] Parse error:", e);
+    }
+  };
+
+  es.onerror = (err) => {
+    console.warn(`[subscribeExportProgress] SSE error on ${jobId}:`, err);
+    es.close();
+    if (onError) onError(err);
+  };
+
+  return () => {
+    es.close();
+  };
+}
+
+// ============================================================================
+// VIDEO ARCHIVE VAULT APIs (Lưu trữ video bền vững trên ổ D)
+// ============================================================================
+
+export async function fetchArchivedVideos(): Promise<ArchivedVideo[]> {
+  try {
+    const res = await fetch(`${API_BASE}/archive/videos`);
+    if (res.ok) {
+      const data: ArchivedVideo[] = await res.json();
+      return data.map((v) => ({
+        ...v,
+        video_url: v.video_url.startsWith("http") ? v.video_url : `${API_BASE}${v.video_url}`,
+        thumbnail_url: v.thumbnail_url
+          ? v.thumbnail_url.startsWith("http")
+            ? v.thumbnail_url
+            : `${API_BASE}${v.thumbnail_url}`
+          : null,
+      }));
+    }
+  } catch (e) {
+    console.warn("[fetchArchivedVideos] Lỗi tải kho video:", e);
+  }
+  return [];
+}
+
+export async function fetchArchiveStats(): Promise<ArchiveStats | null> {
+  try {
+    const res = await fetch(`${API_BASE}/archive/stats`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn("[fetchArchiveStats] Lỗi tải thống kê kho video:", e);
+  }
+  return null;
+}
+
+export async function scanArchiveVideos(): Promise<ArchivedVideo[]> {
+  try {
+    const res = await fetch(`${API_BASE}/archive/scan`, { method: "POST" });
+    if (res.ok) {
+      const data: ArchivedVideo[] = await res.json();
+      return data.map((v) => ({
+        ...v,
+        video_url: v.video_url.startsWith("http") ? v.video_url : `${API_BASE}${v.video_url}`,
+        thumbnail_url: v.thumbnail_url
+          ? v.thumbnail_url.startsWith("http")
+            ? v.thumbnail_url
+            : `${API_BASE}${v.thumbnail_url}`
+          : null,
+      }));
+    }
+  } catch (e) {
+    console.warn("[scanArchiveVideos] Lỗi quét lại kho video:", e);
+  }
+  return [];
+}
+
+export async function openArchiveFolder(targetPath?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/archive/open-folder`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_path: targetPath || null }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn("[openArchiveFolder] Lỗi mở thư mục trên máy:", e);
+    return false;
+  }
+}
+
+export async function deleteArchivedVideo(videoId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/archive/videos/${videoId}?delete_file=true`, {
+      method: "DELETE",
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn(`[deleteArchivedVideo] Lỗi xóa video ${videoId}:`, e);
+    return false;
+  }
+}
+
+

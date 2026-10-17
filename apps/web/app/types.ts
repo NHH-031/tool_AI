@@ -6,7 +6,75 @@ export type ActiveTab =
   | "assets"
   | "voices"
   | "music"
-  | "jobs";
+  | "jobs"
+  | "wizard";
+
+export type WizardStep = 1 | 2 | 3 | 4;
+
+export type StepStatus = "idle" | "running" | "completed" | "error";
+
+export interface Scene {
+  id: string;
+  scene_index: number;
+  text: string;
+  prompt: string;
+  duration_sec?: number;
+  image_url?: string | null;
+  image_status?: "idle" | "generating" | "completed" | "error";
+  audio_url?: string | null;
+  audio_status?: "idle" | "generating" | "completed" | "error";
+}
+
+export interface StoryboardImage {
+  scene_id: string;
+  scene_index: number;
+  prompt: string;
+  image_url: string;
+  status: "idle" | "generating" | "completed" | "error";
+  error?: string;
+}
+
+export interface AudioResult {
+  scene_id: string;
+  scene_index: number;
+  audio_url: string;
+  duration_sec: number;
+  voice_id: string;
+  status: "idle" | "generating" | "completed" | "error";
+  error?: string;
+}
+
+export interface ProjectWorkflow {
+  projectId: string;
+  projectName: string;
+  currentStep: WizardStep;
+  completedSteps: WizardStep[];
+  script: {
+    rawText: string;
+    inputMode: "text" | "srt";
+    scenes: Scene[];
+    status: StepStatus;
+  };
+  storyboard: {
+    images: StoryboardImage[];
+    status: StepStatus;
+  };
+  voice: {
+    voiceId: string;
+    speed: number;
+    musicId: string;
+    musicVolume: number;
+    audios: AudioResult[];
+    status: StepStatus;
+  };
+  export: {
+    videoUrl: string | null;
+    status: StepStatus;
+    progress: number;
+    qaReport?: MediaQAReport;
+  };
+  updatedAt: string;
+}
 
 export type GenerationState =
   | "idle"
@@ -265,4 +333,31 @@ export interface ReviewData {
     timestamp: string;
     status: string;
   }>;
+}
+
+export interface ArchivedVideo {
+  id: string;
+  title: string;
+  project_id: string;
+  file_name: string;
+  absolute_path: string;
+  video_url: string;
+  thumbnail_url?: string | null;
+  duration_sec: number;
+  file_size_bytes: number;
+  file_size_formatted: string;
+  scene_count: number;
+  resolution: string;
+  created_at: string;
+}
+
+export interface ArchiveStats {
+  storage_path: string;
+  total_videos: number;
+  used_storage_bytes: number;
+  used_storage_formatted: string;
+  disk_free_bytes: number;
+  disk_free_formatted: string;
+  disk_total_formatted: string;
+  drive_letter: string;
 }

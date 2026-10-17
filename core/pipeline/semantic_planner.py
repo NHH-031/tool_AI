@@ -7,7 +7,7 @@ from core.schemas.scene_graph import Position, SceneGraph, VisualAction, VisualE
 from core.schemas.script import ScriptSegment
 from core.schemas.visual_plan import SceneVisualPlan, VisualPlanOutput
 from core.validation.semantic import SemanticValidator
-from tests.fixtures.test_cases_data import (
+from core.pipeline.reference_cases import (
     get_case_1_dog_ball,
     get_case_2_teacher_math,
     get_case_3_temperature_molecules,
