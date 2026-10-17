@@ -122,36 +122,47 @@ async def list_voices() -> List[VoiceItem]:
 async def synthesize_voice(req: SynthesizeVoiceRequest) -> SynthesizeVoiceResponse:
     """Tổng hợp giọng đọc cho một phân cảnh cụ thể qua LocalTTSProvider / EdgeTTS."""
     from pathlib import Path
+    from fastapi import HTTPException
     from core.schemas.tts import VoiceConfig
     from core.tts.local import LocalTTSProvider
+
+    if not req.text or not req.text.strip():
+        raise HTTPException(status_code=400, detail="Nội dung lời thoại không được để trống")
 
     PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
     out_dir = PROJECT_ROOT / "output" / "storyboard" / req.project_id
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_audio = out_dir / f"scene_{req.scene_index}_audio.wav"
 
     tts_provider = LocalTTSProvider()
     cfg = VoiceConfig(
-        voice_id=req.voice_id,
+        voice_id=req.voice_id or "vi-VN-HoaiMyNeural",
         language="vi-VN",
-        speed=req.speed,
+        speed=req.speed or 1.0,
     )
 
-    result = await tts_provider.generate(text=req.text, voice_config=cfg)
-    ext = result.format if getattr(result, "format", None) else "mp3"
-    out_audio = out_dir / f"scene_{req.scene_index}_audio.{ext}"
-    out_audio.write_bytes(result.audio_bytes)
-    # Lưu thêm bản wav nếu là mp3 để đảm bảo tương thích ngược với mọi module
-    legacy_wav = out_dir / f"scene_{req.scene_index}_audio.wav"
-    if legacy_wav != out_audio:
-        legacy_wav.write_bytes(result.audio_bytes)
+    try:
+        result = await tts_provider.generate(text=req.text, voice_config=cfg)
+        ext = result.format if getattr(result, "format", None) else "mp3"
+        out_audio = out_dir / f"scene_{req.scene_index}_audio.{ext}"
+        out_audio.write_bytes(result.audio_bytes)
 
-    rel_url = f"/media/storyboard/{req.project_id}/{out_audio.name}"
-    return SynthesizeVoiceResponse(
-        scene_id=req.scene_id,
-        scene_index=req.scene_index,
-        audio_url=rel_url,
-        duration_sec=round(result.duration, 2),
-        voice_id=req.voice_id,
-        status="completed",
-    )
+        # Lưu thêm bản wav nếu là mp3 để đảm bảo tương thích ngược với mọi module
+        legacy_wav = out_dir / f"scene_{req.scene_index}_audio.wav"
+        if legacy_wav != out_audio:
+            legacy_wav.write_bytes(result.audio_bytes)
+
+        rel_url = f"/media/storyboard/{req.project_id}/{out_audio.name}"
+        return SynthesizeVoiceResponse(
+            scene_id=req.scene_id,
+            scene_index=req.scene_index,
+            audio_url=rel_url,
+            duration_sec=round(result.duration, 2),
+            voice_id=req.voice_id,
+            status="completed",
+        )
+    except Exception as e:
+        logger.error(f"[synthesize_voice] Lỗi khi tạo giọng đọc cảnh {req.scene_index}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi thu âm giọng đọc: {str(e)}"
+        )
