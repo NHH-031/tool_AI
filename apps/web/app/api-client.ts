@@ -380,10 +380,22 @@ export async function fetchVoices(): Promise<VoiceItem[]> {
   ];
 }
 
+export function getMusicPreviewUrl(musicId: string): string {
+  return `${API_BASE}/music/${musicId}/preview`;
+}
+
 export async function fetchMusic(): Promise<MusicTrackItem[]> {
   try {
-    const res = await fetch(`${API_BASE}/music`, { signal: AbortSignal.timeout(2000) });
-    if (res.ok) return await res.json();
+    const res = await fetch(`${API_BASE}/music`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data: MusicTrackItem[] = await res.json();
+      return data.map((item) => ({
+        ...item,
+        preview_url: item.preview_url.startsWith("http")
+          ? item.preview_url
+          : `${API_BASE}${item.preview_url}`,
+      }));
+    }
   } catch {}
   return [
     {
@@ -392,10 +404,10 @@ export async function fetchMusic(): Promise<MusicTrackItem[]> {
       artist: "Animation Soundworks",
       mood: "Vui Nhộn, Tinh Nghịch",
       genre: "Children Animation",
-      duration_sec: 120,
+      duration_sec: 64,
       bpm: 124,
-      recommended_volume: 0.15,
-      preview_url: "",
+      recommended_volume: 0.18,
+      preview_url: `${API_BASE}/music/whimsical_play/preview`,
       tags: ["whimsical", "monkey", "cartoon"],
     },
     {
@@ -404,10 +416,10 @@ export async function fetchMusic(): Promise<MusicTrackItem[]> {
       artist: "Studio Acoustic Collective",
       mood: "Tươi Sáng, Hứng Khởi",
       genre: "Acoustic Folk",
-      duration_sec: 145,
+      duration_sec: 64,
       bpm: 110,
       recommended_volume: 0.15,
-      preview_url: "",
+      preview_url: `${API_BASE}/music/acoustic_uplift/preview`,
       tags: ["cheerful", "acoustic", "bright"],
     },
     {
@@ -416,10 +428,10 @@ export async function fetchMusic(): Promise<MusicTrackItem[]> {
       artist: "Tokyo Chillhop Beats",
       mood: "Thư Giãn, Tập Trung",
       genre: "Lofi Hip Hop",
-      duration_sec: 180,
+      duration_sec: 64,
       bpm: 85,
       recommended_volume: 0.12,
-      preview_url: "",
+      preview_url: `${API_BASE}/music/lofi_chill/preview`,
       tags: ["lofi", "study", "relaxing"],
     },
     {
@@ -428,11 +440,23 @@ export async function fetchMusic(): Promise<MusicTrackItem[]> {
       artist: "Pinnacle Scores",
       mood: "Chuyên Nghiệp, Tiến Bộ",
       genre: "Corporate Orchestral",
-      duration_sec: 160,
+      duration_sec: 64,
       bpm: 118,
       recommended_volume: 0.14,
-      preview_url: "",
+      preview_url: `${API_BASE}/music/corporate_inspire/preview`,
       tags: ["corporate", "explainer", "business"],
+    },
+    {
+      id: "ambient_minimal",
+      title: "Subtle Clarity Wave",
+      artist: "Echoes of Silence",
+      mood: "Thanh Bình, Trực Quan",
+      genre: "Ambient Drone",
+      duration_sec: 64,
+      bpm: 70,
+      recommended_volume: 0.10,
+      preview_url: `${API_BASE}/music/ambient_minimal/preview`,
+      tags: ["minimal", "zen", "science", "subtle"],
     },
   ];
 }

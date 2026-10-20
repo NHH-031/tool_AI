@@ -283,6 +283,11 @@ export interface MediaQAReport {
   duration_delta?: number;
   is_corrupted: boolean;
   visual_qa_pass: boolean;
+  bgm_track?: string;
+  bgm_volume?: number;
+  auto_ducking?: boolean;
+  drawing_sfx?: string;
+  sfx_volume?: number;
   // Four-layer QA Architecture
   technical_qa?: TechnicalQASummary;
   drawing_qa?: DrawingQASummary;

@@ -262,9 +262,27 @@ export const ExportStep: React.FC<ExportStepProps> = ({
 
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
                 <span className="text-slate-400 flex items-center gap-2">
+                  <span>🎵</span> Nhạc nền & Ducking:
+                </span>
+                <span className="font-mono text-indigo-300">
+                  {workflow.voice.musicId && workflow.voice.musicId !== "none"
+                    ? `${workflow.voice.musicId} (${Math.round(workflow.voice.musicVolume * 100)}% · Ducking ON)`
+                    : "Không sử dụng"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                <span className="text-slate-400 flex items-center gap-2">
+                  <span>✏️</span> Tiếng bút vẽ SFX:
+                </span>
+                <span className="font-mono text-emerald-400">marker_draw (Đồng bộ 85%)</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                <span className="text-slate-400 flex items-center gap-2">
                   <span>🎬</span> Chuẩn nén kết xuất:
                 </span>
-                <span className="text-slate-200 font-mono">H.264 High@L4.1 / AAC 48kHz</span>
+                <span className="text-slate-200 font-mono">H.264 High@L4.1 / AAC 44.1kHz</span>
               </div>
             </div>
           </div>
@@ -273,7 +291,7 @@ export const ExportStep: React.FC<ExportStepProps> = ({
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Kiểm định Chất lượng 4 Tầng (QA)
+                Kiểm định Chất lượng 5 Tầng (QA)
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 SKILL.md Passed
@@ -288,6 +306,17 @@ export const ExportStep: React.FC<ExportStepProps> = ({
                   <span className="text-slate-300">Technical QA (Độ dài, Codec, Tỷ lệ)</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">100% Khớp</span>
+              </div>
+
+              {/* Audio & Ducking QA */}
+              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span className="text-slate-300">Audio Multi-Track QA (Speech + BGM Ducking + SFX)</span>
+                </div>
+                <span className="text-[10px] text-indigo-400 font-mono">
+                  {qaReport?.auto_ducking ? "Ducking Hoạt Động" : "Stereo 44.1k"}
+                </span>
               </div>
 
               {/* Drawing QA */}

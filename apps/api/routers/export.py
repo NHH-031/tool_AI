@@ -45,6 +45,9 @@ class RenderExportRequest(BaseModel):
     music_id: str = "whimsical_play"
     music_volume: float = 0.15
     has_color: bool = True
+    sfx_enabled: bool = True
+    sfx_volume: float = 0.22
+    sfx_name: str = "marker_draw"
 
 
 class RenderExportResponse(BaseModel):
@@ -193,13 +196,15 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
         adapter = WhiteboardEngineAdapter(root_dir=PROJECT_ROOT)
         tts_provider = LocalTTSProvider()
         scene_clips: List[Path] = []
+        scene_audio_files: List[Path] = []
+        scenes_timing_meta: List[Dict[str, Any]] = []
         total_scenes = len(req.scenes)
 
         for idx, sc in enumerate(req.scenes, 1):
             scene_idx = sc.scene_index or idx
             scene_id = f"scene_{scene_idx}"
             job_record["stage"] = f"Đang dựng hoạt họa bàn tay vẽ phân cảnh {scene_idx}/{total_scenes}..."
-            job_record["progress_percent"] = round(10.0 + (70.0 * idx / total_scenes), 1)
+            job_record["progress_percent"] = round(10.0 + (65.0 * idx / total_scenes), 1)
 
             # 1. Tìm hoặc sinh ảnh phân cảnh
             img_file = _resolve_image_path(req.project_id, scene_idx, sc.image_url)
@@ -227,6 +232,8 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
 
             dur_sec = _get_audio_duration(audio_file)
             dur_sec = max(3.0, dur_sec)
+            scene_audio_files.append(audio_file)
+            scenes_timing_meta.append({"scene_index": scene_idx, "duration_sec": dur_sec})
 
             # 3. Tạo annotation file đặc tả bàn tay vẽ cho cảnh
             annot_file = output_dir / f"{scene_id}.annotation.json"
@@ -269,21 +276,94 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             scene_clips.append(final_scene_mp4)
 
         # 6. Ghép nối các phân cảnh thành video thống nhất
-        job_record["stage"] = "Đang ghép nối các phân cảnh thành video hoàn chỉnh..."
-        job_record["progress_percent"] = 85.0
+        job_record["stage"] = "Đang ghép nối các phân cảnh video..."
+        job_record["progress_percent"] = 80.0
 
-        final_output_mp4 = output_dir / f"{job_id}_final.mp4"
+        temp_concat_mp4 = output_dir / f"{job_id}_concat_raw.mp4"
         if len(scene_clips) > 1:
             logger.info(f"[_run_export_pipeline] Ghép nối {len(scene_clips)} phân cảnh...")
-            concat_ok = _ffmpeg_concat_copy(scene_clips, final_output_mp4) or _pyav_concat(scene_clips, final_output_mp4)
-            if not (concat_ok and final_output_mp4.exists()):
-                shutil.copyfile(str(scene_clips[0]), str(final_output_mp4))
+            concat_ok = _ffmpeg_concat_copy(scene_clips, temp_concat_mp4) or _pyav_concat(scene_clips, temp_concat_mp4)
+            if not (concat_ok and temp_concat_mp4.exists()):
+                shutil.copyfile(str(scene_clips[0]), str(temp_concat_mp4))
         elif len(scene_clips) == 1:
-            shutil.copyfile(str(scene_clips[0]), str(final_output_mp4))
+            shutil.copyfile(str(scene_clips[0]), str(temp_concat_mp4))
         else:
             raise RuntimeError("Không có phân cảnh nào để kết xuất video.")
 
-        total_duration = sum(_get_audio_duration(c) for c in scene_clips)
+        # 7. Hòa âm chuyên nghiệp: Giọng nói + Tiếng bút vẽ SFX + Nhạc nền BGM Auto-Ducking
+        job_record["stage"] = "Đang hòa âm BGM chuyên nghiệp, Auto-Ducking và tiếng bút vẽ SFX..."
+        job_record["progress_percent"] = 90.0
+
+        from core.audio.mixer import AudioMixer
+        from core.audio.sfx_sync import DrawingSFXSynchronizer
+        import numpy as np
+
+        audio_mixer = AudioMixer()
+        speech_chunks = []
+        for af in scene_audio_files:
+            s_arr, _ = audio_mixer.read_audio(af)
+            speech_chunks.append(s_arr)
+
+        if speech_chunks:
+            master_speech_arr = np.concatenate(speech_chunks, axis=1)
+        else:
+            master_speech_arr = np.zeros((2, int(audio_mixer.sample_rate * 4.0)), dtype=np.float32)
+
+        total_duration = master_speech_arr.shape[1] / float(audio_mixer.sample_rate)
+
+        # 7a. Sinh SFX tiếng cọ vẽ đồng bộ bàn tay
+        sfx_arr = None
+        if req.sfx_enabled:
+            logger.info(f"[_run_export_pipeline] Sinh SFX tiếng bút vẽ '{req.sfx_name}'...")
+            syncer = DrawingSFXSynchronizer(sample_rate=audio_mixer.sample_rate, root_dir=PROJECT_ROOT)
+            sfx_arr = syncer.generate_sfx_track_for_scenes(
+                scenes_timing=scenes_timing_meta,
+                total_duration_sec=total_duration,
+                sfx_name=req.sfx_name or "marker_draw",
+            )
+
+        # 7b. Đọc file nhạc nền BGM
+        bgm_arr = None
+        has_bgm = bool(req.music_id and req.music_id != "none" and req.music_volume > 0.001)
+        if has_bgm:
+            music_dir = PROJECT_ROOT / "assets" / "audio" / "music"
+            for ext in [".mp3", ".wav", ".aac"]:
+                m_path = music_dir / f"{req.music_id}{ext}"
+                if m_path.exists():
+                    bgm_arr, _ = audio_mixer.read_audio(m_path)
+                    logger.info(f"[_run_export_pipeline] Đã nạp nhạc nền BGM: {m_path.name}")
+                    break
+
+        # 7c. Trộn đa luồng với Auto-Ducking và Limiter
+        logger.info(f"[_run_export_pipeline] Trộn đa luồng audio (Speech + SFX + BGM Ducking)...")
+        master_audio_arr = audio_mixer.mix_multi_track(
+            speech_arr=master_speech_arr,
+            bgm_arr=bgm_arr,
+            sfx_arr=sfx_arr,
+            bgm_volume=req.music_volume if has_bgm else 0.0,
+            sfx_volume=req.sfx_volume if req.sfx_enabled else 0.0,
+            enable_ducking=True,
+        )
+
+        master_audio_file = output_dir / f"{job_id}_master_audio.aac"
+        audio_mixer.write_audio(master_audio_arr, master_audio_file)
+
+        # 8. Mux master audio vào video cuối cùng
+        final_output_mp4 = output_dir / f"{job_id}_final.mp4"
+        logger.info(f"[_run_export_pipeline] Muxing master audio vào video final: {final_output_mp4}...")
+        adapter.mux_audio_video(
+            video_path=temp_concat_mp4,
+            audio_path=master_audio_file,
+            output_path=final_output_mp4,
+        )
+
+        # Dọn dẹp file tạm
+        if temp_concat_mp4.exists():
+            try:
+                temp_concat_mp4.unlink(missing_ok=True)
+            except Exception:
+                pass
+
         rel_video_url = f"/media/export/{req.project_id}/{final_output_mp4.name}"
         job_record["video_url"] = rel_video_url
         job_record["status"] = "completed"
@@ -297,6 +377,11 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             "fps": 24.0,
             "drawing_hand_overlay": True,
             "warm_tone_background": True,
+            "bgm_track": req.music_id if has_bgm else "none",
+            "bgm_volume": round(req.music_volume, 2),
+            "auto_ducking": has_bgm,
+            "drawing_sfx": req.sfx_name if req.sfx_enabled else "disabled",
+            "sfx_volume": round(req.sfx_volume, 2) if req.sfx_enabled else 0.0,
             "visual_qa_pass": True,
         }
 

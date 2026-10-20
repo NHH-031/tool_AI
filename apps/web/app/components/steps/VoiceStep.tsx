@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { AudioResult, MusicTrackItem, Scene, VoiceItem } from "../../types";
+import { getMusicPreviewUrl } from "../../api-client";
 
 interface VoiceStepProps {
   scenes: Scene[];
@@ -45,6 +46,46 @@ export const VoiceStep: React.FC<VoiceStepProps> = ({
   onNextStep,
 }) => {
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
+  const [isPlayingMusicPreview, setIsPlayingMusicPreview] = useState<boolean>(false);
+  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (musicAudioRef.current) {
+        musicAudioRef.current.pause();
+        musicAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  const toggleMusicPreview = () => {
+    if (selectedMusicId === "none") return;
+    if (isPlayingMusicPreview) {
+      if (musicAudioRef.current) {
+        musicAudioRef.current.pause();
+      }
+      setIsPlayingMusicPreview(false);
+      return;
+    }
+
+    if (musicAudioRef.current) {
+      musicAudioRef.current.pause();
+    }
+
+    const track = musicTracks.find((m) => m.id === selectedMusicId);
+    const previewUrl = track?.preview_url || getMusicPreviewUrl(selectedMusicId);
+    const audio = new Audio(previewUrl);
+    audio.volume = musicVolume || 0.2;
+    audio.onended = () => setIsPlayingMusicPreview(false);
+    audio.onerror = () => setIsPlayingMusicPreview(false);
+
+    audio.play().then(() => {
+      musicAudioRef.current = audio;
+      setIsPlayingMusicPreview(true);
+    }).catch(() => {
+      setIsPlayingMusicPreview(false);
+    });
+  };
 
   // Helper to find audio result for scene
   const getAudioForScene = (scene: Scene) => {
@@ -232,7 +273,23 @@ export const VoiceStep: React.FC<VoiceStepProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs text-slate-400 mb-1.5 font-medium">Giai điệu chủ đạo:</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs text-slate-400 font-medium">Giai điệu chủ đạo:</label>
+              {selectedMusicId !== "none" && (
+                <button
+                  type="button"
+                  onClick={toggleMusicPreview}
+                  className={`text-[11px] px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition active:scale-95 ${
+                    isPlayingMusicPreview
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 animate-pulse"
+                      : "bg-slate-800 hover:bg-slate-700 text-indigo-300"
+                  }`}
+                >
+                  <span>{isPlayingMusicPreview ? "⏸️" : "▶️"}</span>
+                  <span>{isPlayingMusicPreview ? "Dừng thử" : "Nghe thử"}</span>
+                </button>
+              )}
+            </div>
             <select
               value={selectedMusicId}
               onChange={(e) => onSelectMusic(e.target.value)}
@@ -248,8 +305,10 @@ export const VoiceStep: React.FC<VoiceStepProps> = ({
               ) : (
                 <>
                   <option value="whimsical_play">Whimsical Play (Vui tươi · Whiteboard)</option>
-                  <option value="corporate_tech">Inspiration & Tech (Truyền cảm hứng)</option>
-                  <option value="calm_acoustic">Calm Acoustic (Nhẹ nhàng · Mộc mạc)</option>
+                  <option value="acoustic_uplift">Sunny Morning Ukulele (Hứng khởi · Acoustic)</option>
+                  <option value="lofi_chill">Late Night Whiteboard Lofi (Thư giãn · Lofi)</option>
+                  <option value="corporate_inspire">Inspiring Innovation (Chuyên nghiệp)</option>
+                  <option value="ambient_minimal">Subtle Clarity Wave (Trực quan · Ambient)</option>
                 </>
               )}
             </select>
