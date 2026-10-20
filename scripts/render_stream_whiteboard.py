@@ -44,6 +44,16 @@ import stream_render as sr  # noqa: E402
 
 DEFAULT_HAND = _SCRIPT_DIR.parent / "assets" / "drawing-hand.png"
 
+# Bảng căn chỉnh tọa độ điểm neo ngòi bút thực tế (Sub-pixel Pen-Tip Anchor Calibration)
+TOOL_TIP_CALIBRATION = {
+    "hand-pen-modern": (0.008, 0.002),
+    "hand-marker": (0.008, 0.002),
+    "hand-calligraphy": (0.008, 0.002),
+    "hand-quill-vintage": (0.008, 0.002),
+    "hand-highlighter": (0.008, 0.002),
+    "hand-eraser": (0.22, 0.16),
+}
+
 
 # ──────────────────────────────────────────────────────────────
 # 区域几何：把标注画布坐标缩放到输出尺寸
@@ -118,15 +128,32 @@ class RegionStreamRenderer:
         self.drawn = np.empty((self.out_h, self.out_w, 3), dtype=np.float32)
         self.drawn[...] = self.canvas_bgr.astype(np.float32)
 
-        # 笔尖覆盖
+        # 笔尖覆盖 (Tip Overlay & Calibrated Hand Models)
         self.tip: sr.TipOverlay | None = None
+        self.tip_color: sr.TipOverlay | None = None
+        self.last_pos: tuple[int, int] | None = None
+        self.smooth_angle: float = 0.0
+        self.frame_counter: int = 0
+
         if not bare_tip:
             hand_data = sr._load_hand(hand_png, cfg.target_hand_height) if hand_png else None
-            ax, ay = cfg.tip_anchor_x, cfg.tip_anchor_y
+            stem = hand_png.stem if hand_png else "hand-pen-modern"
+            ax, ay = TOOL_TIP_CALIBRATION.get(stem, (cfg.tip_anchor_x, cfg.tip_anchor_y))
             if hand_data is None:
                 hand_data = sr._procedural_tip(cfg.target_hand_height)
                 ax, ay = 0.5, 0.70
             self.tip = sr.TipOverlay(hand_data[0], hand_data[1], tip_anchor_x=ax, tip_anchor_y=ay)
+
+            # Nếu bật chế độ multi-pen, nạp thêm bút dạ quang tô màu (hand-highlighter.png)
+            if getattr(cfg, "multi_pen", False) and hand_png:
+                hl_cand = hand_png.parent / "hand-highlighter.png"
+                if not hl_cand.exists():
+                    hl_cand = hand_png.parent / "drawing-tools" / "hand-highlighter.png"
+                if hl_cand.exists():
+                    hl_data = sr._load_hand(hl_cand, cfg.target_hand_height)
+                    if hl_data:
+                        c_ax, c_ay = TOOL_TIP_CALIBRATION.get("hand-highlighter", (0.008, 0.002))
+                        self.tip_color = sr.TipOverlay(hl_data[0], hl_data[1], tip_anchor_x=c_ax, tip_anchor_y=c_ay)
 
     # 采样原图四角，把接近背景色的像素替换为画布底色
     def _match_original_background(self) -> None:
@@ -144,10 +171,35 @@ class RegionStreamRenderer:
         e = self.cfg.grid_edge
         return (c * e + e // 2, r * e + e // 2)
 
-    def _snapshot_with_tip(self, px: int, py: int) -> np.ndarray:
+    def _snapshot_with_tip(self, px: int, py: int, tool: str = "ink") -> np.ndarray:
         snap = self.drawn.astype(np.uint8)
-        if self.tip is not None:
-            self.tip.stamp(snap, px, py)
+        active_tip = self.tip_color if (tool == "color" and self.tip_color is not None) else self.tip
+        if active_tip is not None:
+            self.frame_counter += 1
+            # Sub-pixel micro-jitter: Rung nhẹ tự nhiên của cơ tay người thật (0.5-0.7px)
+            jx = math.sin(self.frame_counter * 0.45) * 0.65
+            jy = math.cos(self.frame_counter * 0.55) * 0.55
+
+            # Dynamic tangential angle rotation: Tự động nghiêng cổ tay tự nhiên theo hướng nét vẽ
+            if self.last_pos is not None:
+                dx = px - self.last_pos[0]
+                dy = py - self.last_pos[1]
+                dist = math.hypot(dx, dy)
+                if dist > 1.2:
+                    heading_deg = math.degrees(math.atan2(dy, dx))
+                    # Cổ tay người tự nhiên thoải mái ở góc 45 độ
+                    diff = heading_deg - 45.0
+                    diff = (diff + 180.0) % 360.0 - 180.0
+                    target_tilt = float(np.clip(diff * 0.18, -12.0, 12.0))
+                    self.smooth_angle = 0.82 * self.smooth_angle + 0.18 * target_tilt
+            self.last_pos = (px, py)
+
+            active_tip.stamp(
+                snap,
+                int(round(px + jx)),
+                int(round(py + jy)),
+                angle_deg=self.smooth_angle,
+            )
         return snap
 
     # ── 单区域的允许掩码：优先使用实体矢量 maskFile，或矩形 - 后续区域 ──
@@ -251,7 +303,7 @@ class RegionStreamRenderer:
         n = len(samples)
         if n == 0:
             for _ in range(frames):
-                writer.write(self._snapshot_with_tip(self.out_w // 2, self.out_h // 2))
+                writer.write(self._snapshot_with_tip(self.out_w // 2, self.out_h // 2, tool="ink"))
             return
         idx_for_frame = _frame_progress_indices(n, frames)
         last: int | None = None
@@ -264,7 +316,7 @@ class RegionStreamRenderer:
                         continue
                     self._reveal_ink_segment(samples[k - 1], samples[k], allowed)
             sx, sy = samples[si]
-            writer.write(self._snapshot_with_tip(sx, sy))
+            writer.write(self._snapshot_with_tip(sx, sy, tool="ink"))
             last = si
 
     # ── 添彩段：brush 或 contour-wipe，限制在 allowed 内 ──
@@ -274,7 +326,7 @@ class RegionStreamRenderer:
         n = len(centers)
         if n == 0:
             for _ in range(frames):
-                writer.write(self._snapshot_with_tip(self.out_w // 2, self.out_h // 2))
+                writer.write(self._snapshot_with_tip(self.out_w // 2, self.out_h // 2, tool="color"))
             return
         disk = sr._feathered_disk(self.cfg.brush_radius)
         idx_for_frame = _frame_progress_indices(n, frames)
@@ -286,7 +338,7 @@ class RegionStreamRenderer:
                 for k in range(last + 1, ci + 1):
                     self._color_stamp(*centers[k], disk, allowed)
             cx, cy = centers[ci]
-            writer.write(self._snapshot_with_tip(cx, cy))
+            writer.write(self._snapshot_with_tip(cx, cy, tool="color"))
             last = ci
 
     def _wash_contour(self, writer, frames: int, allowed: np.ndarray) -> None:
@@ -341,7 +393,7 @@ class RegionStreamRenderer:
             cx = max(0, min(region_w - 1, cx))
             col = np.where(reveal[:, cx])[0]
             cy = int(col[-1]) if col.size > 0 else 0
-            writer.write(self._snapshot_with_tip(left + cx, top + cy))
+            writer.write(self._snapshot_with_tip(left + cx, top + cy, tool="color"))
 
         # 收尾：确保区域内允许像素全部揭示
         drawn_crop[allowed_crop] = color_crop[allowed_crop]
@@ -475,7 +527,7 @@ class RegionStreamRenderer:
         n = len(samples)
         if n == 0:
             for _ in range(frames):
-                writer.write(self._snapshot_with_tip(self.out_w // 2, self.out_h // 2))
+                writer.write(self._snapshot_with_tip(self.out_w // 2, self.out_h // 2, tool="ink"))
             return
         idx_for_frame = _frame_progress_indices(n, frames)
         cells_done = 0
@@ -493,7 +545,7 @@ class RegionStreamRenderer:
                 self._ink_stamp_cell(path[cells_done], allowed)
                 cells_done += 1
             sx, sy = samples[si]
-            writer.write(self._snapshot_with_tip(sx, sy))
+            writer.write(self._snapshot_with_tip(sx, sy, tool="ink"))
             last = si
         while cells_done < len(path):
             self._ink_stamp_cell(path[cells_done], allowed)
@@ -512,6 +564,8 @@ def _parse_args(argv=None):
                    help="笔迹路径: grid 网格(默认); skeleton 骨架追踪")
     p.add_argument("--color-fill", default="contour-wipe", choices=["contour-wipe", "brush", "none", "off"],
                    help="上色: contour-wipe 轮廓扫描(默认); brush 沿轨迹刷; none/off Không đổ màu (Monochrome Line Art)")
+    p.add_argument("--multi-pen", action="store_true",
+                   help="Bật chế độ đổi bút vẽ: Bút đen vẽ nét khung -> Bút dạ quang tô màu điểm nhấn")
     p.add_argument("--pause", default="heavy", choices=["heavy", "auto", "light", "off"],
                    help="起笔段停顿节奏（预留，逐区域画法下影响较弱）")
     p.add_argument("--fps", type=int, default=None)
@@ -542,6 +596,7 @@ def _build_cfg(args) -> sr.Config:
     kw["ink_path_mode"] = args.ink_path
     kw["color_fill"] = args.color_fill
     kw["pause_mode"] = args.pause
+    kw["multi_pen"] = getattr(args, "multi_pen", False)
     return sr.Config(**kw)
 
 

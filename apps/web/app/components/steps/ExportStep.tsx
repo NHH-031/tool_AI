@@ -15,6 +15,10 @@ interface ExportStepProps {
   drawingTools?: DrawingToolItem[];
   selectedHandToolId?: string;
   onSelectHandTool?: (toolId: string) => void;
+  multiPen?: boolean;
+  onUpdateMultiPen?: (enabled: boolean) => void;
+  transitionType?: "cut" | "eraser" | "crossfade";
+  onUpdateTransitionType?: (type: "cut" | "eraser" | "crossfade") => void;
   isRendering: boolean;
   renderProgress: number;
   renderStage: string;
@@ -39,6 +43,10 @@ export const ExportStep: React.FC<ExportStepProps> = ({
   drawingTools = [],
   selectedHandToolId = "hand-pen-modern",
   onSelectHandTool,
+  multiPen = true,
+  onUpdateMultiPen,
+  transitionType = "eraser",
+  onUpdateTransitionType,
   isRendering,
   renderProgress,
   renderStage,
@@ -448,6 +456,119 @@ export const ExportStep: React.FC<ExportStepProps> = ({
             </div>
           </div>
 
+          {/* Multi-Pen Color Reveal Card (Phase 6) */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span>🪄</span> Đổi Bút Màu Phân Lớp (Multi-Pen Reveal)
+              </span>
+              <button
+                type="button"
+                id="toggle-multi-pen"
+                onClick={() => onUpdateMultiPen && onUpdateMultiPen(!multiPen)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  multiPen ? "bg-indigo-600" : "bg-slate-700"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    multiPen ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Tự động đổi công cụ vẽ theo từng công đoạn: Bàn tay cầm bút dạ đen phác thảo nét khung chính, sau đó đổi sang bút dạ quang vàng neon tô điểm các mảng màu rực rỡ.
+            </p>
+
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs">
+              <span className="text-base">✨</span>
+              <div className="text-[11px]">
+                <span className="font-semibold text-slate-200">Trạng thái: </span>
+                <span className={multiPen ? "text-emerald-400 font-medium" : "text-slate-400"}>
+                  {multiPen ? "BẬT — Đổi bút khi tô màu (Bút đen ➔ Bút dạ quang)" : "TẮT — Dùng 1 bút duy nhất"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Scene Transition Effect Card (Phase 6) */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span>🧽</span> Hiệu Ứng Chuyển Cảnh (Transitions)
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                Eraser Wipe SFX
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Hiệu ứng chuyển đổi tự nhiên giữa các phân cảnh câu chuyện:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {/* Option 1: Eraser Wipe */}
+              <div
+                id="trans-opt-eraser"
+                onClick={() => onUpdateTransitionType && onUpdateTransitionType("eraser")}
+                className={`p-3 rounded-xl border cursor-pointer transition flex flex-col gap-1.5 ${
+                  transitionType === "eraser"
+                    ? "bg-indigo-600/20 border-indigo-500 text-white shadow-sm ring-1 ring-indigo-500"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-white hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-base">🧽</span>
+                  {transitionType === "eraser" && (
+                    <span className="text-[8px] font-mono px-1 rounded bg-indigo-500/30 text-indigo-300">
+                      Khuyên dùng
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-semibold text-white">Lau Bảng Trắng</div>
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Bàn tay cầm giẻ lau sạch bảng kèm âm thanh sột soạt chân thực.
+                </p>
+              </div>
+
+              {/* Option 2: Cut */}
+              <div
+                id="trans-opt-cut"
+                onClick={() => onUpdateTransitionType && onUpdateTransitionType("cut")}
+                className={`p-3 rounded-xl border cursor-pointer transition flex flex-col gap-1.5 ${
+                  transitionType === "cut"
+                    ? "bg-indigo-600/20 border-indigo-500 text-white shadow-sm ring-1 ring-indigo-500"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-white hover:border-slate-700"
+                }`}
+              >
+                <span className="text-base">✂️</span>
+                <div className="text-xs font-semibold text-white">Cắt Trực Tiếp</div>
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Chuyển cảnh ngay lập tức, tiết kiệm thời lượng video.
+                </p>
+              </div>
+
+              {/* Option 3: Crossfade */}
+              <div
+                id="trans-opt-crossfade"
+                onClick={() => onUpdateTransitionType && onUpdateTransitionType("crossfade")}
+                className={`p-3 rounded-xl border cursor-pointer transition flex flex-col gap-1.5 ${
+                  transitionType === "crossfade"
+                    ? "bg-indigo-600/20 border-indigo-500 text-white shadow-sm ring-1 ring-indigo-500"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-white hover:border-slate-700"
+                }`}
+              >
+                <span className="text-base">✨</span>
+                <div className="text-xs font-semibold text-white">Hòa Tan (Fade)</div>
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Hai bức tranh mờ dần vào nhau êm dịu, nghệ thuật.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Engine & Hand Overlay Specs */}
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -583,7 +704,12 @@ export const ExportStep: React.FC<ExportStepProps> = ({
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
         <button
           onClick={onBackStep}
-          className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition"
+          disabled={isRendering}
+          className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+            isRendering
+              ? "bg-slate-800 text-slate-500 cursor-not-allowed opacity-50"
+              : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+          }`}
         >
           ← Quay lại Giọng đọc
         </button>

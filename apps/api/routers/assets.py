@@ -266,6 +266,22 @@ async def list_drawing_tools() -> List[DrawingToolItem]:
             is_default=False,
         ),
         DrawingToolItem(
+            id="hand-highlighter",
+            name="Bút dạ quang Neon",
+            description="Bàn tay cầm bút dạ quang vàng chanh nổi bật, chuyên tô màu điểm nhấn.",
+            icon="🖊️",
+            preview_url="/assets/drawing-tools/hand-highlighter.png",
+            is_default=False,
+        ),
+        DrawingToolItem(
+            id="hand-eraser",
+            name="Miếng lau bảng Whiteboard",
+            description="Bàn tay cầm miếng xóa bảng nỉ chuyên dụng, dùng khi chuyển cảnh và xóa bảng.",
+            icon="🧽",
+            preview_url="/assets/drawing-tools/hand-eraser.png",
+            is_default=False,
+        ),
+        DrawingToolItem(
             id="no_hand",
             name="Ẩn bàn tay (Nét tự hiện)",
             description="Không hiển thị bàn tay, các nét vẽ và màu sắc tự động xuất hiện trên giấy.",

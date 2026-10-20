@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { Scene, StoryboardImage } from "../../types";
 import { previewScene } from "../../api-client";
+import { SceneCanvasEditor } from "../canvas/SceneCanvasEditor";
+import { CustomImageUploadModal } from "../canvas/CustomImageUploadModal";
 
 interface StoryboardStepProps {
   scenes: Scene[];
@@ -17,6 +19,7 @@ interface StoryboardStepProps {
   projectId?: string;
   aspectRatio?: "16:9" | "9:16";
   handToolId?: string;
+  onUpdateSceneImage?: (updatedImage: StoryboardImage) => void;
 }
 
 export const StoryboardStep: React.FC<StoryboardStepProps> = ({
@@ -32,8 +35,11 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
   projectId = "default",
   aspectRatio = "16:9",
   handToolId = "hand-pen-modern",
+  onUpdateSceneImage,
 }) => {
   const [selectedSceneModal, setSelectedSceneModal] = useState<Scene | null>(null);
+  const [editingCanvasScene, setEditingCanvasScene] = useState<{ scene: Scene; imageUrl: string } | null>(null);
+  const [uploadCustomModalScene, setUploadCustomModalScene] = useState<Scene | null>(null);
   const [previewingSceneIndex, setPreviewingSceneIndex] = useState<number | null>(null);
   const [activePreviewVideo, setActivePreviewVideo] = useState<{
     url: string;
@@ -241,18 +247,28 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
 
                   {/* Chưa có ảnh và không trong trạng thái sinh */}
                   {!imageUrl && !isGeneratingThis && !isQueuedInAll && (
-                    <div className="flex flex-col items-center justify-center p-6 text-center space-y-2">
+                    <div className="flex flex-col items-center justify-center p-6 text-center space-y-2.5">
                       <div className="w-10 h-10 rounded-xl bg-slate-800/60 flex items-center justify-center text-xl">
                         🎨
                       </div>
                       <p className="text-xs text-slate-400">Chưa sinh ảnh</p>
-                      <button
-                        onClick={() => onGenerateSingleImage(scene)}
-                        disabled={isGeneratingAll}
-                        className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition shadow-md shadow-indigo-600/20 active:scale-95"
-                      >
-                        Vẽ ảnh cảnh này
-                      </button>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => onGenerateSingleImage(scene)}
+                          disabled={isGeneratingAll}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition shadow-md shadow-indigo-600/20 active:scale-95"
+                        >
+                          Vẽ ảnh AI
+                        </button>
+                        <button
+                          onClick={() => setUploadCustomModalScene(scene)}
+                          disabled={isGeneratingAll}
+                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-xs font-medium transition active:scale-95"
+                          title="Tải logo hoặc hình ảnh riêng của bạn"
+                        >
+                          📤 Tải ảnh riêng
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -305,37 +321,61 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
                         <span>Chờ sinh ảnh</span>
                       )}
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {imageUrl && (
-                        <button
-                          id={`btn-preview-scene-${idx + 1}`}
-                          onClick={() => handleQuickPreview(scene, imageUrl)}
-                          disabled={previewingSceneIndex === scene.scene_index || isGeneratingAll}
-                          className="text-xs px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 active:scale-95 disabled:opacity-50"
-                          title="Xem trước 3 giây bàn tay vẽ phân cảnh này"
-                        >
-                          {previewingSceneIndex === scene.scene_index ? (
-                            <>
-                              <svg className="animate-spin w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                              </svg>
-                              <span>Đang dựng...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>🎬</span>
-                              <span>Xem trước (3s)</span>
-                            </>
-                          )}
-                        </button>
+                        <>
+                          <button
+                            id={`btn-preview-scene-${idx + 1}`}
+                            onClick={() => handleQuickPreview(scene, imageUrl)}
+                            disabled={previewingSceneIndex === scene.scene_index || isGeneratingAll}
+                            className="text-[11px] px-2 py-1 rounded-lg font-medium transition flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 active:scale-95 disabled:opacity-50"
+                            title="Xem trước 3 giây bàn tay vẽ phân cảnh này"
+                          >
+                            {previewingSceneIndex === scene.scene_index ? (
+                              <>
+                                <svg className="animate-spin w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                </svg>
+                                <span>Đang dựng...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>🎬</span>
+                                <span>Xem trước</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            id={`btn-edit-canvas-scene-${idx + 1}`}
+                            onClick={() => setEditingCanvasScene({ scene, imageUrl })}
+                            disabled={isGeneratingAll || isGeneratingThis}
+                            className="text-[11px] px-2 py-1 rounded-lg font-medium transition flex items-center gap-1 bg-indigo-500/10 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 active:scale-95 disabled:opacity-50"
+                            title="Mở Canvas Studio chỉnh sửa nét vẽ, thêm mũi tên, đóng dấu doodle"
+                          >
+                            <span>✏️</span>
+                            <span>Sửa nét</span>
+                          </button>
+
+                          <button
+                            id={`btn-upload-custom-scene-${idx + 1}`}
+                            onClick={() => setUploadCustomModalScene(scene)}
+                            disabled={isGeneratingAll || isGeneratingThis}
+                            className="text-[11px] px-2 py-1 rounded-lg font-medium transition flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 active:scale-95 disabled:opacity-50"
+                            title="Tải logo hoặc ảnh riêng thay thế"
+                          >
+                            <span>📤</span>
+                            <span>Đổi ảnh</span>
+                          </button>
+                        </>
                       )}
 
                       <button
                         id={`btn-regen-scene-${idx + 1}`}
                         onClick={() => onGenerateSingleImage(scene)}
                         disabled={isGeneratingThis || isGeneratingAll}
-                        className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
+                        className={`text-[11px] px-2 py-1 rounded-lg font-medium transition flex items-center gap-1.5 ${
                           isGeneratingThis
                             ? "bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 cursor-wait shadow-sm"
                             : isGeneratingAll
@@ -345,7 +385,7 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
                       >
                         {isGeneratingThis ? (
                           <>
-                            <svg className="animate-spin w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none">
+                            <svg className="animate-spin w-3 h-3 text-indigo-400" viewBox="0 0 24 24" fill="none">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                             </svg>
@@ -353,8 +393,8 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
                           </>
                         ) : (
                           <>
-                            <span className="text-xs">🔄</span>
-                            <span>{imageUrl ? "Sinh lại ảnh" : "Tạo ảnh"}</span>
+                            <span>🔄</span>
+                            <span>{imageUrl ? "Sinh lại" : "Tạo ảnh"}</span>
                           </>
                         )}
                       </button>
@@ -371,7 +411,12 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
         <button
           onClick={onBackStep}
-          className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition"
+          disabled={isGeneratingAll || !!generatingSceneId}
+          className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+            isGeneratingAll || !!generatingSceneId
+              ? "bg-slate-800 text-slate-500 cursor-not-allowed opacity-50"
+              : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+          }`}
         >
           ← Quay lại Kịch bản
         </button>
@@ -390,9 +435,9 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
           <button
             id="btn-storyboard-next"
             onClick={onNextStep}
-            disabled={!allImagesReady}
+            disabled={!allImagesReady || isGeneratingAll || !!generatingSceneId}
             className={`px-6 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 transition ${
-              !allImagesReady
+              !allImagesReady || isGeneratingAll || !!generatingSceneId
                 ? "bg-slate-800 text-slate-500 cursor-not-allowed"
                 : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 active:scale-95"
             }`}
@@ -447,6 +492,40 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* HTML5 Canvas Studio In-Place Editor Modal */}
+      {editingCanvasScene && (
+        <SceneCanvasEditor
+          scene={editingCanvasScene.scene}
+          imageUrl={editingCanvasScene.imageUrl}
+          projectId={projectId}
+          isOpen={true}
+          onClose={() => setEditingCanvasScene(null)}
+          onSaveSuccess={(updated) => {
+            if (onUpdateSceneImage) {
+              onUpdateSceneImage(updated);
+            }
+            setEditingCanvasScene(null);
+          }}
+        />
+      )}
+
+      {/* Custom Image Upload & 2D Sketch Filter Modal */}
+      {uploadCustomModalScene && (
+        <CustomImageUploadModal
+          scene={uploadCustomModalScene}
+          projectId={projectId}
+          aspectRatio={aspectRatio}
+          isOpen={true}
+          onClose={() => setUploadCustomModalScene(null)}
+          onUploadSuccess={(updated) => {
+            if (onUpdateSceneImage) {
+              onUpdateSceneImage(updated);
+            }
+            setUploadCustomModalScene(null);
+          }}
+        />
       )}
     </div>
   );

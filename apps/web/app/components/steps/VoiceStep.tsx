@@ -427,7 +427,12 @@ export const VoiceStep: React.FC<VoiceStepProps> = ({
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
         <button
           onClick={onBackStep}
-          className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition"
+          disabled={isSynthesizing || !!synthesizingSceneId}
+          className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+            isSynthesizing || !!synthesizingSceneId
+              ? "bg-slate-800 text-slate-500 cursor-not-allowed opacity-50"
+              : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+          }`}
         >
           ← Quay lại Storyboard
         </button>
@@ -441,9 +446,9 @@ export const VoiceStep: React.FC<VoiceStepProps> = ({
           <button
             id="btn-voice-next"
             onClick={onNextStep}
-            disabled={!allAudiosReady}
+            disabled={!allAudiosReady || isSynthesizing || !!synthesizingSceneId}
             className={`px-6 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 transition ${
-              !allAudiosReady
+              !allAudiosReady || isSynthesizing || !!synthesizingSceneId
                 ? "bg-slate-800 text-slate-500 cursor-not-allowed"
                 : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 active:scale-95"
             }`}

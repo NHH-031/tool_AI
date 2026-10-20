@@ -56,6 +56,7 @@ export interface ProjectWorkflow {
     inputMode: "text" | "srt";
     scenes: Scene[];
     status: StepStatus;
+    characterAnchor?: CharacterAnchorData | null;
   };
   storyboard: {
     images: StoryboardImage[];
@@ -75,6 +76,8 @@ export interface ProjectWorkflow {
     vttUrl?: string | null;
     subtitleStyle?: "none" | "classic" | "karaoke";
     handToolId?: string;
+    multiPen?: boolean;
+    transitionType?: "cut" | "eraser" | "crossfade";
     jobId?: string | null;
     status: StepStatus;
     progress: number;
@@ -386,3 +389,23 @@ export interface ArchiveStats {
   disk_total_formatted: string;
   drive_letter: string;
 }
+
+export interface CharacterAnchorData {
+  name: string;
+  gender: string;
+  age_group: string;
+  hair_style: string;
+  facial_features: string;
+  clothing: string;
+  accessories?: string;
+  seed?: number;
+  custom_notes?: string;
+}
+
+export interface DoodleItem {
+  id: string;
+  name: string;
+  category: string;
+  svg_content: string;
+}
+

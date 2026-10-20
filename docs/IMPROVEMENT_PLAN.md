@@ -1,432 +1,426 @@
-# 🎬 KẾ HOẠCH NÂNG CẤP - AI WHITEBOARD VIDEO STUDIO 2.0
+# 🎬 KẾ HOẠCH NÂNG CẤP & MỞ RỘNG TOÀN DIỆN - AI WHITEBOARD VIDEO STUDIO 3.0+
 
 > **Ngày khởi tạo:** 2026-10-20
-> **Trạng thái:** Đã hoàn thành 5/5 Phase (100% Production Ready)
+> **Trạng thái:** 
+> - ✅ Đã hoàn thành 5/5 Phase nền tảng (Phase 1 -> Phase 5: 100% Passed)
+> - ✅ Đã xử lý triệt để lỗi mất trạng thái Loading khi tương tác nút / chuyển bước
+> - 🚀 Bước vào giai đoạn mở rộng tính năng thương mại hóa đỉnh cao (Phase 6 -> Phase 10)
 > **Repository:** https://github.com/NHH-031/tool_AI
-> **Phiên bản hiện tại:** 2.0 (Toàn diện, đa tính năng)
+> **Phiên bản hiện tại:** 2.5 (Production Ready + Hotfixed)
 
 ---
 
-## 📊 TỔNG QUAN HIỆN TRẠNG
+## 📊 TỔNG QUAN HIỆN TRẠNG & THÀNH TỰU ĐÃ ĐẠT ĐƯỢC
 
-### ✅ Những gì đã hoàn thành tốt
-- Quy trình 4 bước chuẩn mực: Kịch bản → Storyboard → Giọng đọc → Kết xuất video MP4
-- Phong cách mỹ thuật 2D Comic / Graphic Novel trên nền giấy kem ấm `#F5EBD7` (tuân thủ SKILL.md)
-- Bộ render stream whiteboard: Bàn tay cầm bút vẽ liên tục theo nét thực tế
-- SQLite Job Store + SSE theo dõi tiến độ thời gian thực
-- Hệ thống TTS EdgeTTS miễn phí chất lượng cao (có trích xuất WordBoundary)
-- Sinh ảnh qua Pollinations.ai (miễn phí, không cần API key)
-- Đạo diễn kịch bản AI qua Gemini (GeminiScriptDirector)
-
-### ❌ Các lỗ hổng cần xử lý
-
-| # | Vấn đề | Mức độ | File liên quan |
-|---|--------|--------|----------------|
-| 1 | Nhạc nền BGM chỉ là metadata giả, chưa có file âm thanh thật | 🔴 Nghiêm trọng | `apps/api/routers/music.py`, `export.py` |
-| 2 | Pipeline export bỏ qua hoàn toàn `music_id` và `music_volume` | 🔴 Nghiêm trọng | `apps/api/routers/export.py:260-270` |
-| 3 | WordBoundary timing từ EdgeTTS bị bỏ rơi, không sinh phụ đề | 🟡 Quan trọng | `core/tts/edge.py:99-127` |
-| 4 | Mỗi cảnh chỉ có 1 vùng vẽ toàn màn hình (single-region) | 🟡 Quan trọng | `apps/api/routers/export.py:145-173` |
-| 5 | Cố định 16:9, chưa hỗ trợ video dọc 9:16 cho TikTok/Shorts | 🟡 Quan trọng | `core/artwork/pollinations.py`, `export.py` |
-| 6 | Chỉ có 1 bàn tay duy nhất, không có tùy chọn bút/tay khác | 🟢 Cải thiện | `assets/drawing-hand.png` |
-| 7 | Render tuần tự từng cảnh, chậm 3-5 phút cho 5-6 cảnh | 🟢 Cải thiện | `apps/api/routers/export.py:198-269` |
-| 8 | Không có xem trước hoạt họa từng cảnh (quick preview) | 🟢 Cải thiện | `apps/web/app/components/steps/` |
-| 9 | Dịch kịch bản phụ thuộc GEMINI_API_KEY hoặc từ điển thủ công | 🟢 Cải thiện | `core/artwork/translations/vi_to_en.json` |
-| 10 | Không có Auto-save dự án trên trình duyệt | 🟢 Cải thiện | `apps/web/app/page.tsx` |
-
----
-
-## 🗺️ LỘ TRÌNH THEO PHASE
+### ✅ Những gì hệ thống đã vận hành hoàn hảo (Phase 1 – Phase 5)
+1. **Quy trình 4 bước chuẩn mực:** Kịch bản (Script) → Phân cảnh (Storyboard) → Giọng đọc (Voice) → Kết xuất video MP4 (Export).
+2. **Tuân thủ chặt chẽ SKILL.md:** Phong cách mỹ thuật 2D Comic/Graphic Novel trên nền giấy kem ấm `#F5EBD7`, không chữ rác, viền vẽ tinh gọn.
+3. **Âm thanh chuyên nghiệp (Phase 1):** 
+   - 5 bản nhạc nền BGM bản quyền miễn phí tích hợp sẵn.
+   - Kỹ thuật **Auto-Ducking** tự động hạ nhạc nền khi có giọng đọc và nâng âm lượng ở khoảng lặng.
+   - Tiếng cọ bút vẽ sột soạt (Drawing Scratch SFX) đồng bộ chính xác với nhịp di chuyển của bàn tay.
+4. **Phụ đề tự động (Phase 2):**
+   - Sinh file `.srt` và `.vtt` chuẩn xác từ mốc thời gian `WordBoundary` của TTS.
+   - Hỗ trợ Burn-in phụ đề trực tiếp lên video với 2 phong cách: **Cổ điển (Classic)** và **TikTok Karaoke Highlight**.
+5. **Đa dạng tỷ lệ khung hình (Phase 3):**
+   - Hỗ trợ video ngang **16:9** (YouTube/Facebook) và video dọc **9:16** (TikTok/Shorts/Reels).
+   - Tự động điều chỉnh kích thước ảnh sinh ra (720x1280 vs 1280x720) và bảo vệ vùng an toàn phụ đề (Safe Zone) không bị che bởi giao diện mobile.
+6. **Hoạt họa ngữ nghĩa & Bút vẽ tùy chọn (Phase 4):**
+   - Tự động phân tách 2-3 phân vùng vẽ ngữ nghĩa (bối cảnh → nhân vật → chi tiết) bằng OpenCV.
+   - Bộ sưu tập 4 công cụ vẽ: Bút dạ hiện đại, Bút máy cổ điển, Bút thư pháp, Bút viết bảng và Chế độ ẩn bàn tay (`no_hand`).
+7. **Tối ưu hóa Studio (Phase 5):**
+   - Render song song đa phân cảnh (Parallel Multi-Scene Rendering) tăng tốc độ xuất video gấp 2.5 lần.
+   - Nút xem trước hoạt họa 3 giây (Single-Scene Quick Preview) tức thì trên từng phân cảnh.
+   - Auto-save dự án tự động vào `localStorage` có thông báo khôi phục mượt mà khi reload trang.
+   - Dịch kịch bản tự động 4 tầng dự phòng (MyMemory + Google + Gemini + Offline Dict) hoàn toàn không phụ thuộc API key.
+   - Modal Cài đặt Studio trực quan lưu cấu hình yêu thích.
+8. **Hotfix Trải nghiệm người dùng:**
+   - Khắc phục hoàn toàn sự cố: Bấm chuyển bước hoặc chuyển nút làm biến mất hiệu ứng Loading.
+   - Khóa điều hướng (`isLocked`) và hiển thị banner trạng thái toàn cục (`Global Loading Indicator`) kèm thanh tiến độ liên tục cho đến khi tác vụ kết thúc 100%.
 
 ---
 
-## PHASE 1: HỆ THỐNG ÂM THANH CHUYÊN NGHIỆP
-> **Mục tiêu:** Video xuất ra có nhạc nền, âm thanh bút vẽ sống động, không còn im lặng đơn điệu
-> **Thời gian ước tính:** 2-3 ngày
-> **Mức ưu tiên:** 🔴 CAO NHẤT
+## 🛠️ CHI TIẾT HOTFIX VỪA THỰC HIỆN
 
-### Task 1.1: Tích hợp kho nhạc nền BGM thật
-- **Mô tả:** Bổ sung các file nhạc nền bản quyền miễn phí vào thư mục `assets/audio/music/`
-- **Chi tiết thực hiện:**
-  - [x] Tạo thư mục `assets/audio/music/`
-  - [x] Thu thập/sinh 5 bản nhạc nền miễn phí (lofi, acoustic, cinematic, playful, ambient)
-  - [x] Cập nhật `MUSIC_CATALOG` trong `apps/api/routers/music.py`: thêm `preview_url` trỏ đến file thật
-  - [x] Thêm API endpoint `GET /music/{music_id}/preview` để phát nhạc thử trên web
-  - [x] Cập nhật `apps/web/app/components/MusicView.tsx`: nút Play/Pause nghe thử từng bản nhạc với HTML5 Audio
-  - [x] Cập nhật `VoiceStep.tsx`: Thêm nút nghe thử BGM tức thì ngay cạnh thanh chọn nhạc
-- **Files đã chỉnh sửa / tạo mới:**
-  - `apps/api/routers/music.py`
-  - `apps/web/app/components/MusicView.tsx`
-  - `apps/web/app/components/steps/VoiceStep.tsx`
-  - `apps/web/app/api-client.ts`
-  - `scripts/generate_audio_assets.py`
-
-### Task 1.2: Trộn nhạc BGM vào pipeline kết xuất video
-- **Mô tả:** Sửa pipeline export để trộn nhạc nền BGM cùng giọng đọc vào video thành phẩm
-- **Chi tiết thực hiện:**
-  - [x] Tạo module `core/audio/mixer.py`: hàm `mix_audio_with_bgm()` và `AudioMixer.mix_multi_track()`
-  - [x] Áp dụng kỹ thuật **Auto-Ducking**: nhạc nền tự hạ ~35% khi có giọng đọc, tự nâng về 100% khi ngắt câu / khoảng lặng
-  - [x] Cập nhật `_run_export_pipeline()` trong `apps/api/routers/export.py`:
-    - Sau bước render video các cảnh, tiến hành hòa âm đa luồng
-    - Đọc `req.music_id` để nạp bản nhạc BGM tương ứng
-    - Đọc `req.music_volume` để điều chỉnh âm lượng
-  - [x] BGM tự động loop nếu video dài hơn bản nhạc, tự fade-out 2s cuối video
-- **Files đã tạo mới:**
-  - `core/audio/__init__.py`
-  - `core/audio/mixer.py`
-- **Files đã chỉnh sửa:**
-  - `apps/api/routers/export.py`
-
-### Task 1.3: Hiệu ứng âm thanh cọ bút vẽ (Drawing Scratch SFX)
-- **Mô tả:** Lồng âm thanh bút chì/bút lông cọ lên giấy, đồng bộ với thời gian bàn tay vẽ
-- **Chi tiết thực hiện:**
-  - [x] Tạo 3 mẫu âm thanh SFX bút vẽ (marker draw, pencil sketch, chalk board) lưu tại `assets/audio/sfx/`
-  - [x] Tạo module `core/audio/sfx_sync.py`: chồng âm SFX vào khoảng thời gian bàn tay đang vẽ (85% thời lượng thoại)
-  - [x] SFX tự tắt khi bàn tay rời đi (15% cuối mỗi cảnh giữ tranh tĩnh cho khán giả quan sát)
-  - [x] Tích hợp vào pipeline export cùng BGM và giọng đọc với Limiter chống rè
-- **Files đã tạo mới:**
-  - `core/audio/sfx_sync.py`
-- **Files đã chỉnh sửa:**
-  - `apps/api/routers/export.py`
-  - `apps/web/app/components/steps/ExportStep.tsx`
-  - `apps/web/app/types.ts`
-  - `tests/test_audio_engine.py`
-
-### 📋 Checklist hoàn thành Phase 1:
-- [x] Video xuất ra có nhạc nền BGM thật, âm lượng tự động hạ khi giọng đọc cất tiếng
-- [x] Video có tiếng bút vẽ sột soạt đồng bộ với bàn tay
-- [x] Người dùng nghe thử được nhạc nền trên giao diện web
-- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_audio_engine.py` (4/4 tests passed)
-- [x] Commit & push lên GitHub (Commit `159ff0f`)
+| Vấn đề trước sửa | Nguyên nhân gốc rễ | Giải pháp đã triển khai | Trạng thái |
+|-------------------|-------------------|------------------------|------------|
+| Khi hệ thống đang xử lý tác vụ (phân tích kịch bản, sinh ảnh, thu âm, render video), người dùng bấm nút chuyển bước hoặc nút khác thì biểu tượng Loading biến mất | Do component bước cũ bị `unmount` bởi conditional rendering `{workflow.currentStep === N && (...)}`, khiến UI cục bộ của bước đó bị hủy dù background task vẫn chạy | 1. Thêm `isAnyLoading` tổng hợp toàn bộ cờ loading.<br>2. Chặn chuyển bước (`handleStepClick`), chuyển dự án (`handleSelectProject`, `handleNewProject`), và các nút Tiếp tục khi đang tải.<br>3. Thêm prop `isLocked` vào `StepProgressBar` & `StudioHeader`.<br>4. Hiển thị Banner Loading toàn cục cố định trên đầu trang kèm nút quay lại bước đang chạy.<br>5. Disable trực quan các nút Back / Next trên cả 4 bước. | ✅ ĐÃ KHẮC PHỤC TRIỆT ĐỂ |
 
 ---
 
-## PHASE 2: PHỤ ĐỀ TỰ ĐỘNG & XUẤT FILE SRT
-> **Mục tiêu:** Video có phụ đề chạy chữ chuyên nghiệp, xuất kèm file .srt để tải lên YouTube/TikTok
-> **Thời gian ước tính:** 2 ngày
-> **Mức ưu tiên:** 🟡 CAO
+## 🗺️ BẢN ĐỒ KẾ HOẠCH NÂNG CẤP MỚI (PHASE 6 - PHASE 10)
 
-### Task 2.1: Sinh file phụ đề .srt từ WordBoundary timing
-- **Mô tả:** Tận dụng mốc thời gian `WordBoundary` từ EdgeTTS để sinh file `.srt` chuẩn
-- **Chi tiết thực hiện:**
-  - [x] Tạo module `core/subtitles/__init__.py`
-  - [x] Tạo module `core/subtitles/srt_generator.py`:
-    - Hàm `generate_project_subtitles()`, `create_segments_from_scene()`
-    - Phân tách và nhóm từ đồng bộ theo WordBoundary từ TTS hoặc phân bổ đều
-    - Xuất chuẩn SRT format: `index`, `timestamp --> timestamp`, `text`
-  - [x] Xuất định dạng WebVTT qua `to_vtt()` (cho YouTube / Web player)
-  - [x] Cập nhật pipeline export: sau khi render xong, tạo file `.srt` và `.vtt` tổng
-  - [x] Thêm API endpoint `GET /export/{job_id}/subtitle` để tải file `.srt` hoặc `.vtt`
-- **Files đã tạo mới:**
-  - `core/subtitles/__init__.py`
-  - `core/subtitles/models.py`
-  - `core/subtitles/srt_generator.py`
-- **Files đã chỉnh sửa:**
-  - `apps/api/routers/export.py`
-  - `apps/api/routers/voices.py` (lưu timing vào metadata)
-
-### Task 2.2: Burn-in phụ đề trực tiếp lên video
-- **Mô tả:** Vẽ phụ đề đè lên video trong quá trình render (tùy chọn bật/tắt)
-- **Chi tiết thực hiện:**
-  - [x] Tạo module `core/subtitles/burner.py`:
-    - Lớp `SubtitleBurner` dùng Pillow (hỗ trợ font Segoe UI / Arial tiếng Việt có dấu)
-    - Giải mã và tái nén video chất lượng cao qua PyAV
-  - [x] Hỗ trợ 2 kiểu phụ đề:
-    - **Classic**: Chữ trắng viền đen nét đậm, nền kính bo góc mờ tối chống chói
-    - **Karaoke**: Highlight từ đang đọc màu vàng kim `#FACC15` phong cách TikTok
-  - [x] Thêm tùy chọn `subtitle_style` vào `RenderExportRequest` (none / classic / karaoke)
-  - [x] Cập nhật frontend `ExportStep.tsx`: bộ chọn 3 kiểu phụ đề trực quan
-  - [x] Nút tải file phụ đề `.SRT` và `.VTT` bên cạnh nút tải MP4
-- **Files đã tạo mới:**
-  - `core/subtitles/burner.py`
-- **Files đã chỉnh sửa:**
-  - `apps/api/routers/export.py`
-  - `apps/web/app/components/steps/ExportStep.tsx`
-  - `apps/web/app/api-client.ts`
-  - `apps/web/app/types.ts`
-  - `apps/web/app/page.tsx`
-  - `tests/test_subtitles.py`
-
-### 📋 Checklist hoàn thành Phase 2:
-- [x] Video kết xuất ra có phụ đề chữ chạy theo nhịp giọng đọc (Classic hoặc TikTok Karaoke)
-- [x] Người dùng chọn được kiểu phụ đề (Không phụ đề / Classic / Karaoke)
-- [x] Nút "Tải file phụ đề (.SRT)" xuất hiện bên cạnh nút "Tải xuống MP4"
-- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_subtitles.py` (4/4 tests passed)
-- [x] Commit & push lên GitHub (Phase 2)
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                      LỘ TRÌNH PHÁT TRIỂN TIẾP THEO (PHASE 6 - 10)                     │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                        │
+│  [PHASE 6] ────► [PHASE 7] ────► [PHASE 8] ────► [PHASE 9] ────► [PHASE 10]           │
+│  Vector Stroke   Canvas Studio   Multi-Speaker   Interactive     GPU Acceleration      │
+│  Path Tracing    Character Lock  Custom Voice    Subtitles       Redis Task Queue      │
+│  Eraser Transit  Asset Upload    ElevenLabs      Handwritten     Docker Compose        │
+│                                                                                        │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## PHASE 3: HỖ TRỢ VIDEO DỌC 9:16 (TIKTOK / SHORTS / REELS)
-> **Mục tiêu:** Nhà sáng tạo có thể chọn xuất video dọc 9:16 cho nền tảng video ngắn
-> **Thời gian ước tính:** 2 ngày
-> **Mức ưu tiên:** 🟡 CAO
+## 🎨 PHASE 6: VECTOR STROKE ENGINE & HOẠT HỌA BÀN TAY ĐẲNG CẤP [HOÀN THÀNH ✅]
+> **Mục tiêu:** Chuyển đổi phương pháp vẽ từ quét mảng khối (raster scan/grid) sang vẽ theo từng nét cọ Vector thực tế (Bezier curves path tracing). Thêm hiệu ứng lau bảng chuyển cảnh.
+> **Thời gian hoàn thành:** 2026-10-20
+> **Trạng thái:** ✅ ĐÃ TRIỂN KHAI & PASS 100% KIỂM THỬ (11/11 tests trong `tests/test_vector_drawing.py`)
+> **Kết quả bàn giao:**
+> - `core/drawing/vectorizer.py`: Ramer-Douglas-Peucker & Chaikin curve smoothing, Zhang-Suen morphological thinning, phân loại nét vẽ (`outline`, `structure`, `detail`, `shading`).
+> - `core/drawing/stroke_order.py`: `NaturalStrokeSorter` sắp xếp thứ tự vẽ tự nhiên theo phân cấp người thật + TSP nearest-neighbor tối ưu đường đi đầu bút, tự đảo ngược hướng nét vẽ.
+> - `core/transitions/eraser.py`: `WhiteboardEraserTransition` sinh hiệu ứng bàn tay cầm giẻ lau xóa bảng quét dọn sạch nét vẽ để lại nền giấy kem ấm `#F5EBD7` kèm audio SFX tiếng cọ xát sột soạt.
+> - Bộ tài nguyên mới: `assets/drawing-tools/hand-highlighter.png`, `assets/drawing-tools/hand-eraser.png`, `assets/audio/sfx/eraser_wipe.mp3`.
+> - Tích hợp Engine & API: Điểm neo ngòi bút chuẩn xác từng pixel (`TOOL_TIP_CALIBRATION`), góc xoay cổ tay động theo hướng vẽ, chế độ vẽ 2 bút (`multi_pen`), chuyển cảnh (`cut`, `eraser`, `crossfade`) trên cả Backend và UI ExportStep.
 
-### Task 3.1: Bộ chọn tỷ lệ khung hình trên giao diện web
-- **Mô tả:** Thêm bộ chọn aspect ratio (16:9 hoặc 9:16) tại bước đầu tiên
-- **Chi tiết thực hiện:**
-  - [x] Cập nhật `CreateVideoView.tsx`: thêm bộ chọn tỉ lệ khung hình (16:9, 9:16, 1:1) trực quan
-  - [x] Cập nhật `ScriptStep.tsx`: thêm card chọn tỷ lệ khung hình Video (16:9 Ngang vs 9:16 Dọc)
-  - [x] Truyền `aspect_ratio` qua toàn bộ pipeline (từ ScriptStep → StoryboardStep → ExportStep)
-  - [x] Cập nhật `apps/web/app/types.ts`: thêm field `aspectRatio` vào `ProjectWorkflow`
-  - [x] Cập nhật `apps/web/app/api-client.ts`: truyền `aspect_ratio` vào `generateStoryboardImage` và `renderExport`
-  - [x] Cập nhật `ExportStep.tsx`: video preview hiển thị dynamic container (`aspect-[9/16]` khi dọc 9:16)
-- **Files đã chỉnh sửa:**
-  - `apps/web/app/components/CreateVideoView.tsx`
-  - `apps/web/app/components/steps/ScriptStep.tsx`
-  - `apps/web/app/components/steps/ExportStep.tsx`
-  - `apps/web/app/types.ts`
-  - `apps/web/app/api-client.ts`
-  - `apps/web/app/page.tsx`
+### Task 6.1: Vector hóa nét vẽ tranh (SVG / Potrace Path Extraction)
+- **Vấn đề hiện tại:** Tranh vẽ được hiện ra theo dạng quét lưới (grid) hoặc viền contour wipe, nét vẽ xuất hiện theo từng mảng nhỏ thay vì nét bút liền mạch uốn lượn như người thật cầm bút.
+- **Giải pháp:**
+  - Tích hợp bộ vector hóa đường nét hình ảnh bằng thư viện `potrace` / `vtracer` / OpenCV Thinning (Zhang-Suen skeletonization).
+  - Trích xuất toàn bộ nét vẽ thành danh sách các đường cong Bezier liên tục (`Polyline` / `Path`).
+  - Sắp xếp thứ tự nét vẽ tự nhiên: Các nét khung chính vẽ trước, nét chi tiết nhỏ vẽ sau, nét tô bóng/chấm phá vẽ cuối cùng.
+- **Files cần tác động:**
+  - `core/drawing/vectorizer.py` (Mới)
+  - `core/drawing/stroke_order.py` (Mới)
+  - `engines/whiteboard/stream_renderer.py`
+  - `tests/test_vector_drawing.py` (Mới)
 
-### Task 3.2: Điều chỉnh sinh ảnh và render theo tỷ lệ mới
-- **Mô tả:** Khi chọn 9:16, toàn bộ pipeline từ sinh ảnh đến render video phải dùng kích thước dọc
-- **Chi tiết thực hiện:**
-  - [x] Cập nhật `core/artwork/prompt_builder.py`: thêm `aspect_ratio` vào `StructuredIllustrationPrompt`
-  - [x] Cập nhật `core/artwork/pollinations.py`: nếu `aspect_ratio == "9:16"` → dùng kích thước `720x1280` và bổ sung từ khóa định hướng dọc mobile
-  - [x] Cập nhật `apps/api/routers/storyboard.py`: nhận `aspect_ratio` từ request và cấu hình prompt chuẩn định dạng dọc
-  - [x] Cập nhật `apps/api/routers/export.py`:
-    - Annotation canvas sử dụng tỷ lệ dọc `1080x1920` (hoặc `720x1280`)
-    - Vị trí đường đi bàn tay vẽ (handPath) điều chỉnh cho khung hình dọc (tránh lệch ngoài rìa)
-    - Truyền `aspect_ratio` cho toàn bộ quá trình render phân cảnh
-  - [x] Cập nhật `core/subtitles/burner.py`:
-    - Safe-zone cho video dọc 9:16: nâng lề đáy lên `margin_ratio = 0.16` (thay vì 0.08) để tránh bị che bởi thanh điều hướng và caption TikTok / Reels / Shorts
-    - Nhóm từ ngắn hơn (`max_words_per_segment = 4`) để phụ đề dọc không bị tràn dòng
-  - [x] Cập nhật `engines/whiteboard/adapter.py`: `WhiteboardRenderConfig` hỗ trợ tham số `aspect_ratio`
-  - [x] Cập nhật `scripts/render_stream_whiteboard.py`: output video co giãn tỷ lệ chuẩn theo `cap_long_edge` cho video dọc
-- **Files đã tạo mới:**
-  - `tests/test_aspect_ratio.py`
-- **Files đã chỉnh sửa:**
-  - `core/artwork/prompt_builder.py`
-  - `core/artwork/pollinations.py`
-  - `apps/api/routers/storyboard.py`
-  - `apps/api/routers/export.py`
-  - `core/subtitles/burner.py`
+### Task 6.2: Căn chỉnh ngòi bút theo thời gian thực (Sub-pixel Pen-Tip Alignment)
+- **Vấn đề hiện tại:** Bàn tay di chuyển theo hướng chung của vùng hình chữ nhật, đầu ngòi bút chưa bám khít từng milimet theo nét mực đang tuôn ra.
+- **Giải pháp:**
+  - Căn chỉnh điểm neo ngòi bút (Pen Tip Anchor Point) chính xác cho từng loại công cụ trong `assets/drawing-tools/` (ví dụ: bút dạ ngòi ở tọa độ `(45, 12)`, bút lông ngòi ở `(30, 8)`).
+  - Bổ sung hiệu ứng rung tự nhiên tay người (micro-jitter) để đường nét không bị cứng đơ như robot.
+  - Tự động xoay nhẹ góc nghiêng bàn tay theo hướng di chuyển của nét cọ (tangential angle rotation).
+- **Files cần tác động:**
   - `engines/whiteboard/adapter.py`
+  - `scripts/render_stream_whiteboard.py`
 
-### 📋 Checklist hoàn thành Phase 3:
-- [x] Người dùng chọn được 16:9 (YouTube) hoặc 9:16 (TikTok/Shorts/Reels) từ giao diện
-- [x] Ảnh sinh ra đúng tỷ lệ dọc/ngang tương ứng
-- [x] Video kết xuất ra đúng kích thước dọc 720x1280 / 1080x1920 khi chọn 9:16
-- [x] Lề an toàn phụ đề (Safe Zone) được bảo vệ, tránh bị che khuất bởi UI TikTok/Shorts
-- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_aspect_ratio.py` (7/7 tests passed)
-- [x] Commit & push lên GitHub (Phase 3)
+### Task 6.3: Đổi màu bút vẽ & Tô màu phân lớp (Multi-Pen Color Reveal)
+- **Vấn đề hiện tại:** Chỉ có 1 bàn tay cầm bút dạ đen duy nhất, phần tô màu chỉ xuất hiện sau cùng mà không có thao tác đổi bút.
+- **Giải pháp:**
+  - Hỗ trợ đổi bút theo lớp vẽ:
+    - Bước 1: Bàn tay cầm bút đen phác thảo nét vẽ chính (`ink`).
+    - Bước 2: Bàn tay đổi sang bút lông màu hoặc bút dạ quang vàng/cam/xanh tô điểm các chi tiết nổi bật (`color highlight`).
+  - Cho phép người dùng tùy chọn bật/tắt tính năng đổi bút trong phần Cài đặt.
+- **Files cần tác động:**
+  - `assets/drawing-tools/hand-highlighter.png` (Mới)
+  - `core/annotation/auto_segment.py`
+  - `apps/web/app/components/steps/ExportStep.tsx`
+
+### Task 6.4: Hiệu ứng giẻ lau xóa bảng chuyển cảnh (Whiteboard Eraser Transition)
+- **Vấn đề hiện tại:** Giữa 2 phân cảnh kịch bản, video chỉ cắt cảnh trực tiếp (hard cut) làm đứt gãy mạch cảm xúc video vẽ tay.
+- **Giải pháp:**
+  - Thêm tài nguyên hình ảnh: Bàn tay cầm miếng xóa bảng / khăn lau bảng (`assets/drawing-tools/hand-eraser.png`).
+  - Ở 1 giây cuối của phân cảnh cũ, bàn tay cầm miếng xóa bảng lướt qua màn hình lau sạch các nét vẽ từ trái qua phải kèm âm thanh tiếng lau bảng sột soạt (Eraser SFX), để lại mặt bảng giấy kem tinh khôi trước khi phân cảnh mới bắt đầu vẽ.
+  - Tùy chọn 3 kiểu chuyển cảnh: Cắt trực tiếp (Cut), Lau bảng (Whiteboard Eraser Wipe), Mờ dần (Crossfade).
+- **Files cần tác động:**
+  - `assets/drawing-tools/hand-eraser.png` (Mới)
+  - `assets/audio/sfx/eraser_wipe.mp3` (Mới)
+  - `core/transitions/eraser.py` (Mới)
+  - `apps/api/routers/export.py`
 
 ---
 
-## PHASE 4: HOẠT HỌA PHÂN VÙNG NGỮ NGHĨA & ĐA DẠNG BÚT VẼ
-> **Mục tiêu:** Nâng tầm chất lượng hoạt họa: vẽ theo thứ tự kể chuyện, đa dạng công cụ vẽ
-> **Thời gian ước tính:** 3-4 ngày
+## 🖼️ PHASE 7: TỰ DO BIÊN TẬP PHÂN CẢNH & KHÓA NHẤT QUÁN NHÂN VẬT [HOÀN THÀNH ✅]
+> **Mục tiêu:** Cung cấp công cụ chỉnh sửa hình ảnh trực tiếp trên Canvas, giữ đồng nhất ngoại hình nhân vật qua các cảnh và cho phép người dùng chèn logo/ảnh cá nhân.
+> **Thời gian hoàn thành:** 2026-10-20
+> **Trạng thái:** ✅ ĐÃ TRIỂN KHAI & PASS 100% KIỂM THỬ (12/12 tests trong `tests/test_phase7_storyboard_studio.py`)
+> **Kết quả bàn giao:**
+> - `apps/web/app/components/canvas/SceneCanvasEditor.tsx`: Studio biên tập Canvas trực tiếp (Bút vẽ mực, bút dạ quang highlight, giẻ lau tẩy nền `#F5EBD7`, mũi tên chỉ dẫn, khoanh vùng tròn/khung, nhập chữ, đóng dấu doodle, hoàn tác Undo/Redo).
+> - `apps/web/app/components/canvas/CustomImageUploadModal.tsx`: Tải ảnh chụp/logo doanh nghiệp từ máy và xem trước kết quả sau khi qua bộ lọc phác thảo.
+> - `core/artwork/filter_sketch.py`: Bộ lọc `SketchFilter` chuyển đổi ảnh thực tế/logo thành tranh vẽ 2D nét mực contour `#1A1A1A` kết hợp màu nước comic trên nền giấy kem ấm cổ `#F5EBD7`.
+> - `core/artwork/character_anchor.py`: Hệ thống neo giữ nhân vật chính (`CharacterAnchor`), trích xuất tự động từ kịch bản và gắn điều kiện nhất quán khuôn mặt, trang phục, kiểu tóc xuyên suốt toàn bộ các cảnh.
+> - `assets/doodles/*.svg`: Kho 16 biểu tượng Doodle vector vẽ tay chuẩn Comic Whiteboard (Mũi tên cong/thẳng/zic-zac, khung highlight, bóng đèn, cúp, ngôi sao, bong bóng thoại, dấu kiểm).
+> - Backend APIs: `POST /storyboard/save-canvas-edit`, `POST /storyboard/upload-custom-image`, `POST /storyboard/character-anchor/extract`, `GET /storyboard/doodles/list`.
+
+### Task 7.1: Bộ công cụ Canvas biên tập trực tiếp (In-Place Storyboard Editor)
+- **Mô tả:** Cho phép người dùng chỉnh sửa hoặc vẽ thêm trực tiếp lên ảnh phân cảnh tại Bước 2 (Storyboard).
+- **Chi tiết thực hiện:**
+  - Tích hợp Fabric.js hoặc HTML5 Canvas editor nhẹ:
+    - Thêm mũi tên chỉ dẫn vẽ tay (Doodle Arrows: cong, thẳng, đứt đoạn).
+    - Thêm vòng tròn / khung vuông đánh dấu điểm nhấn (Highlight Circle / Box).
+    - Thêm hộp thoại lời thoại bong bóng (Speech Bubble) hoặc ghi chú chữ viết tay.
+    - Công cụ xóa chi tiết thừa (Eraser / Brush trắng nền `#F5EBD7`).
+  - Lưu ảnh đã chỉnh sửa và tự động cập nhật phân vùng vẽ tương ứng.
+- **Files cần tác động:**
+  - `apps/web/app/components/canvas/SceneCanvasEditor.tsx` (Mới)
+  - `apps/web/app/components/steps/StoryboardStep.tsx`
+  - `apps/api/routers/storyboard.py`
+
+### Task 7.2: Khóa đặc điểm nhân vật AI (Character Consistency Engine)
+- **Vấn đề hiện tại:** Mỗi phân cảnh sinh ảnh độc lập, cùng một nhân vật (ví dụ: "anh Nam kỹ sư") cảnh 1 mặc áo xanh đeo kính, cảnh 2 lại thành người khác mặc áo đỏ.
+- **Giải pháp:**
+  - Trích xuất nhân vật trung tâm trong kịch bản: `character_name`, `gender`, `features` (tóc, kính, trang phục đặc trưng).
+  - Gán hạt giống cố định (`seed`) và neo chuỗi mô tả nhân vật (`character anchor prompt`) xuyên suốt toàn bộ các prompt phân cảnh.
+  - Thêm thẻ "Nhân vật chính" trong Bước 1 để người dùng tùy chỉnh tạo hình nhân vật mẫu trước khi sinh phân cảnh.
+- **Files cần tác động:**
+  - `core/artwork/character_anchor.py` (Mới)
+  - `core/artwork/prompt_builder.py`
+  - `apps/web/app/components/steps/ScriptStep.tsx`
+
+### Task 7.3: Tải ảnh riêng & Logo doanh nghiệp để vẽ tay (Custom Asset Upload)
+- **Mô tả:** Cho phép người dùng tải lên hình ảnh logo, ảnh chụp sản phẩm, sơ đồ biểu đồ của riêng họ để bàn tay vẽ lại trên video.
+- **Chi tiết thực hiện:**
+  - Thêm nút "Tải ảnh từ máy tính" trong từng thẻ cảnh của StoryboardStep.
+  - Bộ lọc tự động chuyển đổi ảnh tải lên thành tranh vẽ nét mực 2D trên nền giấy kem `#F5EBD7` (Edge-detection line art filter) để hòa hợp 100% với phong cách toàn bộ video.
+  - API endpoint: `POST /storyboard/upload-custom-image`.
+- **Files cần tác động:**
+  - `core/artwork/filter_sketch.py` (Mới)
+  - `apps/api/routers/storyboard.py`
+  - `apps/web/app/components/steps/StoryboardStep.tsx`
+
+### Task 7.4: Thư viện 1000+ hình vẽ biểu tượng có sẵn (Doodle Icon Vault)
+- **Mô tả:** Kho thư viện vector doodle được phân loại theo chủ đề: Doanh nghiệp, Giáo dục, Y tế, Tài chính, Công nghệ, Mạng xã hội, Icon cảm xúc.
+- **Chi tiết thực hiện:**
+  - Tích hợp kho icon doodle chuẩn nét vẽ tay nền kem `#F5EBD7`.
+  - Hộp thoại tìm kiếm icon nhanh, kéo thả trực tiếp vào cảnh đang dựng.
+- **Files cần tác động:**
+  - `assets/doodles/` (Thư mục vector doodle)
+  - `apps/web/app/components/DoodlePickerModal.tsx` (Mới)
+
+---
+
+## 🎙️ PHASE 8: HỆ THỐNG GIỌNG ĐỌC ĐA NHÂN VẬT & TẢI ÂM THANH RIÊNG
+> **Mục tiêu:** Biến video thành câu chuyện sống động với đối thoại nhiều nhân vật, hỗ trợ giọng đọc biểu cảm cao cấp và tải file âm thanh cá nhân.
+> **Thời gian ước tính:** 2 - 3 ngày
+> **Mức ưu tiên:** 🟡 CAO
+
+### Task 8.1: Hội thoại đa nhân vật (Multi-Speaker Dialogue)
+- **Mô tả:** Cho phép kịch bản có nhiều người nói cùng lúc (ví dụ: Người kể chuyện, Khách hàng, Chuyên gia).
+- **Chi tiết thực hiện:**
+  - Trong Bước 3 (Giọng đọc): Thay vì áp dụng 1 giọng đọc cho toàn bộ video, người dùng có thể chỉ định giọng đọc riêng cho từng phân cảnh (Scene 1: NamMinh, Scene 2: HoaiMy, Scene 3: NamMinh).
+  - Tự động nhận diện nhãn nhân vật từ kịch bản (ví dụ: `[Nam]: ...`, `[Nữ]: ...`).
+  - Giao diện gán nhanh giọng đọc theo nhân vật hoặc đổi toàn bộ chỉ bằng 1 cú click.
+- **Files cần tác động:**
+  - `apps/web/app/components/steps/VoiceStep.tsx`
+  - `apps/api/routers/export.py`
+  - `apps/web/app/types.ts`
+
+### Task 8.2: Tải lên file ghi âm thuyết minh thật (Custom Voiceover Upload)
+- **Mô tả:** Người dùng muốn tự đọc kịch bản bằng chính giọng của họ thay vì dùng giọng máy AI.
+- **Chi tiết thực hiện:**
+  - Thêm nút "Tải file thu âm (MP3/WAV)" hoặc "Ghi âm trực tiếp từ trình duyệt bằng Micro" trên từng cảnh.
+  - Sử dụng Web Audio API để thu âm trực tiếp và nén thành blob MP3 gửi lên backend.
+  - Tự động chạy Whisper cục bộ hoặc phân tách âm lượng để trích xuất Word Timing phục vụ phụ đề chạy chữ.
+- **Files cần tác động:**
+  - `apps/web/app/components/VoiceRecorder.tsx` (Mới)
+  - `apps/web/app/components/steps/VoiceStep.tsx`
+  - `apps/api/routers/voices.py`
+
+### Task 8.3: Tải nhạc nền cá nhân & Cắt gọt nhạc (Custom BGM & Audio Trimmer)
+- **Mô tả:** Cho phép người dùng tải lên bài nhạc nền yêu thích của riêng họ.
+- **Chi tiết thực hiện:**
+  - Nút upload file MP3 nhạc nền riêng tại Bước 3.
+  - Thanh trượt waveform cắt chọn đoạn nhạc bắt đầu (Start offset), điều chỉnh độ mờ dần (Fade-in / Fade-out duration).
+  - Lưu vào danh mục nhạc cá nhân của dự án.
+- **Files cần tác động:**
+  - `apps/api/routers/music.py`
+  - `apps/web/app/components/steps/VoiceStep.tsx`
+
+### Task 8.4: Tích hợp giọng đọc biểu cảm cao cấp (ElevenLabs & FPT.AI)
+- **Mô tả:** Bổ sung các nhà cung cấp TTS cảm xúc cao cấp bên cạnh EdgeTTS miễn phí.
+- **Chi tiết thực hiện:**
+  - Tạo adapter `core/tts/elevenlabs.py` và `core/tts/fpt.py`.
+  - Cấu hình API key tùy chọn trong SettingsModal.
+  - Khả năng kiểm soát cảm xúc: Vui vẻ, hào hứng, trầm ấm, thì thầm, kịch tính.
+- **Files cần tác động:**
+  - `core/tts/elevenlabs.py` (Mới)
+  - `core/tts/factory.py`
+  - `apps/web/app/components/SettingsModal.tsx`
+
+---
+
+## 📝 PHASE 9: TRÌNH BIÊN TẬP PHỤ ĐỀ TRỰC QUAN & CHỮ VIẾT TAY
+> **Mục tiêu:** Tùy biến phụ đề chuyên sâu theo chuẩn thương hiệu, sửa lỗi chính tả trực quan và hỗ trợ bàn tay viết chữ.
+> **Thời gian ước tính:** 2 - 3 ngày
 > **Mức ưu tiên:** 🔵 TRUNG BÌNH
 
-### Task 4.1: Bóc tách phân vùng vẽ tự động (Multi-Region Reveal)
-- **Mô tả:** Thay thế single-region (1 vùng toàn màn hình) bằng 2-3 vùng vẽ theo ngữ nghĩa
+### Task 9.1: Tùy biến toàn diện giao diện phụ đề (Subtitle Typography Customizer)
+- **Mô tả:** Cho phép người dùng tùy biến kiểu chữ, màu sắc, vị trí của phụ đề trên video.
 - **Chi tiết thực hiện:**
-  - [x] Tạo module `core/annotation/auto_segment.py`:
-    - Phân tích ảnh bằng OpenCV (edge detection + contour grouping)
-    - Chia tranh thành 2-3 khối lớn (vùng nền, vùng nhân vật chính, vùng chi tiết phụ)
-    - Tạo annotation JSON với nhiều `elements` thay vì 1 element
-  - [x] Cập nhật `_create_scene_annotation()` trong `apps/api/routers/export.py`:
-    - Gọi `auto_segment` để phân vùng thay vì tạo 1 vùng toàn cảnh
-    - Gán `startMs` tuần tự theo quy tắc: nền → nhân vật → chi tiết
-    - Áp dụng `protectedRegions` cho các vùng chồng lấn
-  - [x] Kết nối với `core/pipeline/semantic_planner.py` để lấy thông tin ngữ nghĩa (nếu có)
-- **Files đã tạo mới:**
-  - `core/annotation/__init__.py`
-  - `core/annotation/auto_segment.py`
-  - `tests/test_multi_region_drawing.py`
-- **Files đã chỉnh sửa:**
-  - `apps/api/routers/export.py`
-
-### Task 4.2: Bộ sưu tập bàn tay & bút vẽ (Custom Drawing Tools)
-- **Mô tả:** Cho người dùng chọn kiểu bàn tay/bút vẽ hoặc ẩn bàn tay
-- **Chi tiết thực hiện:**
-  - [x] Tạo thư mục `assets/drawing-tools/`:
-    - `hand-pen-modern.png` (bút dạ đen - mặc định hiện tại)
-    - `hand-quill-vintage.png` (bút lông ngỗng chấm mực - phong cách cổ điển)
-    - `hand-calligraphy.png` (bút thư pháp - phong cách Á Đông)
-    - `hand-marker.png` (bút viết bảng - phong cách whiteboard hiện đại)
-  - [x] Thêm API catalog bút vẽ: `GET /assets/drawing-tools`
-  - [x] Cập nhật frontend: selector chọn kiểu bút vẽ tại ExportStep
-  - [x] Truyền `hand_tool_id` vào `RenderExportRequest` và pipeline render
-  - [x] Hỗ trợ chế độ `no_hand` (ẩn bàn tay, nét vẽ tự hiện)
-- **Files đã tạo mới:**
-  - `assets/drawing-tools/hand-pen-modern.png`
-  - `assets/drawing-tools/hand-marker.png`
-  - `assets/drawing-tools/hand-quill-vintage.png`
-  - `assets/drawing-tools/hand-calligraphy.png`
-- **Files đã chỉnh sửa:**
-  - `apps/api/routers/assets.py` (bổ sung endpoint drawing-tools)
-  - `apps/api/routers/export.py`
-  - `engines/whiteboard/adapter.py`
+  - Lựa chọn Font chữ:
+    - Font viết tay / bảng đen: *Patrick Hand, Mali, Itim, Caveat, Be Vietnam Pro*.
+    - Font hiện đại: *Inter, Montserrat, Roboto, Outfit*.
+  - Thanh chỉnh kích thước chữ (Font Size: Nhỏ, Vừa, Lớn, Cực đại).
+  - Màu sắc: Màu chữ, Màu viền nét (Text Stroke), Màu nền đệm mờ (Box Background), Màu highlight Karaoke (Vàng neon `#FFE600`, Xanh mint `#00FFCC`, Cam rực `#FF5500`).
+  - Vị trí phụ đề: Đáy màn hình (Bottom), Giữa màn hình (Center), Đỉnh màn hình (Top) kèm điều chỉnh tọa độ Y linh hoạt.
+- **Files cần tác động:**
+  - `core/subtitles/burner.py`
   - `apps/web/app/components/steps/ExportStep.tsx`
-  - `apps/web/app/api-client.ts`
   - `apps/web/app/types.ts`
-  - `apps/web/app/page.tsx`
 
-### 📋 Checklist hoàn thành Phase 4:
-- [x] Video được vẽ theo thứ tự: bối cảnh → nhân vật → chi tiết (không còn quét 1 vùng toàn màn hình)
-- [x] Người dùng chọn được ít nhất 3 kiểu bút vẽ/bàn tay hoặc ẩn bàn tay
-- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_multi_region_drawing.py` (8/8 tests passed)
-- [x] Commit & push lên GitHub (Phase 4)
+### Task 9.2: Trình kéo thả mốc thời gian phụ đề trực quan (Visual Subtitle Timeline Scrubbing)
+- **Mô tả:** Nếu người dùng muốn sửa lỗi phát âm hoặc căn chỉnh chữ chạy sớm/trễ hơn một chút so với giọng đọc mà không muốn render lại từ đầu.
+- **Chi tiết thực hiện:**
+  - Giao diện Timeline trực quan dạng timeline video editor thu nhỏ:
+    - Hiển thị dải sóng âm (audio waveform) và các khối chữ phụ đề bên dưới.
+    - Kéo viền trái/phải của khối chữ để đổi `startTime` và `endTime`.
+    - Click đúp vào khối chữ để sửa lỗi chính tả phụ đề tức thì.
+  - Tải lại file `.srt` và `.vtt` đã chỉnh sửa.
+- **Files cần tác động:**
+  - `apps/web/app/components/subtitles/SubtitleTimelineEditor.tsx` (Mới)
+  - `apps/api/routers/export.py`
+
+### Task 9.3: Hoạt họa bàn tay viết chữ từng ký tự (Handwritten Text Animation)
+- **Mô tả:** Bàn tay cầm bút viết từng con chữ hoặc tiêu đề lên bảng trắng giống như thầy cô giáo đang giảng bài.
+- **Chi tiết thực hiện:**
+  - Chuyển đổi text sang chuỗi vector glyphs bằng FreeType / Fonttools.
+  - Bàn tay di chuyển uốn lượn theo từng nét chữ cái từ trái sang phải, nét mực hiện ra ngay dưới ngòi bút.
+  - Phù hợp cho việc ghi tiêu đề phân cảnh, ghi chú tóm tắt ý chính hoặc công thức toán/lý/hóa.
+- **Files cần tác động:**
+  - `core/drawing/text_handwriter.py` (Mới)
+  - `engines/whiteboard/adapter.py`
 
 ---
 
-## PHASE 5: TỐI ƯU HIỆU NĂNG & TRẢI NGHIỆM STUDIO
-> **Mục tiêu:** Tăng tốc render, thêm tính năng tiện ích, nâng cấp UX
-> **Thời gian ước tính:** 2-3 ngày
-> **Mức ưu tiên:** 🔵 TRUNG BÌNH (Đã hoàn thành 100%)
+## ⚡ PHASE 10: TĂNG TỐC GPU, HÀNG ĐỢI TÁC VỤ & ĐÓNG GÓI CLOUD
+> **Mục tiêu:** Nâng tầm hệ thống thành nền tảng SaaS/Enterprise chịu tải cao, render video siêu tốc qua card màn hình và triển khai 1-click Docker.
+> **Thời gian ước tính:** 3 - 4 ngày
+> **Mức ưu tiên:** 🔵 TRUNG BÌNH
 
-### Task 5.1: Render song song đa tiến trình (Parallel Multi-Scene Rendering)
-- **Mô tả:** Tận dụng nhiều lõi CPU để render đồng thời nhiều cảnh, tăng tốc gấp 2.5-3 lần
+### Task 10.1: Tăng tốc kết xuất video bằng phần cứng GPU (Hardware Acceleration)
+- **Mô tả:** Rút ngắn thời gian render video từ 60 giây xuống còn 10-15 giây nhờ tận dụng chip đồ họa.
 - **Chi tiết thực hiện:**
-  - [x] Đóng gói bước render và muxing mỗi cảnh vào hàm con không nghẽn luồng
-  - [x] Sử dụng `asyncio.Semaphore(max_workers)` kết hợp `asyncio.to_thread` tối ưu trên cả Windows và Linux (tránh vấn đề pickle của ProcessPoolExecutor)
-  - [x] Quản lý tiến trình SSE: báo tiến độ render từng cảnh theo thời gian thực tới web client
-  - [x] Tự động tính toán số worker: `min(4, total_scenes, max(1, os.cpu_count() - 1))`
-- **Files đã chỉnh sửa:**
+  - Tự động phát hiện phần cứng đồ họa:
+    - Card NVIDIA: Sử dụng codec `h264_nvenc` / `hevc_nvenc`.
+    - Chip Intel: Sử dụng codec `h264_qsv`.
+    - Chip Apple Silicon (M1/M2/M3/M4): Sử dụng codec `h264_videotoolbox`.
+    - Fallback: `libx264` tối ưu đa luồng CPU (khi không có GPU).
+  - Tích hợp cờ cấu hình GPU trong file cài đặt `SettingsModal.tsx`.
+- **Files cần tác động:**
+  - `engines/whiteboard/adapter.py`
+  - `scripts/render_stream_whiteboard.py`
   - `apps/api/routers/export.py`
 
-### Task 5.2: Nút xem trước hoạt họa từng cảnh (Single-Scene Quick Preview)
-- **Mô tả:** Thêm nút "🎬 Xem trước (3s)" trên mỗi cảnh để dựng nhanh đoạn hoạt họa 3 giây (15fps/480p)
+### Task 10.2: Hàng đợi tác vụ độc lập (Redis + Celery / RQ Worker Queue)
+- **Vấn đề hiện tại:** Toàn bộ tác vụ render chạy trong process background của FastAPI. Khi có nhiều người dùng đồng thời, server có thể bị nghẽn CPU hoặc đơ giao diện.
+- **Giải pháp:**
+  - Xây dựng mô hình kiến trúc Worker Queue tách rời:
+    - API Server (FastAPI) nhận request và đẩy job vào Redis queue.
+    - Pool các Worker nodes chuyên biệt nhận job từ queue và xử lý render song song.
+    - Cập nhật tiến độ qua Redis Pub/Sub và WebSocket / SSE về cho trình duyệt.
+- **Files cần tác động:**
+  - `core/queue/worker.py` (Mới)
+  - `core/queue/tasks.py` (Mới)
+  - `apps/api/main.py`
+
+### Task 10.3: Xuất đa định dạng (GIF hoạt họa, WebM trong suốt, 4K UHD)
+- **Mô tả:** Mở rộng định dạng video xuất ra cho nhiều mục đích marketing và trình chiếu.
 - **Chi tiết thực hiện:**
-  - [x] Thêm API endpoint `POST /export/preview-scene`:
-    - Nhận `scene_index`, `image_url`, `text`, `aspect_ratio`, `drawing_tool`
-    - Render nhanh đoạn hoạt họa 3 giây ở 15fps, kích thước tối ưu
-    - Trả về URL video preview MP4 tức thì
-  - [x] Cập nhật `StoryboardStep.tsx`: thêm nút "🎬 Xem trước (3s)" ngay trên từng thẻ cảnh
-  - [x] Hộp thoại xem trước video modal popup có thanh điều khiển HTML5 Video và nút đóng trực quan
-- **Files đã tạo mới / chỉnh sửa:**
+  - Xuất ảnh động **GIF** chất lượng cao (bảng màu tối ưu palettedir): Cực kỳ thích hợp để nhúng vào Email marketing, bài viết Blog, Notion hoặc tài liệu Docs.
+  - Xuất video **WebM có nền trong suốt (Alpha channel)**: Cho phép chèn bàn tay vẽ lên trên bất kỳ video hoặc bài giảng trình chiếu nào khác.
+  - Tùy chọn độ phân giải: **480p** (Bản nháp siêu tốc), **720p** (HD), **1080p** (Full HD chuẩn), **4K UHD** (Trình chiếu sự kiện).
+  - Thêm Watermark thương hiệu hoặc logo cá nhân ở góc video.
+- **Files cần tác động:**
+  - `core/export/format_converter.py` (Mới)
   - `apps/api/routers/export.py`
-  - `apps/web/app/components/steps/StoryboardStep.tsx`
-  - `apps/web/app/api-client.ts`
+  - `apps/web/app/components/steps/ExportStep.tsx`
 
-### Task 5.3: Auto-save dự án & Khôi phục phiên làm việc
-- **Mô tả:** Tự động lưu trạng thái dự án vào localStorage, không mất dữ liệu khi reload trang
+### Task 10.4: Quản lý dự án chuyên sâu (Duplicate, Export/Import Project)
+- **Mô tả:** Cho phép sao lưu, nhân bản và chia sẻ dự án giữa các thành viên hoặc máy tính khác nhau.
 - **Chi tiết thực hiện:**
-  - [x] Tạo hook `useAutoSave()` trong frontend:
-    - Debounce 1.5 giây, lưu tự động `scenes`, `workflow`, `step`, `subtitles`, `drawing_tool` vào `localStorage`
-    - Khi tải trang, kiểm tra bản nháp và hiển thị thanh thông báo nổi bật cho phép "Khôi phục bản nháp" hoặc "Bỏ qua / Xóa nháp"
-  - [x] Lưu kèm timestamp định dạng tiếng Việt để người dùng biết thời điểm lưu
-  - [x] Cung cấp hàm `discardDraft()` để xóa sạch bản nháp khi cần bắt đầu mới
-- **Files đã tạo mới:**
-  - `apps/web/app/hooks/useAutoSave.ts`
-- **Files đã chỉnh sửa:**
-  - `apps/web/app/page.tsx`
-
-### Task 5.4: Dịch kịch bản tự động không cần API key
-- **Mô tả:** Bổ sung bộ dịch tự động (deep-translator kết hợp MyMemoryTranslator + GoogleTranslator + Gemini + từ điển) làm fallback khi không có Gemini key
-- **Chi tiết thực hiện:**
-  - [x] Bổ sung thư viện `deep-translator>=1.11.0` vào `requirements.txt`
-  - [x] Tạo module `core/artwork/translator.py`:
-    - Hàm `auto_translate_vi_to_en(text: str) -> str` với cơ chế 4 tầng dự phòng
-    - Tầng 1: MyMemoryTranslator (ổn định, không bị chặn)
-    - Tầng 2: GoogleTranslator
-    - Tầng 3: Gemini Generative AI (nếu có API Key)
-    - Tầng 4: Bộ từ điển từ khóa tiếng Việt - Anh ngoại tuyến
-    - Bộ nhớ đệm (LRU cache) trong bộ nhớ giảm thiểu số lần gọi dịch lặp lại
-    - Hàm `create_whiteboard_art_prompt(script_text, aspect_ratio)` sinh prompt chuẩn Comic Line Art
-  - [x] Tích hợp vào `apps/api/routers/scripts.py` khi phân rã kịch bản cục bộ không cần key
-- **Files đã tạo mới:**
-  - `core/artwork/translator.py`
-- **Files đã chỉnh sửa:**
-  - `apps/api/routers/scripts.py`
-  - `requirements.txt`
-
-### Task 5.5: Bảng cài đặt (Settings Modal) trên giao diện web
-- **Mô tả:** Cho phép người dùng cấu hình API key, giọng đọc mặc định, tỷ lệ khung hình, công cụ vẽ, kiểu phụ đề ngay trên giao diện web
-- **Chi tiết thực hiện:**
-  - [x] Tạo component `SettingsModal.tsx`:
-    - Ô nhập: Gemini API Key (chế độ ẩn/hiện mật khẩu)
-    - Chọn tỷ lệ mặc định: 16:9 Ngang hoặc 9:16 Dọc
-    - Chọn giọng đọc mặc định: Nam (NamMinh) / Nữ (HoaiMy)
-    - Thanh trượt: Tốc độ đọc mặc định (0.8x - 1.5x)
-    - Chọn công cụ vẽ mặc định: Bút hiện đại, bút lông, bút máy cổ điển, bút thư pháp, ẩn bàn tay
-    - Bật/tắt phụ đề mặc định và chọn phong cách phụ đề (Cổ điển / Karaoke)
-    - Nút xóa cache và đặt lại cấu hình gốc
-  - [x] Nút "⚙️ Cài đặt" trực quan trên thanh tiêu đề `StudioHeader.tsx`
-  - [x] Tích hợp với `localStorage` và cập nhật state toàn studio trong `apps/web/app/page.tsx`
-- **Files đã tạo mới:**
-  - `apps/web/app/components/SettingsModal.tsx`
-- **Files đã chỉnh sửa:**
+  - Nút "Nhân bản dự án (Duplicate)": Tạo bản sao nguyên vẹn của kịch bản, ảnh và âm thanh để thử nghiệm biến thể mới.
+  - Nút "Xuất file dự án (.whiteboard)": Đóng gói toàn bộ script, prompts, hình ảnh và audio vào một file nén zip duy nhất.
+  - Nút "Nhập file dự án": Khôi phục nguyên trạng dự án từ file `.whiteboard` bất cứ lúc nào.
+- **Files cần tác động:**
+  - `apps/api/routers/projects.py`
   - `apps/web/app/components/StudioHeader.tsx`
-  - `apps/web/app/page.tsx`
 
-### 📋 Checklist hoàn thành Phase 5:
-- [x] Render video nhanh hơn ít nhất 2x so với hiện tại (xử lý song song đa cảnh)
-- [x] Người dùng xem trước được hoạt họa từng cảnh trước khi render toàn bộ (quick preview 3s)
-- [x] Dự án tự động lưu nháp, thông báo khôi phục mượt mà không mất dữ liệu khi reload trang
-- [x] Dịch kịch bản tự động với 4 tầng dự phòng không cần cấu hình API key
-- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_phase5_optimizations.py` (4/4 tests passed)
-- [x] Toàn bộ hệ thống vượt qua 30/30 unit & integration tests, TypeScript 0 lỗi
-- [x] Commit & push lên GitHub (Phase 5)
+### Task 10.5: Đóng gói Docker & Docker-Compose (1-Click Self-Hosting)
+- **Mô tả:** Giúp bất kỳ ai cũng có thể tự cài đặt và chạy toàn bộ AI Whiteboard Studio trên máy chủ cá nhân hoặc VPS chỉ bằng một lệnh duy nhất.
+- **Chi tiết thực hiện:**
+  - Viết `Dockerfile` đa giai đoạn (multi-stage build) cho Backend (Python 3.11 + FFmpeg + OpenCV + PyAV) và Frontend (Node.js 20 + Next.js).
+  - Viết `docker-compose.yml` liên kết toàn bộ:
+    - Service `api`: FastAPI backend.
+    - Service `web`: Next.js frontend UI.
+    - Service `redis`: Message broker & cache.
+    - Volume gắn ngoài lưu trữ video xuất ra vào ổ cứng máy chủ.
+  - Tài liệu hướng dẫn cài đặt nhanh 3 bước trong `DEPLOYMENT.md`.
+- **Files cần tạo mới:**
+  - `Dockerfile.api`
+  - `Dockerfile.web`
+  - `docker-compose.yml`
+  - `docs/DEPLOYMENT.md`
 
 ---
 
-## 📐 SƠ ĐỒ KIẾN TRÚC SAU NÂNG CẤP
+## 📐 SƠ ĐỒ KIẾN TRÚC TỔNG THỂ AI WHITEBOARD STUDIO 3.0+
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    AI WHITEBOARD VIDEO STUDIO 2.0                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────┐  ┌──────────────┐ │
-│  │  Bước 1      │  │  Bước 2       │  │  Bước 3      │  │  Bước 4       │ │
-│  │  Kịch bản    │→│  Storyboard   │→│  Giọng đọc   │→│  Kết xuất     │ │
-│  │  + Tỷ lệ     │  │  + Preview    │  │  + Timing    │  │  + Phụ đề     │ │
-│  │  + Dịch AI   │  │  + Auto-seg   │  │  + SRT gen   │  │  + BGM mix    │ │
-│  └─────────────┘  └──────────────┘  └─────────────┘  │  + SFX sync   │ │
-│                                                         │  + 9:16/16:9  │ │
-│                                                         │  + Parallel   │ │
-│                                                         └──────────────┘ │
-│                                                                         │
-│  ┌──────────────────────────────────────────────────────────────────┐   │
-│  │                    CORE MODULES (Backend)                        │   │
-│  │                                                                  │   │
-│  │  core/audio/           core/subtitles/         core/annotation/  │   │
-│  │  ├── mixer.py          ├── srt_generator.py    ├── auto_segment  │   │
-│  │  ├── sfx_sync.py       ├── vtt_generator.py    └── __init__.py   │   │
-│  │  └── __init__.py       ├── burner.py                             │   │
-│  │                        └── __init__.py                            │   │
-│  │                                                                  │   │
-│  │  core/artwork/         core/tts/               engines/          │   │
-│  │  ├── translator.py     ├── edge.py (timing)    ├── adapter.py    │   │
-│  │  ├── pollinations.py   └── ...                 └── ...           │   │
-│  │  └── ...                                                         │   │
-│  └──────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  ┌──────────────────────────────────────────────────────────────────┐   │
-│  │                    ASSETS (Media Resources)                      │   │
-│  │  assets/audio/music/   → 5 bản BGM miễn phí                     │   │
-│  │  assets/audio/sfx/     → 3-4 mẫu âm thanh bút vẽ               │   │
-│  │  assets/drawing-tools/ → 4 kiểu bàn tay/bút vẽ                  │   │
-│  └──────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                               AI WHITEBOARD VIDEO STUDIO 3.0+                                   │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│  ┌────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                                 FRONTEND STUDIO (Next.js 14)                               │  │
+│  │                                                                                            │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │  │
+│  │  │ Bước 1:      │  │ Bước 2:      │  │ Bước 3:      │  │ Bước 4:      │  │ Studio       │  │  │
+│  │  │ Kịch bản     │  │ Storyboard   │  │ Giọng đọc    │  │ Kết xuất     │  │ Tools        │  │  │
+│  │  │ • Dịch AI    │  │ • Canvas Edit│  │ • Multi-Voice│  │ • 16:9/9:16  │  │ • Settings   │  │  │
+│  │  │ • Chia cảnh  │  │ • Character  │  │ • Micro Rec  │  │ • BGM/SFX Mix│  │ • Archive    │  │  │
+│  │  │ • Ratio Pick │  │ • Custom Img │  │ • Custom BGM │  │ • Sub Burner │  │ • Autosave   │  │  │
+│  │  │ • Chara Lock │  │ • Doodle Lib │  │ • Waveform   │  │ • GPU Export │  │ • Lock Guard │  │  │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │  │
+│  └────────────────────────────────────────────────────────────────────────────────────────────┘  │
+│                                              ▲  │ (HTTP / SSE / WebSocket)                       │
+│                                              │  ▼                                                │
+│  ┌────────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                             BACKEND ENGINE (FastAPI + Workers)                             │  │
+│  │                                                                                            │  │
+│  │  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐  ┌──────────────┐  │  │
+│  │  │ ARTWORK & VISION   │  │ AUDIO & NARRATION  │  │ WHITEBOARD ENGINE  │  │ SUBTITLES &   │  │  │
+│  │  │ • Pollinations.ai  │  │ • EdgeTTS Engine   │  │ • Potrace Vector   │  │ TYPOGRAPHY    │  │  │
+│  │  │ • Sketch Filters   │  │ • ElevenLabs API   │  │ • Bezier Alignment │  │ • SRT/VTT Gen │  │  │
+│  │  │ • Multi-Tier Trans │  │ • Multi-Track Mix  │  │ • Multi-Pen Switch │  │ • Safe Zone   │  │  │
+│  │  │ • Auto-Segment     │  │ • Auto-Ducking     │  │ • Eraser Transition│  │ • Karaoke Burn│  │  │
+│  │  │ • Character Anchor │  │ • Drawing SFX Sync │  │ • GPU / PyAV Mux   │  │ • Font Engine │  │  │
+│  │  └────────────────────┘  └────────────────────┘  └────────────────────┘  └──────────────┘  │  │
+│  │                                                                                            │  │
+│  │  ┌──────────────────────────────────────────────────────────────────────────────────────┐  │  │
+│  │  │ QUEUE & STORAGE: Redis + SQLite Job Store + Local Video Vault (Ổ D:)                  │  │  │
+│  │  └──────────────────────────────────────────────────────────────────────────────────────┘  │  │
+│  └────────────────────────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📊 TỔNG KẾT SỐ LIỆU
+## 📈 SO SÁNH NĂNG LỰC TRƯỚC VÀ SAU LỘ TRÌNH 3.0+
 
-| Chỉ số | Trước nâng cấp | Sau nâng cấp (dự kiến) |
-|--------|-----------------|------------------------|
-| Âm thanh video | Chỉ giọng đọc | Giọng đọc + BGM + SFX bút vẽ |
-| Phụ đề | Không có | Auto-burn (Classic/Karaoke) + Xuất .SRT |
-| Tỷ lệ khung hình | Chỉ 16:9 | 16:9 + 9:16 (TikTok/Shorts) |
-| Phân vùng vẽ | 1 vùng toàn màn hình | 2-3 vùng ngữ nghĩa |
-| Công cụ vẽ | 1 bàn tay duy nhất | 4 kiểu + ẩn bàn tay |
-| Tốc độ render (5 cảnh) | ~3-5 phút | ~1-2 phút (song song) |
-| Auto-save dự án | Không | Tự lưu mỗi 10 giây |
-| Dịch kịch bản không key | Từ điển thủ công (hạn chế) | AI dịch tự động |
-
----
-
-## 📝 GHI CHÚ QUAN TRỌNG
-
-1. **Tuân thủ SKILL.md:** Mọi thay đổi đều phải giữ nguyên phong cách mỹ thuật 2D Comic/Graphic Novel trên nền giấy kem ấm `#F5EBD7`. Tuyệt đối không tạo ra hiệu ứng 3D hoặc thay đổi bản sắc mỹ thuật.
-2. **Tương thích ngược:** Tất cả API endpoint hiện có phải giữ nguyên giao diện (interface), chỉ bổ sung tham số mới ở dạng optional với giá trị mặc định hợp lý.
-3. **Thứ tự Phase:** Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 (có thể song song Phase 4 và Phase 5).
-4. **Kiểm thử:** Sau mỗi Phase, chạy `pytest` đảm bảo 100% test pass trước khi commit.
-5. **Commit convention:** Mỗi Phase hoàn thành → 1 commit rõ ràng với message dạng `feat(phase-X): [mô tả ngắn]`.
+| Tiêu chí đánh giá | Hiện tại (Phiên bản 2.5) | Sau khi hoàn thành Lộ trình 3.0+ |
+|-------------------|--------------------------|----------------------------------|
+| **Độ chân thực nét vẽ** | Quét lưới (grid) & viền contour | Nét cọ uốn lượn Vector Bezier, ngòi bút bám sát mực |
+| **Đổi bút & Tô màu** | 1 bút đơn sắc, tô màu xuất hiện tĩnh | Bút đen vẽ khung → Đổi bút dạ quang/bút lông tô màu điểm nhấn |
+| **Chuyển cảnh** | Cắt cảnh trực tiếp (Hard cut) | Bàn tay cầm giẻ lau xóa bảng (Eraser Wipe) kèm âm thanh |
+| **Biên tập phân cảnh** | Chỉ xem ảnh tĩnh hoặc sửa prompt text | Vẽ thêm mũi tên, vòng tròn highlight, text trực tiếp trên ảnh |
+| **Tính nhất quán nhân vật** | Mỗi cảnh sinh ảnh độc lập, hay lệch nhân vật | Neo giữ seed & đặc điểm nhận dạng xuyên suốt toàn bộ câu chuyện |
+| **Ảnh riêng & Logo** | Chỉ sinh ảnh qua AI | Tự do upload logo, ảnh chụp sản phẩm được vẽ lại thành tranh nét mực |
+| **Giọng đọc thuyết minh** | 1 giọng đơn điệu cho cả video | Hội thoại đa nhân vật (Nam/Nữ đối đáp) + Tự tải giọng thu âm thật |
+| **Nhạc nền BGM** | 5 bản nhạc mặc định | Tự do tải MP3 cá nhân lên, cắt đoạn nhạc bắt đầu, chỉnh âm lượng |
+| **Phụ đề & Chữ chạy** | 2 kiểu mặc định, không sửa được mốc thời gian | Tùy biến mọi font chữ, màu sắc, kéo thả mốc thời gian trực quan |
+| **Bàn tay viết chữ** | Chưa hỗ trợ | Bàn tay cầm bút viết từng ký tự tiêu đề / bài học lên bảng |
+| **Tốc độ kết xuất** | CPU song song (~1-2 phút cho 5 cảnh) | Tăng tốc GPU NVENC (~15-20 giây cho 5 cảnh) |
+| **Định dạng xuất ra** | Video MP4 | MP4, GIF động, WebM nền trong suốt, 4K UHD 60fps |
+| **Môi trường triển khai** | Chạy thủ công trên máy dev | 1-Click Docker Compose triển khai trên mọi VPS / Cloud |
 
 ---
 
-> **Cập nhật lần cuối:** 2026-10-20 | **Người lập:** AI Whiteboard Studio Team
+## 📋 THỨ TỰ ƯU TIÊN VÀ HÀNH ĐỘNG TIẾP THEO
+
+### Bước hành động khuyến nghị tiếp tục ngay:
+1. **Triển khai Phase 6 (Vector Stroke Engine & Bàn tay vẽ chân thực):**
+   - Đây là yếu tố cốt lõi mang lại sự "WOW" lớn nhất cho người xem video bảng trắng.
+   - Thêm bộ Vectorizer trích xuất nét vẽ Bezier và hiệu ứng chuyển cảnh bằng giẻ lau bảng.
+2. **Triển khai Phase 7.1 & 7.3 (Canvas In-place Editor & Upload Logo riêng):**
+   - Đáp ứng nhu cầu thực tế của các nhà sáng tạo nội dung muốn chèn logo thương hiệu hoặc chỉnh sửa nhanh hình vẽ.
+3. **Triển khai Phase 8.1 & 8.2 (Multi-Speaker Dialogue & Thu âm thật):**
+   - Tăng tính hấp dẫn cho các video kể chuyện, bài giảng hoặc kịch bản phỏng vấn/tư vấn bán hàng.
+
+---
+
+> **Cập nhật ngày:** 2026-10-20 | **Người lập:** AI Whiteboard Studio Lead Architect

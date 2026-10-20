@@ -37,6 +37,7 @@ class WhiteboardRenderConfig:
     max_draw_ms: int = 15000
     aspect_ratio: str = "16:9"
     hand_tool_id: str = "hand-pen-modern"
+    multi_pen: bool = True  # Đổi bút dạ quang khi sang giai đoạn tô màu
 
 
 class WhiteboardEngineAdapter:
@@ -885,6 +886,8 @@ class WhiteboardEngineAdapter:
             cmd.extend(["--max-draw-ms", str(cfg.max_draw_ms)])
         if is_bare:
             cmd.append("--bare-tip")
+        if getattr(cfg, "multi_pen", False):
+            cmd.append("--multi-pen")
 
         env = os.environ.copy()
         env["PYTHONUTF8"] = "1"
@@ -899,6 +902,26 @@ class WhiteboardEngineAdapter:
         if res.returncode != 0:
             raise RuntimeError(f"Whiteboard rendering failed (code {res.returncode}): {res.stderr}")
         return output_path
+
+    def render_eraser_transition(
+        self,
+        frame_from: np.ndarray,
+        frame_to: Optional[np.ndarray],
+        output_path: Path,
+        fps: int = 30,
+        duration_sec: float = 1.0,
+    ) -> Path:
+        """
+        Kết xuất hiệu ứng giẻ lau xóa bảng chuyển cảnh (Whiteboard Eraser Wipe).
+        """
+        from core.transitions.eraser import WhiteboardEraserTransition
+        eraser = WhiteboardEraserTransition(
+            eraser_hand_path=self.assets_dir / "drawing-tools" / "hand-eraser.png",
+            canvas_hex="#F5EBD7",
+            fps=fps,
+            duration_sec=duration_sec,
+        )
+        return eraser.render_transition_video(frame_from, frame_to, output_path)
 
     def mux_audio_video(self, video_path: Path, audio_path: Path, output_path: Path) -> Path:
         """

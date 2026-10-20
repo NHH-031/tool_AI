@@ -92,6 +92,8 @@ class Config:
     ink_path_mode: str = "grid"
     skeleton_min_points: int = 8        # 骨架笔画最少点数（过滤碎片）
     skeleton_resample_spacing: float = 2.5  # 骨架重采样间距（像素）
+    # ── 多笔模式 (Multi-pen switching) ──
+    multi_pen: bool = False             # Bật tự động đổi bút dạ quang tô màu khi sang giai đoạn color
 
 
 # ──────────────────────────────────────────────────────────────
@@ -679,12 +681,24 @@ class TipOverlay:
         self.tip_px = int(round((self.w - 1) * np.clip(tip_anchor_x, 0.0, 1.0)))
         self.tip_py = int(round((self.h - 1) * np.clip(tip_anchor_y, 0.0, 1.0)))
 
-    def stamp(self, canvas: np.ndarray, x: int, y: int) -> np.ndarray:
-        """让素材的笔尖锚点对齐到画布坐标 (x, y)（即落墨点）。"""
+    def stamp(self, canvas: np.ndarray, x: int, y: int, angle_deg: float = 0.0) -> np.ndarray:
+        """让素材的笔尖锚点对齐到画布坐标 (x, y)（即落墨点），支持绕笔尖微角度旋转。"""
+        h_canvas, w_canvas = canvas.shape[:2]
+
+        if abs(angle_deg) > 0.4:
+            # Xoay hình ảnh bàn tay và mặt nạ quanh điểm neo ngòi bút
+            M = cv2.getRotationMatrix2D((float(self.tip_px), float(self.tip_py)), angle_deg, 1.0)
+            cur_hand = cv2.warpAffine(self.hand, M, (self.w, self.h), borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
+            cur_mask = cv2.warpAffine(self.mask, M, (self.w, self.h), borderMode=cv2.BORDER_CONSTANT, borderValue=0.0)
+            cur_mask_inv = 1.0 - cur_mask
+        else:
+            cur_hand = self.hand
+            cur_mask = self.mask
+            cur_mask_inv = self.mask_inv
+
         # 素材左上角 = 落墨点 - 笔尖偏移
         anchor_x = x - self.tip_px
         anchor_y = y - self.tip_py
-        h_canvas, w_canvas = canvas.shape[:2]
 
         x0 = max(0, anchor_x)
         y0 = max(0, anchor_y)
@@ -699,9 +713,9 @@ class TipOverlay:
         sy1 = sy0 + (y1 - y0)
 
         region = canvas[y0:y1, x0:x1]
-        hand_region = self.hand[sy0:sy1, sx0:sx1]
-        mask_region = self.mask[sy0:sy1, sx0:sx1]
-        inv_region = self.mask_inv[sy0:sy1, sx0:sx1]
+        hand_region = cur_hand[sy0:sy1, sx0:sx1]
+        mask_region = cur_mask[sy0:sy1, sx0:sx1]
+        inv_region = cur_mask_inv[sy0:sy1, sx0:sx1]
 
         for c in range(3):
             region[:, :, c] = (

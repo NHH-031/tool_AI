@@ -12,6 +12,7 @@ interface StudioHeaderProps {
   archiveCount?: number;
   onOpenArchiveVault?: () => void;
   onOpenSettings?: () => void;
+  isLocked?: boolean;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -23,6 +24,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   archiveCount,
   onOpenArchiveVault,
   onOpenSettings,
+  isLocked = false,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -65,8 +67,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <div className="relative flex-1 max-w-md mx-auto" ref={dropdownRef}>
           <button
             id="btn-project-dropdown"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-full flex items-center justify-between gap-2 px-4 py-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 hover:bg-slate-850 text-slate-200 text-xs sm:text-sm font-medium transition shadow-inner"
+            disabled={isLocked}
+            onClick={() => !isLocked && setDropdownOpen(!dropdownOpen)}
+            className={`w-full flex items-center justify-between gap-2 px-4 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs sm:text-sm font-medium transition shadow-inner ${
+              isLocked
+                ? "opacity-60 cursor-not-allowed"
+                : "hover:border-slate-700 hover:bg-slate-850"
+            }`}
+            title={isLocked ? "Đang xử lý tác vụ, vui lòng chờ..." : undefined}
           >
             <div className="flex items-center gap-2 truncate">
               <span className="text-slate-400 text-xs font-normal">Dự án:</span>
@@ -180,8 +188,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 
           <button
             id="btn-new-script"
-            onClick={onNewProject}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-600/30 transition active:scale-95"
+            disabled={isLocked}
+            onClick={() => !isLocked && onNewProject()}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition ${
+              isLocked
+                ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-400"
+                : "bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-600/30 active:scale-95"
+            }`}
+            title={isLocked ? "Đang xử lý tác vụ, vui lòng chờ..." : undefined}
           >
             <span className="text-base leading-none font-bold">+</span>
             <span>Kịch bản mới</span>

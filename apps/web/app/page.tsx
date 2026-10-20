@@ -115,6 +115,19 @@ export default function Home() {
   const [renderStage, setRenderStage] = useState<string>("");
   const [renderErrorMessage, setRenderErrorMessage] = useState<string | null>(null);
 
+  // =========================================================================
+  // GLOBAL LOADING STATE — prevents step-switch from hiding loading indicators
+  // =========================================================================
+  const isAnyLoading = isAnalyzingScript || isGeneratingAllImages || !!generatingSceneId || isSynthesizingAllVoices || !!synthesizingSceneId || isRenderingVideo;
+
+  const getGlobalLoadingMessage = (): { emoji: string; label: string; detail: string; step: WizardStep } | null => {
+    if (isAnalyzingScript) return { emoji: "🤖", label: "Đang phân tích kịch bản...", detail: "AI đang chia cảnh và tạo prompt vẽ tay", step: 1 };
+    if (isGeneratingAllImages || generatingSceneId) return { emoji: "🎨", label: "Đang tạo ảnh storyboard...", detail: generatingSceneId ? `Sinh ảnh cho cảnh đang xử lý` : "Sinh ảnh toàn bộ phân cảnh", step: 2 };
+    if (isSynthesizingAllVoices || synthesizingSceneId) return { emoji: "🎙️", label: "Đang thu âm giọng đọc...", detail: synthesizingSceneId ? `Thu âm cảnh đang xử lý` : "Thu âm toàn bộ phân cảnh", step: 3 };
+    if (isRenderingVideo) return { emoji: "🎬", label: "Đang kết xuất video...", detail: renderStage || `Tiến độ: ${renderProgress}%`, step: 4 };
+    return null;
+  };
+
   // Initialize studio data
   useEffect(() => {
     async function initStudio() {
@@ -198,8 +211,9 @@ export default function Home() {
     }
   }, [workflow.currentStep, workflow.projectId, workflow.script.scenes.length]);
 
-  // Handler: Switch Step
+  // Handler: Switch Step — blocked while any async operation is running
   const handleStepClick = (step: WizardStep) => {
+    if (isAnyLoading) return; // Block navigation while loading
     setWorkflow((prev) => ({
       ...prev,
       currentStep: step,
@@ -208,6 +222,7 @@ export default function Home() {
 
   // Handler: Switch Project
   const handleSelectProject = (projectId: string) => {
+    if (isAnyLoading) return;
     const proj = projects.find((p) => p.id === projectId);
     if (!proj) return;
 
@@ -246,6 +261,7 @@ export default function Home() {
 
   // Handler: New Project
   const handleNewProject = () => {
+    if (isAnyLoading) return;
     const newId = `proj-${Date.now()}`;
     const newTitle = "Dự án kịch bản mới";
     setWorkflow({
@@ -292,6 +308,16 @@ export default function Home() {
     setIsAnalyzingScript(true);
     try {
       const res = await analyzeScript(text, mode, targetScenes);
+      let processedScenes = res.scenes;
+      if (workflow.script.characterAnchor) {
+        const anchor = workflow.script.characterAnchor;
+        const anchorClause = `[Character Identity]: Main character ${anchor.name}, ${anchor.gender}, ${anchor.hair_style}, ${anchor.clothing}.`;
+        processedScenes = res.scenes.map((s) => ({
+          ...s,
+          prompt: `${anchorClause}\n${s.prompt}`,
+        }));
+      }
+
       setWorkflow((prev) => ({
         ...prev,
         projectName: prev.projectName === "Dự án kịch bản mới" || !prev.projectName ? res.title : prev.projectName,
@@ -299,7 +325,7 @@ export default function Home() {
           ...prev.script,
           rawText: text,
           inputMode: mode,
-          scenes: res.scenes,
+          scenes: processedScenes,
           status: "completed",
         },
       }));
@@ -311,6 +337,7 @@ export default function Home() {
   };
 
   const handleNextFromScript = () => {
+    if (isAnyLoading) return;
     setWorkflow((prev) => ({
       ...prev,
       currentStep: 2,
@@ -337,10 +364,16 @@ export default function Home() {
   const handleGenerateSingleImage = async (scene: Scene) => {
     setGeneratingSceneId(scene.id);
     try {
+      let promptToSend = scene.prompt;
+      if (workflow.script.characterAnchor && !promptToSend.includes("[Character Identity]")) {
+        const anchor = workflow.script.characterAnchor;
+        promptToSend = `[Character Identity]: Main character ${anchor.name}, ${anchor.gender}, ${anchor.hair_style}, ${anchor.clothing}.\n${promptToSend}`;
+      }
+
       const img = await generateStoryboardImage(
         scene.id,
         scene.scene_index,
-        scene.prompt,
+        promptToSend,
         workflow.projectId,
         true,
         workflow.aspectRatio || "16:9"
@@ -364,15 +397,40 @@ export default function Home() {
     }
   };
 
+  const handleUpdateSceneImage = (img: StoryboardImage) => {
+    setWorkflow((prev) => {
+      const nextImages = prev.storyboard.images.filter(
+        (i) => i.scene_id !== img.scene_id && i.scene_index !== img.scene_index
+      );
+      nextImages.push(img);
+      const updatedScenes = prev.script.scenes.map((sc) =>
+        sc.id === img.scene_id || sc.scene_index === img.scene_index
+          ? { ...sc, image_url: img.image_url, image_status: "completed" as const }
+          : sc
+      );
+      return {
+        ...prev,
+        script: { ...prev.script, scenes: updatedScenes },
+        storyboard: { ...prev.storyboard, images: nextImages },
+      };
+    });
+  };
+
   const handleGenerateAllImages = async () => {
     setIsGeneratingAllImages(true);
     try {
       for (const scene of workflow.script.scenes) {
         setGeneratingSceneId(scene.id);
+        let promptToSend = scene.prompt;
+        if (workflow.script.characterAnchor && !promptToSend.includes("[Character Identity]")) {
+          const anchor = workflow.script.characterAnchor;
+          promptToSend = `[Character Identity]: Main character ${anchor.name}, ${anchor.gender}, ${anchor.hair_style}, ${anchor.clothing}.\n${promptToSend}`;
+        }
+
         const img = await generateStoryboardImage(
           scene.id,
           scene.scene_index,
-          scene.prompt,
+          promptToSend,
           workflow.projectId,
           false,
           workflow.aspectRatio || "16:9"
@@ -397,6 +455,7 @@ export default function Home() {
   };
 
   const handleNextFromStoryboard = () => {
+    if (isAnyLoading) return;
     setWorkflow((prev) => ({
       ...prev,
       currentStep: 3,
@@ -470,6 +529,7 @@ export default function Home() {
   };
 
   const handleNextFromVoice = () => {
+    if (isAnyLoading) return;
     setWorkflow((prev) => ({
       ...prev,
       currentStep: 4,
@@ -499,6 +559,8 @@ export default function Home() {
         subtitleStyle: workflow.export.subtitleStyle || "classic",
         aspectRatio: workflow.aspectRatio || "16:9",
         handToolId: workflow.export.handToolId || "hand-pen-modern",
+        multiPen: workflow.export.multiPen !== undefined ? workflow.export.multiPen : true,
+        transitionType: workflow.export.transitionType || "eraser",
       });
 
       if (res.videoUrl) {
@@ -640,6 +702,7 @@ export default function Home() {
         archiveCount={archiveVideosCount}
         onOpenArchiveVault={() => setIsArchiveVaultOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        isLocked={isAnyLoading}
       />
 
       {/* 2. Step Progress Bar (4 Linear Steps) */}
@@ -647,7 +710,54 @@ export default function Home() {
         currentStep={workflow.currentStep}
         completedSteps={workflow.completedSteps}
         onStepClick={handleStepClick}
+        isLocked={isAnyLoading}
       />
+
+      {/* 2b. Global Loading Banner — persists regardless of active step */}
+      {isAnyLoading && (() => {
+        const info = getGlobalLoadingMessage();
+        if (!info) return null;
+        return (
+          <div className="w-full bg-indigo-950/60 border-b border-indigo-500/30 backdrop-blur-md">
+            <div className="max-w-4xl mx-auto flex items-center justify-between px-4 sm:px-8 py-3">
+              <div className="flex items-center gap-3">
+                <div className="relative flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full bg-indigo-500/20 border-2 border-indigo-400/50 flex items-center justify-center text-lg animate-pulse">
+                    {info.emoji}
+                  </div>
+                  <svg className="absolute -inset-0.5 w-10 h-10 animate-spin" viewBox="0 0 36 36" fill="none">
+                    <circle cx="18" cy="18" r="16" stroke="currentColor" strokeWidth="2" className="text-slate-800" />
+                    <path d="M18 2 a16 16 0 0 1 16 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-indigo-400" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-semibold text-white leading-tight">{info.label}</p>
+                  <p className="text-[10px] sm:text-[11px] text-indigo-300/70">{info.detail}</p>
+                </div>
+              </div>
+              {info.step !== workflow.currentStep && (
+                <button
+                  onClick={() => setWorkflow((prev) => ({ ...prev, currentStep: info.step }))}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600/40 hover:bg-indigo-600/60 text-indigo-200 border border-indigo-500/30 font-medium transition"
+                >
+                  Quay về Bước {info.step}
+                </button>
+              )}
+              {isRenderingVideo && (
+                <div className="hidden sm:flex items-center gap-2">
+                  <div className="w-24 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500 rounded-full"
+                      style={{ width: `${renderProgress}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono text-indigo-300">{renderProgress}%</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 3. Main Step Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
@@ -720,6 +830,13 @@ export default function Home() {
             onAnalyze={handleAnalyzeScript}
             isAnalyzing={isAnalyzingScript}
             onNextStep={handleNextFromScript}
+            characterAnchor={workflow.script.characterAnchor}
+            onUpdateCharacterAnchor={(anchor) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                script: { ...prev.script, characterAnchor: anchor },
+              }))
+            }
           />
         )}
 
@@ -737,6 +854,7 @@ export default function Home() {
             projectId={workflow.projectId}
             aspectRatio={workflow.aspectRatio || "16:9"}
             handToolId={workflow.export.handToolId || "hand-pen-modern"}
+            onUpdateSceneImage={handleUpdateSceneImage}
           />
         )}
 
@@ -804,6 +922,20 @@ export default function Home() {
               setWorkflow((prev) => ({
                 ...prev,
                 export: { ...prev.export, handToolId: toolId },
+              }))
+            }
+            multiPen={workflow.export.multiPen !== undefined ? workflow.export.multiPen : true}
+            onUpdateMultiPen={(m) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                export: { ...prev.export, multiPen: m },
+              }))
+            }
+            transitionType={workflow.export.transitionType || "eraser"}
+            onUpdateTransitionType={(t) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                export: { ...prev.export, transitionType: t },
               }))
             }
             isRendering={isRenderingVideo}

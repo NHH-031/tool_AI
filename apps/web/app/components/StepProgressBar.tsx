@@ -15,6 +15,7 @@ interface StepProgressBarProps {
   completedSteps: WizardStep[];
   onStepClick: (step: WizardStep) => void;
   stepSubtitles?: { [key in WizardStep]?: string };
+  isLocked?: boolean;
 }
 
 export const StepProgressBar: React.FC<StepProgressBarProps> = ({
@@ -22,6 +23,7 @@ export const StepProgressBar: React.FC<StepProgressBarProps> = ({
   completedSteps,
   onStepClick,
   stepSubtitles = {},
+  isLocked = false,
 }) => {
   const steps: StepInfo[] = [
     {
@@ -71,7 +73,7 @@ export const StepProgressBar: React.FC<StepProgressBarProps> = ({
         {steps.map((step) => {
           const isCompleted = completedSteps.includes(step.number);
           const isCurrent = currentStep === step.number;
-          const isAccessible = isCompleted || step.number <= currentStep || isCompleted;
+          const isAccessible = (isCompleted || step.number <= currentStep) && !isLocked;
 
           return (
             <button
@@ -84,8 +86,11 @@ export const StepProgressBar: React.FC<StepProgressBarProps> = ({
               }}
               disabled={!isAccessible}
               className={`relative z-10 flex flex-col items-center group transition focus:outline-none ${
-                isAccessible ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+                isLocked
+                  ? "cursor-not-allowed opacity-60"
+                  : isAccessible ? "cursor-pointer" : "cursor-not-allowed opacity-50"
               }`}
+              title={isLocked ? "Đang xử lý, vui lòng chờ..." : undefined}
             >
               {/* Circle Badge */}
               <div

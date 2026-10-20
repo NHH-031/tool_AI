@@ -15,7 +15,11 @@ import {
   ArchivedVideo,
   ArchiveStats,
   DrawingToolItem,
+  CharacterAnchorData,
+  DoodleItem,
 } from "./types";
+
+export type { CharacterAnchorData, DoodleItem };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -785,6 +789,118 @@ export async function generateStoryboardImage(
   }
 }
 
+export async function saveCanvasEdit(payload: {
+  projectId: string;
+  sceneId: string;
+  sceneIndex: number;
+  imageDataBase64: string;
+}): Promise<StoryboardImage> {
+  const res = await fetch(`${API_BASE}/storyboard/save-canvas-edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_id: payload.projectId,
+      scene_id: payload.sceneId,
+      scene_index: payload.sceneIndex,
+      image_data_base64: payload.imageDataBase64,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    const imageUrl = data.image_url.startsWith("http")
+      ? data.image_url
+      : `${API_BASE}${data.image_url}`;
+    return {
+      scene_id: payload.sceneId,
+      scene_index: payload.sceneIndex,
+      prompt: "",
+      image_url: imageUrl,
+      status: "completed",
+    };
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi lưu chỉnh sửa Canvas (HTTP ${res.status})`);
+}
+
+export async function uploadCustomImage(payload: {
+  projectId: string;
+  sceneId: string;
+  sceneIndex: number;
+  imageDataBase64: string;
+  applySketchFilter?: boolean;
+  sketchStyle?: "watercolor_comic" | "pure_ink";
+  contrast?: number;
+  lineStrength?: number;
+  aspectRatio?: "16:9" | "9:16";
+}): Promise<StoryboardImage> {
+  const res = await fetch(`${API_BASE}/storyboard/upload-custom-image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_id: payload.projectId,
+      scene_id: payload.sceneId,
+      scene_index: payload.sceneIndex,
+      image_data_base64: payload.imageDataBase64,
+      apply_sketch_filter: payload.applySketchFilter !== undefined ? payload.applySketchFilter : true,
+      sketch_style: payload.sketchStyle || "watercolor_comic",
+      contrast: payload.contrast !== undefined ? payload.contrast : 1.2,
+      line_strength: payload.lineStrength !== undefined ? payload.lineStrength : 1.3,
+      aspect_ratio: payload.aspectRatio || "16:9",
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    const imageUrl = data.image_url.startsWith("http")
+      ? data.image_url
+      : `${API_BASE}${data.image_url}`;
+    return {
+      scene_id: payload.sceneId,
+      scene_index: payload.sceneIndex,
+      prompt: "Custom Uploaded Artwork",
+      image_url: imageUrl,
+      status: "completed",
+    };
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi tải ảnh riêng (HTTP ${res.status})`);
+}
+
+export async function fetchDoodleVault(): Promise<DoodleItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/storyboard/doodles/list`, {
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn("[fetchDoodleVault] Failed to load doodles:", e);
+  }
+  return [];
+}
+
+export async function extractCharacterAnchor(scriptText: string): Promise<CharacterAnchorData | null> {
+  try {
+    const res = await fetch(`${API_BASE}/storyboard/character-anchor/extract`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ script_text: scriptText }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn("[extractCharacterAnchor] Extraction failed:", e);
+  }
+  return null;
+}
+
+
 export async function synthesizeVoice(
   sceneId: string,
   sceneIndex: number,
@@ -844,6 +960,8 @@ export async function renderExport(payload: {
   subtitleEnabled?: boolean;
   aspectRatio?: "16:9" | "9:16";
   handToolId?: string;
+  multiPen?: boolean;
+  transitionType?: "cut" | "eraser" | "crossfade";
 }): Promise<{
   jobId: string;
   status: string;
@@ -868,6 +986,8 @@ export async function renderExport(payload: {
       subtitle_enabled: payload.subtitleEnabled !== undefined ? payload.subtitleEnabled : (payload.subtitleStyle !== "none"),
       aspect_ratio: payload.aspectRatio || "16:9",
       hand_tool_id: payload.handToolId || "hand-pen-modern",
+      multi_pen: payload.multiPen !== undefined ? payload.multiPen : true,
+      transition_type: payload.transitionType || "eraser",
     }),
     signal: AbortSignal.timeout(30000),
   });
@@ -909,6 +1029,7 @@ export async function previewScene(payload: {
   aspectRatio?: "16:9" | "9:16";
   handToolId?: string;
   hasColor?: boolean;
+  multiPen?: boolean;
 }): Promise<{
   previewUrl: string;
   durationSec: number;
@@ -927,6 +1048,7 @@ export async function previewScene(payload: {
       aspect_ratio: payload.aspectRatio || "16:9",
       hand_tool_id: payload.handToolId || "hand-pen-modern",
       has_color: payload.hasColor !== undefined ? payload.hasColor : true,
+      multi_pen: payload.multiPen !== undefined ? payload.multiPen : true,
     }),
     signal: AbortSignal.timeout(60000),
   });

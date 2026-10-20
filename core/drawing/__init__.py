@@ -3,6 +3,8 @@ from .hand_path import HandPathPlanner, HandState, transform_strokes_to_canvas
 from .path_parser import calculate_polyline_length, parse_and_sample_path, shape_to_path_d
 from .sorter import StrokeOrderPlanner
 from .debug_renderer import DebugRenderer
+from .vectorizer import BitmapStrokeVectorizer, VectorStrokeSegment, ramer_douglas_peucker, chaikin_smooth
+from .stroke_order import NaturalStrokeSorter
 from core.schemas.drawing import DrawingAction, DrawingStroke
 
 __all__ = [
@@ -17,4 +19,9 @@ __all__ = [
     "parse_and_sample_path",
     "calculate_polyline_length",
     "shape_to_path_d",
+    "BitmapStrokeVectorizer",
+    "VectorStrokeSegment",
+    "NaturalStrokeSorter",
+    "ramer_douglas_peucker",
+    "chaikin_smooth",
 ]

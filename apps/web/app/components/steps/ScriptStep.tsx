@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Scene, TemplateItem } from "../../types";
+import { CharacterAnchorData, Scene, TemplateItem } from "../../types";
+import { extractCharacterAnchor } from "../../api-client";
 
 interface ScriptStepProps {
   projectTitle: string;
@@ -20,6 +21,8 @@ interface ScriptStepProps {
   onAnalyze: (text: string, mode: "text" | "srt", targetScenes?: number) => Promise<void>;
   isAnalyzing: boolean;
   onNextStep: () => void;
+  characterAnchor?: CharacterAnchorData | null;
+  onUpdateCharacterAnchor?: (anchor: CharacterAnchorData | null) => void;
 }
 
 export const ScriptStep: React.FC<ScriptStepProps> = ({
@@ -39,10 +42,14 @@ export const ScriptStep: React.FC<ScriptStepProps> = ({
   onAnalyze,
   isAnalyzing,
   onNextStep,
+  characterAnchor,
+  onUpdateCharacterAnchor,
 }) => {
   const [targetSceneCount, setTargetSceneCount] = useState<number>(scenes.length > 0 ? scenes.length : 3);
   const [autoSplitMode, setAutoSplitMode] = useState<boolean>(true);
   const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
+  const [isAnchorOpen, setIsAnchorOpen] = useState<boolean>(Boolean(characterAnchor));
+  const [isExtractingAnchor, setIsExtractingAnchor] = useState<boolean>(false);
 
   const sampleIdeas = [
     {
@@ -272,6 +279,139 @@ export const ScriptStep: React.FC<ScriptStepProps> = ({
               )}
             </div>
 
+            {/* Character Consistency Engine Card (Task 7.2) */}
+            <div className="pt-2 border-t border-slate-800/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <span>👤</span>
+                    <span>Khóa nhất quán nhân vật AI (Character Anchor)</span>
+                  </span>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Giữ đồng nhất trang phục, màu tóc, khuôn mặt và seed AI qua tất cả phân cảnh
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isAnchorOpen}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setIsAnchorOpen(enabled);
+                      if (enabled && !characterAnchor && onUpdateCharacterAnchor) {
+                        onUpdateCharacterAnchor({
+                          name: "Nhân vật chính",
+                          gender: "male",
+                          age_group: "adult",
+                          hair_style: "neat short black hair",
+                          facial_features: "friendly expressive face",
+                          clothing: "smart casual navy blue jacket and white shirt",
+                          seed: 42,
+                        });
+                      } else if (!enabled && onUpdateCharacterAnchor) {
+                        onUpdateCharacterAnchor(null);
+                      }
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+              </div>
+
+              {isAnchorOpen && characterAnchor && (
+                <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3.5 space-y-3 text-xs animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-indigo-300 text-[11px]">Đặc điểm nhận diện nhân vật mẫu:</span>
+                    <button
+                      type="button"
+                      disabled={isExtractingAnchor || !rawText.trim()}
+                      onClick={async () => {
+                        try {
+                          setIsExtractingAnchor(true);
+                          const extracted = await extractCharacterAnchor(rawText);
+                          if (extracted && onUpdateCharacterAnchor) {
+                            onUpdateCharacterAnchor(extracted);
+                          }
+                        } finally {
+                          setIsExtractingAnchor(false);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center gap-1 transition active:scale-95 disabled:opacity-40"
+                    >
+                      {isExtractingAnchor ? "Đang quét kịch bản..." : "✨ Tự phát hiện từ kịch bản"}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Tên nhân vật:</label>
+                      <input
+                        type="text"
+                        value={characterAnchor.name}
+                        onChange={(e) =>
+                          onUpdateCharacterAnchor &&
+                          onUpdateCharacterAnchor({ ...characterAnchor, name: e.target.value })
+                        }
+                        placeholder="Ví dụ: Anh Nam, Cô Mai..."
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-[11px] outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Giới tính & Độ tuổi:</label>
+                      <select
+                        value={`${characterAnchor.gender}-${characterAnchor.age_group}`}
+                        onChange={(e) => {
+                          const [g, a] = e.target.value.split("-");
+                          if (onUpdateCharacterAnchor) {
+                            onUpdateCharacterAnchor({ ...characterAnchor, gender: g, age_group: a });
+                          }
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-[11px] outline-none focus:border-indigo-500"
+                      >
+                        <option value="male-adult">Nam giới (Trưởng thành)</option>
+                        <option value="female-adult">Nữ giới (Trưởng thành)</option>
+                        <option value="male-young_adult">Thanh niên (Nam trẻ)</option>
+                        <option value="female-young_adult">Thanh niên (Nữ trẻ)</option>
+                        <option value="male-elderly">Ông lão / Người cao tuổi</option>
+                        <option value="female-elderly">Bà lão / Người cao tuổi</option>
+                        <option value="male-child">Bé trai</option>
+                        <option value="female-child">Bé gái</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Kiểu tóc & Khuôn mặt:</label>
+                    <input
+                      type="text"
+                      value={characterAnchor.hair_style}
+                      onChange={(e) =>
+                        onUpdateCharacterAnchor &&
+                        onUpdateCharacterAnchor({ ...characterAnchor, hair_style: e.target.value })
+                      }
+                      placeholder="Ví dụ: Tóc ngắn đen rẽ ngôi, đeo kính tròn gọng đen..."
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-[11px] outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Trang phục cố định:</label>
+                    <input
+                      type="text"
+                      value={characterAnchor.clothing}
+                      onChange={(e) =>
+                        onUpdateCharacterAnchor &&
+                        onUpdateCharacterAnchor({ ...characterAnchor, clothing: e.target.value })
+                      }
+                      placeholder="Ví dụ: Áo khoác vest xanh navy, sơ mi trắng..."
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-[11px] outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Action Analyze Button */}
             <div className="pt-2">
               <button
@@ -394,9 +534,9 @@ export const ScriptStep: React.FC<ScriptStepProps> = ({
               <button
                 id="btn-script-next"
                 onClick={onNextStep}
-                disabled={scenes.length === 0}
+                disabled={scenes.length === 0 || isAnalyzing}
                 className={`w-full py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition ${
-                  scenes.length === 0
+                  scenes.length === 0 || isAnalyzing
                     ? "bg-slate-800 text-slate-600 cursor-not-allowed"
                     : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25 active:scale-[0.99]"
                 }`}

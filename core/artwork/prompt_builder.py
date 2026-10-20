@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
+from core.artwork.character_anchor import CharacterAnchor
 from core.artwork.pose_system import CharacterPoseSystem
 from core.artwork.style_profile import WhiteboardVisualStyleProfile, DetailBudget
 from core.schemas.scene_graph import SceneGraph, VisualEntity, VisualAction, VisualRelationship
@@ -39,6 +40,7 @@ class IllustrationPromptBuilder:
         scene_graph: SceneGraph,
         style_profile: Optional[WhiteboardVisualStyleProfile] = None,
         detail_budget: Optional[DetailBudget] = None,
+        character_anchor: Optional[CharacterAnchor] = None,
     ) -> StructuredIllustrationPrompt:
         profile = style_profile or WhiteboardVisualStyleProfile()
         budget = detail_budget or profile.detail_budget
@@ -162,9 +164,10 @@ class IllustrationPromptBuilder:
         )
 
         title_text = getattr(scene_graph, "title", None) or getattr(scene_graph, "scene_id", "Whiteboard Scene")
+        anchor_clause = f"\n{character_anchor.build_anchor_prompt()}" if character_anchor else ""
         full_prompt = (
             f"Title: {title_text}\n"
-            f"[Subject]: {subject_desc}.\n"
+            f"[Subject]: {subject_desc}.{anchor_clause}\n"
             f"[Action]: {action_desc}.\n"
             f"[Relationship]: {rel_desc}.\n"
             f"[Pose]: {pose_desc}\n"

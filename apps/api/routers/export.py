@@ -58,6 +58,8 @@ class RenderExportRequest(BaseModel):
     subtitle_enabled: bool = True
     aspect_ratio: str = "16:9"
     hand_tool_id: str = "hand-pen-modern"
+    multi_pen: bool = True
+    transition_type: str = "eraser"  # "cut", "eraser", "crossfade"
 
 
 class RenderExportResponse(BaseModel):
@@ -91,6 +93,7 @@ class PreviewSceneRequest(BaseModel):
     aspect_ratio: str = "16:9"
     hand_tool_id: str = "hand-pen-modern"
     has_color: bool = True
+    multi_pen: bool = True
 
 
 class PreviewSceneResponse(BaseModel):
@@ -294,6 +297,7 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                 aspect_ratio=req.aspect_ratio,
                 hand_tool_id=req.hand_tool_id,
                 bare_tip=(req.hand_tool_id == "no_hand"),
+                multi_pen=getattr(req, "multi_pen", True),
             )
             final_scene_mp4 = output_dir / f"{scene_id}_final.mp4"
 
@@ -360,34 +364,85 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             for r in scene_results
         ]
 
-        # 6. Ghép nối các phân cảnh thành video thống nhất
-        job_record["stage"] = "Đang ghép nối các phân cảnh video..."
+        # 6. Ghép nối các phân cảnh thành video thống nhất (Hỗ trợ Eraser Wipe Transition)
+        job_record["stage"] = "Đang xử lý hiệu ứng chuyển cảnh lau bảng trắng và ghép nối video..."
         job_record["progress_percent"] = 80.0
-
-        temp_concat_mp4 = output_dir / f"{job_id}_concat_raw.mp4"
-        if len(scene_clips) > 1:
-            logger.info(f"[_run_export_pipeline] Ghép nối {len(scene_clips)} phân cảnh...")
-            concat_ok = _ffmpeg_concat_copy(scene_clips, temp_concat_mp4) or _pyav_concat(scene_clips, temp_concat_mp4)
-            if not (concat_ok and temp_concat_mp4.exists()):
-                shutil.copyfile(str(scene_clips[0]), str(temp_concat_mp4))
-        elif len(scene_clips) == 1:
-            shutil.copyfile(str(scene_clips[0]), str(temp_concat_mp4))
-        else:
-            raise RuntimeError("Không có phân cảnh nào để kết xuất video.")
-
-        # 7. Hòa âm chuyên nghiệp: Giọng nói + Tiếng bút vẽ SFX + Nhạc nền BGM Auto-Ducking
-        job_record["stage"] = "Đang hòa âm BGM chuyên nghiệp, Auto-Ducking và tiếng bút vẽ SFX..."
-        job_record["progress_percent"] = 90.0
 
         from core.audio.mixer import AudioMixer
         from core.audio.sfx_sync import DrawingSFXSynchronizer
         import numpy as np
 
         audio_mixer = AudioMixer()
-        speech_chunks = []
-        for af in scene_audio_files:
-            s_arr, _ = audio_mixer.read_audio(af)
+        transition_type = getattr(req, "transition_type", "eraser") or "eraser"
+        combined_clips: List[Path] = []
+        speech_chunks: List[np.ndarray] = []
+        transition_dur_sec = 0.8  # Thời lượng hiệu ứng lau bảng
+
+        # Nạp tiếng sfx giẻ lau bảng
+        eraser_sfx_path = PROJECT_ROOT / "assets" / "audio" / "sfx" / "eraser_wipe.mp3"
+        eraser_sfx_chunk = None
+        if eraser_sfx_path.exists():
+            try:
+                e_raw, _ = audio_mixer.read_audio(eraser_sfx_path)
+                target_samples = int(audio_mixer.sample_rate * transition_dur_sec)
+                if e_raw.shape[1] >= target_samples:
+                    eraser_sfx_chunk = e_raw[:, :target_samples]
+                else:
+                    pad = np.zeros((2, target_samples - e_raw.shape[1]), dtype=np.float32)
+                    eraser_sfx_chunk = np.concatenate([e_raw, pad], axis=1)
+            except Exception as e:
+                logger.warning(f"Không thể đọc file eraser_wipe.mp3: {e}")
+
+        if eraser_sfx_chunk is None:
+            eraser_sfx_chunk = np.zeros((2, int(audio_mixer.sample_rate * transition_dur_sec)), dtype=np.float32)
+
+        for sc_i in range(len(scene_clips)):
+            combined_clips.append(scene_clips[sc_i])
+            s_arr, _ = audio_mixer.read_audio(scene_audio_files[sc_i])
             speech_chunks.append(s_arr)
+
+            # Nếu có cảnh tiếp theo và chọn kiểu lau bảng (eraser wipe)
+            if sc_i < len(scene_clips) - 1 and transition_type == "eraser":
+                try:
+                    # Lấy frame cuối của cảnh hiện tại
+                    cap = cv2.VideoCapture(str(scene_clips[sc_i]))
+                    last_f = None
+                    while True:
+                        ret, f = cap.read()
+                        if not ret:
+                            break
+                        last_f = f
+                    cap.release()
+
+                    if last_f is not None:
+                        trans_path = output_dir / f"{job_id}_trans_{sc_i+1}_to_{sc_i+2}.mp4"
+                        adapter.render_eraser_transition(
+                            frame_from=last_f,
+                            frame_to=None,
+                            output_path=trans_path,
+                            fps=24,
+                            duration_sec=transition_dur_sec,
+                        )
+                        combined_clips.append(trans_path)
+                        speech_chunks.append(eraser_sfx_chunk)
+                        logger.info(f"[_run_export_pipeline] Đã chèn chuyển cảnh Eraser Transition: {trans_path.name}")
+                except Exception as ex:
+                    logger.warning(f"[_run_export_pipeline] Không thể sinh Eraser Transition ({ex}), bỏ qua chuyển cảnh.")
+
+        temp_concat_mp4 = output_dir / f"{job_id}_concat_raw.mp4"
+        if len(combined_clips) > 1:
+            logger.info(f"[_run_export_pipeline] Ghép nối {len(combined_clips)} video segments (kèm chuyển cảnh)...")
+            concat_ok = _ffmpeg_concat_copy(combined_clips, temp_concat_mp4) or _pyav_concat(combined_clips, temp_concat_mp4)
+            if not (concat_ok and temp_concat_mp4.exists()):
+                shutil.copyfile(str(combined_clips[0]), str(temp_concat_mp4))
+        elif len(combined_clips) == 1:
+            shutil.copyfile(str(combined_clips[0]), str(temp_concat_mp4))
+        else:
+            raise RuntimeError("Không có phân cảnh nào để kết xuất video.")
+
+        # 7. Hòa âm chuyên nghiệp: Giọng nói + Tiếng bút vẽ SFX + Nhạc nền BGM Auto-Ducking
+        job_record["stage"] = "Đang hòa âm BGM chuyên nghiệp, Auto-Ducking và tiếng bút vẽ SFX..."
+        job_record["progress_percent"] = 90.0
 
         if speech_chunks:
             master_speech_arr = np.concatenate(speech_chunks, axis=1)
@@ -721,6 +776,7 @@ async def preview_scene(req: PreviewSceneRequest) -> PreviewSceneResponse:
         aspect_ratio=req.aspect_ratio,
         hand_tool_id=req.hand_tool_id,
         bare_tip=(req.hand_tool_id == "no_hand"),
+        multi_pen=getattr(req, "multi_pen", True),
     )
 
     adapter = WhiteboardEngineAdapter(root_dir=PROJECT_ROOT)
