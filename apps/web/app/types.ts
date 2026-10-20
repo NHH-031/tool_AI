@@ -16,6 +16,7 @@ export type StepStatus = "idle" | "running" | "completed" | "error";
 export interface Scene {
   id: string;
   scene_index: number;
+  title?: string;
   text: string;
   prompt: string;
   duration_sec?: number;

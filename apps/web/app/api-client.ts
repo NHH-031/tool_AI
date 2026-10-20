@@ -900,6 +900,53 @@ export async function renderExport(payload: {
   throw new Error(`Lỗi khởi tạo Render Video (${res.status}): ${errText}`);
 }
 
+export async function previewScene(payload: {
+  projectId: string;
+  sceneIndex: number;
+  text: string;
+  prompt?: string;
+  imageUrl?: string;
+  aspectRatio?: "16:9" | "9:16";
+  handToolId?: string;
+  hasColor?: boolean;
+}): Promise<{
+  previewUrl: string;
+  durationSec: number;
+  sceneIndex: number;
+  resolution: string;
+}> {
+  const res = await fetch(`${API_BASE}/export/preview-scene`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_id: payload.projectId,
+      scene_index: payload.sceneIndex,
+      text: payload.text,
+      prompt: payload.prompt,
+      image_url: payload.imageUrl,
+      aspect_ratio: payload.aspectRatio || "16:9",
+      hand_tool_id: payload.handToolId || "hand-pen-modern",
+      has_color: payload.hasColor !== undefined ? payload.hasColor : true,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    return {
+      previewUrl: data.preview_url.startsWith("http")
+        ? data.preview_url
+        : `${API_BASE}${data.preview_url}`,
+      durationSec: data.duration_sec,
+      sceneIndex: data.scene_index,
+      resolution: data.resolution,
+    };
+  }
+
+  const errText = await res.text();
+  throw new Error(`Lỗi tạo xem trước hoạt họa (${res.status}): ${errText}`);
+}
+
 export async function getExportStatus(jobId: string): Promise<{
   jobId: string;
   status: string;

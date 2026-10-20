@@ -11,6 +11,7 @@ interface StudioHeaderProps {
   backendHealthy: boolean;
   archiveCount?: number;
   onOpenArchiveVault?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -21,6 +22,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   backendHealthy,
   archiveCount,
   onOpenArchiveVault,
+  onOpenSettings,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -146,6 +148,18 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               {backendHealthy ? "AI Online" : "Demo Mode"}
             </span>
           </div>
+
+          {onOpenSettings && (
+            <button
+              id="btn-open-settings"
+              onClick={onOpenSettings}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition active:scale-95"
+              title="Cài đặt Studio & API Key"
+            >
+              <span className="text-sm">⚙️</span>
+              <span className="hidden md:inline">Cài đặt</span>
+            </button>
+          )}
 
           {onOpenArchiveVault && (
             <button

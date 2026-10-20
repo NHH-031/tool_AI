@@ -37,7 +37,9 @@ import { StoryboardStep } from "./components/steps/StoryboardStep";
 import { VoiceStep } from "./components/steps/VoiceStep";
 import { ExportStep } from "./components/steps/ExportStep";
 import { ArchiveVaultModal } from "./components/ArchiveVaultModal";
+import { SettingsModal, SETTINGS_STORAGE_KEY } from "./components/SettingsModal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { useAutoSave } from "./hooks/useAutoSave";
 
 export default function Home() {
   const [backendHealthy, setBackendHealthy] = useState<boolean>(false);
@@ -52,6 +54,9 @@ export default function Home() {
   // Video Archive Vault State
   const [isArchiveVaultOpen, setIsArchiveVaultOpen] = useState<boolean>(false);
   const [archiveVideosCount, setArchiveVideosCount] = useState<number>(0);
+
+  // Settings Modal State
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
   // Current Active Project Workflow State
   const [workflow, setWorkflow] = useState<ProjectWorkflow>({
@@ -134,10 +139,38 @@ export default function Home() {
       fetchArchiveStats().then((st) => {
         if (st) setArchiveVideosCount(st.total_videos);
       });
+
+      // Tải cài đặt mặc định từ localStorage nếu có
+      try {
+        const rawSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (rawSettings) {
+          const s = JSON.parse(rawSettings);
+          setWorkflow((prev) => ({
+            ...prev,
+            aspectRatio: s.defaultAspectRatio || prev.aspectRatio,
+            voice: {
+              ...prev.voice,
+              voiceId: s.defaultVoiceId || prev.voice.voiceId,
+              speed: s.defaultSpeed || prev.voice.speed,
+            },
+            export: {
+              ...prev.export,
+              handToolId: s.defaultHandToolId || prev.export.handToolId,
+              subtitleStyle: s.defaultSubtitleStyle || prev.export.subtitleStyle,
+            },
+          }));
+        }
+      } catch {}
     }
 
     initStudio();
   }, []);
+
+  // Auto-Save dự án tự động vào localStorage & Khôi phục phiên làm việc
+  const { hasDraft, draftMeta, restoreDraft, discardDraft } = useAutoSave(
+    workflow,
+    setWorkflow
+  );
 
   // Auto-sync existing storyboard images when arriving at Step 2
   useEffect(() => {
@@ -606,6 +639,7 @@ export default function Home() {
         backendHealthy={backendHealthy}
         archiveCount={archiveVideosCount}
         onOpenArchiveVault={() => setIsArchiveVaultOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* 2. Step Progress Bar (4 Linear Steps) */}
@@ -617,6 +651,37 @@ export default function Home() {
 
       {/* 3. Main Step Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Autosave Draft Notification Banner */}
+        {hasDraft && draftMeta && (
+          <div className="mb-6 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 backdrop-blur-md animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">💾</span>
+              <div>
+                <p className="text-xs sm:text-sm font-semibold text-white">
+                  Phát hiện bản nháp đã lưu: &ldquo;{draftMeta.projectName}&rdquo; ({draftMeta.sceneCount} phân cảnh)
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Lưu lúc {new Date(draftMeta.savedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}. Bạn có muốn tiếp tục làm việc không?
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                onClick={discardDraft}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                Bỏ qua
+              </button>
+              <button
+                onClick={restoreDraft}
+                className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition shadow-md shadow-indigo-600/20 active:scale-95"
+              >
+                Khôi phục bản nháp
+              </button>
+            </div>
+          </div>
+        )}
+
         <ErrorBoundary>
         {workflow.currentStep === 1 && (
           <ScriptStep
@@ -669,6 +734,9 @@ export default function Home() {
             generatingSceneId={generatingSceneId}
             onBackStep={() => handleStepClick(1)}
             onNextStep={handleNextFromStoryboard}
+            projectId={workflow.projectId}
+            aspectRatio={workflow.aspectRatio || "16:9"}
+            handToolId={workflow.export.handToolId || "hand-pen-modern"}
           />
         )}
 
@@ -765,6 +833,15 @@ export default function Home() {
           setIsArchiveVaultOpen(false);
           fetchArchiveStats().then((st) => st && setArchiveVideosCount(st.total_videos));
         }}
+      />
+
+      {/* Settings Modal (Cài Đặt Studio & API Key) */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        voices={voices}
+        drawingTools={drawingTools}
+        onClearDrafts={discardDraft}
       />
     </div>
   );

@@ -145,13 +145,9 @@ class GeminiScriptDirector:
 
             prompt_text = f"Ý tưởng / Kịch bản: {idea}"
             candidate_models = [
-                "gemini-3.8-flash",
-                "gemini-3.5-flash-lite",
-                "gemini-3.1-flash-lite",
-                "gemini-flash-lite-latest",
-                "gemini-3-flash-preview",
-                "gemini-3.5-flash",
-                "gemini-flash-latest",
+                "gemini-2.5-flash",
+                "gemini-1.5-flash",
+                "gemini-2.0-flash",
             ]
 
             raw_text = None
@@ -230,7 +226,7 @@ class GeminiScriptDirector:
                 "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
                 f"Câu văn: {scene_text}"
             )
-            for m in ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-flash-latest"]:
+            for m in ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"]:
                 try:
                     resp = client.models.generate_content(model=m, contents=prompt)
                     desc_en = resp.text.strip().replace("\n", " ")

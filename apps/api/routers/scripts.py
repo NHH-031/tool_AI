@@ -20,6 +20,7 @@ class AnalyzeScriptRequest(BaseModel):
     target_scenes: Optional[int] = Field(default=None, description="Số phân cảnh mong muốn")
     target_duration_sec: Optional[float] = Field(default=60.0, description="Thời lượng tổng (giây)")
     has_color: bool = Field(default=True, description="Vẽ có màu hay nét mực đơn sắc")
+    aspect_ratio: str = Field(default="16:9", description="Tỷ lệ khung hình: 16:9 hoặc 9:16")
 
 
 class SceneResponse(BaseModel):
@@ -87,8 +88,10 @@ def _parse_srt_to_scenes(srt_text: str) -> List[SceneResponse]:
     return scenes
 
 
-def _fallback_local_split(text: str, target_scenes: Optional[int] = None) -> List[SceneResponse]:
-    """Phân chia kịch bản bằng logic câu/đoạn tự nhiên và tự động dịch prompt tiếng Anh chuẩn SKILL.md."""
+def _fallback_local_split(text: str, target_scenes: Optional[int] = None, aspect_ratio: str = "16:9") -> List[SceneResponse]:
+    """Phân chia kịch bản bằng logic câu/đoạn tự nhiên và tự động dịch prompt tiếng Anh chuẩn SKILL.md không cần API key."""
+    from core.artwork.translator import create_whiteboard_art_prompt
+
     # 1. Kiểm tra xem văn bản có phân theo đoạn văn (paragraphs) rõ ràng không
     paragraphs = [p.strip() for p in text.splitlines() if len(p.strip()) > 30]
     if len(paragraphs) in [2, 3, 4, 5, 6, 7] and not target_scenes:
@@ -117,22 +120,8 @@ def _fallback_local_split(text: str, target_scenes: Optional[int] = None) -> Lis
     for i, scene_text in enumerate(raw_chunks, 1):
         dur = max(3.5, round(len(scene_text.split()) / 2.6, 1))
 
-        # 2. Tạo prompt tiếng Anh chuẩn Notion/Storybook thay vì để nguyên tiếng Việt thô
-        prompt_en = None
-        try:
-            from core.artwork.gemini_director import GeminiScriptDirector
-            if GeminiScriptDirector.is_available():
-                prompt_en = GeminiScriptDirector.create_single_scene_prompt(scene_text)
-        except Exception as e_p:
-            logger.warning(f"[_fallback_local_split] Could not translate scene {i} via Gemini: {e_p}")
-
-        if not prompt_en:
-            prompt_en = (
-                f"Masterpiece storybook watercolor and ink illustration, crisp expressive dark ink contours "
-                f"and rich vibrant harmonious colors on warm vintage cream paper #F5EBD7. "
-                f"Whiteboard doodle line art representing narrative scene {i}. "
-                f"Clear distinct contour lines, smooth connected ink outlines, rich watercolor fills, high detail, 1080p widescreen, no text"
-            )
+        # 2. Tạo visual prompt tiếng Anh tự động dịch bằng multi-tier fallback (MyMemory/Google/Gemini/Offline)
+        prompt_en = create_whiteboard_art_prompt(scene_text, scene_index=i, aspect_ratio=aspect_ratio)
 
         scenes.append(
             SceneResponse(
@@ -207,5 +196,5 @@ async def analyze_script(req: AnalyzeScriptRequest) -> AnalyzeScriptResponse:
         logger.warning(f"[analyze_script] Director error: {e}. Using local heuristic splitter.")
 
     # Fallback: Heuristic sentence splitter (2-3 sentences/scene)
-    scenes = _fallback_local_split(raw, target_scenes=req.target_scenes)
+    scenes = _fallback_local_split(raw, target_scenes=req.target_scenes, aspect_ratio=req.aspect_ratio)
     return AnalyzeScriptResponse(title=raw[:30] + "...", scenes=scenes)

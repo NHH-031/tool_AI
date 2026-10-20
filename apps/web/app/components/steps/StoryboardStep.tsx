@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Scene, StoryboardImage } from "../../types";
+import { previewScene } from "../../api-client";
 
 interface StoryboardStepProps {
   scenes: Scene[];
@@ -13,6 +14,9 @@ interface StoryboardStepProps {
   generatingSceneId: string | null;
   onBackStep: () => void;
   onNextStep: () => void;
+  projectId?: string;
+  aspectRatio?: "16:9" | "9:16";
+  handToolId?: string;
 }
 
 export const StoryboardStep: React.FC<StoryboardStepProps> = ({
@@ -25,8 +29,45 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
   generatingSceneId,
   onBackStep,
   onNextStep,
+  projectId = "default",
+  aspectRatio = "16:9",
+  handToolId = "hand-pen-modern",
 }) => {
   const [selectedSceneModal, setSelectedSceneModal] = useState<Scene | null>(null);
+  const [previewingSceneIndex, setPreviewingSceneIndex] = useState<number | null>(null);
+  const [activePreviewVideo, setActivePreviewVideo] = useState<{
+    url: string;
+    sceneIndex: number;
+    title: string;
+  } | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const handleQuickPreview = async (scene: Scene, imgUrl: string) => {
+    try {
+      setPreviewingSceneIndex(scene.scene_index);
+      setPreviewError(null);
+      const res = await previewScene({
+        projectId,
+        sceneIndex: scene.scene_index,
+        text: scene.text,
+        prompt: scene.prompt,
+        imageUrl: imgUrl,
+        aspectRatio,
+        handToolId,
+        hasColor: true,
+      });
+      setActivePreviewVideo({
+        url: res.previewUrl,
+        sceneIndex: scene.scene_index,
+        title: scene.title || `Phân cảnh ${scene.scene_index}`,
+      });
+    } catch (err: any) {
+      console.error("[QuickPreview] Lỗi tạo xem trước:", err);
+      setPreviewError(err?.message || "Không thể tạo xem trước hoạt họa");
+    } finally {
+      setPreviewingSceneIndex(null);
+    }
+  };
 
   // Helper to find image for scene
   const getImageForScene = (scene: Scene) => {
@@ -264,33 +305,60 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
                         <span>Chờ sinh ảnh</span>
                       )}
                     </span>
-                    <button
-                      id={`btn-regen-scene-${idx + 1}`}
-                      onClick={() => onGenerateSingleImage(scene)}
-                      disabled={isGeneratingThis || isGeneratingAll}
-                      className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
-                        isGeneratingThis
-                          ? "bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 cursor-wait shadow-sm"
-                          : isGeneratingAll
-                          ? "bg-slate-800 text-slate-500 border border-slate-800 cursor-not-allowed"
-                          : "text-indigo-400 hover:text-indigo-200 bg-slate-800/60 hover:bg-indigo-600/20 border border-slate-700/60 hover:border-indigo-500/50 active:scale-95"
-                      }`}
-                    >
-                      {isGeneratingThis ? (
-                        <>
-                          <svg className="animate-spin w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                          </svg>
-                          <span>Đang sinh lại...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-xs">🔄</span>
-                          <span>{imageUrl ? "Sinh lại ảnh" : "Tạo ảnh"}</span>
-                        </>
+                    <div className="flex items-center gap-1.5">
+                      {imageUrl && (
+                        <button
+                          id={`btn-preview-scene-${idx + 1}`}
+                          onClick={() => handleQuickPreview(scene, imageUrl)}
+                          disabled={previewingSceneIndex === scene.scene_index || isGeneratingAll}
+                          className="text-xs px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 active:scale-95 disabled:opacity-50"
+                          title="Xem trước 3 giây bàn tay vẽ phân cảnh này"
+                        >
+                          {previewingSceneIndex === scene.scene_index ? (
+                            <>
+                              <svg className="animate-spin w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                              </svg>
+                              <span>Đang dựng...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🎬</span>
+                              <span>Xem trước (3s)</span>
+                            </>
+                          )}
+                        </button>
                       )}
-                    </button>
+
+                      <button
+                        id={`btn-regen-scene-${idx + 1}`}
+                        onClick={() => onGenerateSingleImage(scene)}
+                        disabled={isGeneratingThis || isGeneratingAll}
+                        className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
+                          isGeneratingThis
+                            ? "bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 cursor-wait shadow-sm"
+                            : isGeneratingAll
+                            ? "bg-slate-800 text-slate-500 border border-slate-800 cursor-not-allowed"
+                            : "text-indigo-400 hover:text-indigo-200 bg-slate-800/60 hover:bg-indigo-600/20 border border-slate-700/60 hover:border-indigo-500/50 active:scale-95"
+                        }`}
+                      >
+                        {isGeneratingThis ? (
+                          <>
+                            <svg className="animate-spin w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                            <span>Đang sinh lại...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-xs">🔄</span>
+                            <span>{imageUrl ? "Sinh lại ảnh" : "Tạo ảnh"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -309,6 +377,11 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
         </button>
 
         <div className="flex items-center gap-3">
+          {previewError && (
+            <span className="text-xs text-rose-400 hidden sm:inline">
+              ⚠️ {previewError}
+            </span>
+          )}
           {!allImagesReady && (
             <span className="text-xs text-amber-400/90 hidden sm:inline">
               ⚠️ Cần có ảnh cho tất cả các cảnh để tiếp tục
@@ -329,6 +402,52 @@ export const StoryboardStep: React.FC<StoryboardStepProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Modal Quick Video Preview (3 Giây) */}
+      {activePreviewVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎬</span>
+                <span className="text-sm font-bold text-white">
+                  Xem Trước Nét Vẽ: {activePreviewVideo.title}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  3.0s Preview
+                </span>
+              </div>
+              <button
+                onClick={() => setActivePreviewVideo(null)}
+                className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs transition"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 bg-black flex items-center justify-center">
+              <video
+                src={activePreviewVideo.url}
+                autoPlay
+                loop
+                controls
+                playsInline
+                className={`max-h-[60vh] w-auto rounded-xl shadow-lg border border-slate-800 ${
+                  aspectRatio === "9:16" ? "aspect-[9/16]" : "aspect-[16/9]"
+                }`}
+              />
+            </div>
+            <div className="p-3 bg-slate-950/60 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <span>Hoạt họa bàn tay vẽ phân đoạn nhanh 15fps</span>
+              <button
+                onClick={() => setActivePreviewVideo(null)}
+                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs transition"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import logging
+import os
 from pathlib import Path
 import shutil
 import uuid
@@ -15,6 +16,11 @@ from pydantic import BaseModel, Field
 from core.pipeline.whiteboard_pipeline import WhiteboardPipeline
 from core.jobs.models import JobStatus
 from core.storage.job_store import ExportJobStoreDict, global_job_store
+from engines.whiteboard.adapter import WhiteboardEngineAdapter, WhiteboardRenderConfig
+from core.tts.local import LocalTTSProvider
+from core.schemas.tts import VoiceConfig
+from core.artwork.generator import ArtworkGeneratorFactory, StructuredIllustrationPrompt
+from scripts.merge_scenes import _ffmpeg_concat_copy, _pyav_concat
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +80,25 @@ class ExportStatusResponse(BaseModel):
     vtt_url: Optional[str] = None
     error_message: Optional[str] = None
     qa_report: Optional[Dict[str, Any]] = None
+
+
+class PreviewSceneRequest(BaseModel):
+    project_id: str = "preview"
+    scene_index: int = 1
+    text: str = ""
+    prompt: Optional[str] = None
+    image_url: Optional[str] = None
+    aspect_ratio: str = "16:9"
+    hand_tool_id: str = "hand-pen-modern"
+    has_color: bool = True
+
+
+class PreviewSceneResponse(BaseModel):
+    preview_url: str
+    duration_sec: float
+    scene_index: int
+    resolution: str
+    status: str = "completed"
 
 
 
@@ -189,17 +214,16 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
     try:
         adapter = WhiteboardEngineAdapter(root_dir=PROJECT_ROOT)
         tts_provider = LocalTTSProvider()
-        scene_clips: List[Path] = []
-        scene_audio_files: List[Path] = []
-        scenes_timing_meta: List[Dict[str, Any]] = []
-        scenes_subtitles_meta: List[Dict[str, Any]] = []
         total_scenes = len(req.scenes)
+        completed_scenes = 0
+        cpu_count = os.cpu_count() or 2
+        # Tối ưu song song: từ 2 đến 4 workers tùy thuộc vào số lõi CPU và số lượng cảnh
+        max_workers = min(4, total_scenes, max(1, cpu_count - 1)) if total_scenes > 1 else 1
 
-        for idx, sc in enumerate(req.scenes, 1):
+        async def _render_scene_worker(idx: int, sc: ExportSceneItem) -> Dict[str, Any]:
+            nonlocal completed_scenes
             scene_idx = sc.scene_index or idx
             scene_id = f"scene_{scene_idx}"
-            job_record["stage"] = f"Đang dựng hoạt họa bàn tay vẽ phân cảnh {scene_idx}/{total_scenes}..."
-            job_record["progress_percent"] = round(10.0 + (65.0 * idx / total_scenes), 1)
 
             # 1. Tìm hoặc sinh ảnh phân cảnh
             img_file = _resolve_image_path(req.project_id, scene_idx, sc.image_url)
@@ -244,14 +268,6 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
 
             dur_sec = _get_audio_duration(audio_file)
             dur_sec = max(3.0, dur_sec)
-            scene_audio_files.append(audio_file)
-            scenes_timing_meta.append({"scene_index": scene_idx, "duration_sec": dur_sec})
-            scenes_subtitles_meta.append({
-                "scene_index": scene_idx,
-                "text": sc.text,
-                "duration_sec": dur_sec,
-                "words_timing": tts_words_data,
-            })
 
             # 3. Tạo annotation file đặc tả bàn tay vẽ cho cảnh
             annot_file = output_dir / f"{scene_id}.annotation.json"
@@ -279,23 +295,70 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                 hand_tool_id=req.hand_tool_id,
                 bare_tip=(req.hand_tool_id == "no_hand"),
             )
-            logger.info(f"[_run_export_pipeline] Render raw video cho {scene_id} ({dur_sec:.1f}s, draw {draw_target_ms}ms)...")
-            adapter.render_scene(
-                image_path=img_file,
-                annotation_path=annot_file,
-                output_path=raw_video,
-                config=seg_cfg,
-            )
-
-            # 5. Mux audio vào video phân cảnh
             final_scene_mp4 = output_dir / f"{scene_id}_final.mp4"
-            logger.info(f"[_run_export_pipeline] Mux audio cho {scene_id}...")
-            adapter.mux_audio_video(
-                video_path=raw_video,
-                audio_path=audio_file,
-                output_path=final_scene_mp4,
-            )
-            scene_clips.append(final_scene_mp4)
+
+            def _sync_render_and_mux():
+                logger.info(f"[_run_export_pipeline] Render raw video cho {scene_id} ({dur_sec:.1f}s, draw {draw_target_ms}ms)...")
+                adapter.render_scene(
+                    image_path=img_file,
+                    annotation_path=annot_file,
+                    output_path=raw_video,
+                    config=seg_cfg,
+                )
+                logger.info(f"[_run_export_pipeline] Mux audio cho {scene_id}...")
+                adapter.mux_audio_video(
+                    video_path=raw_video,
+                    audio_path=audio_file,
+                    output_path=final_scene_mp4,
+                )
+                return final_scene_mp4
+
+            await asyncio.to_thread(_sync_render_and_mux)
+
+            completed_scenes += 1
+            job_record["stage"] = f"Đang dựng hoạt họa bàn tay vẽ các phân cảnh ({completed_scenes}/{total_scenes} hoàn tất)..."
+            job_record["progress_percent"] = round(10.0 + (65.0 * completed_scenes / total_scenes), 1)
+
+            return {
+                "scene_idx": scene_idx,
+                "final_scene_mp4": final_scene_mp4,
+                "audio_file": audio_file,
+                "dur_sec": dur_sec,
+                "text": sc.text,
+                "tts_words_data": tts_words_data,
+            }
+
+        # Render đa tiến trình song song (Parallel Multi-Scene Rendering)
+        if total_scenes > 1 and max_workers > 1:
+            logger.info(f"[_run_export_pipeline] Bắt đầu render song song {total_scenes} phân cảnh với {max_workers} luồng xử lý...")
+            sem = asyncio.Semaphore(max_workers)
+
+            async def _throttled_worker(i, s):
+                async with sem:
+                    return await _render_scene_worker(i, s)
+
+            scene_results = await asyncio.gather(*[_throttled_worker(idx, sc) for idx, sc in enumerate(req.scenes, 1)])
+        else:
+            scene_results = []
+            for idx, sc in enumerate(req.scenes, 1):
+                res = await _render_scene_worker(idx, sc)
+                scene_results.append(res)
+
+        # Sắp xếp lại thứ tự phân cảnh theo đúng cấu trúc kịch bản
+        scene_results.sort(key=lambda r: r["scene_idx"])
+
+        scene_clips: List[Path] = [r["final_scene_mp4"] for r in scene_results]
+        scene_audio_files: List[Path] = [r["audio_file"] for r in scene_results]
+        scenes_timing_meta: List[Dict[str, Any]] = [{"scene_index": r["scene_idx"], "duration_sec": r["dur_sec"]} for r in scene_results]
+        scenes_subtitles_meta: List[Dict[str, Any]] = [
+            {
+                "scene_index": r["scene_idx"],
+                "text": r["text"],
+                "duration_sec": r["dur_sec"],
+                "words_timing": r["tts_words_data"],
+            }
+            for r in scene_results
+        ]
 
         # 6. Ghép nối các phân cảnh thành video thống nhất
         job_record["stage"] = "Đang ghép nối các phân cảnh video..."
@@ -605,5 +668,76 @@ async def download_subtitle(job_id: str, format: str = "srt"):
         path=str(sub_file),
         media_type=media_type,
         filename=filename,
+    )
+
+
+@router.post("/preview-scene", response_model=PreviewSceneResponse)
+async def preview_scene(req: PreviewSceneRequest) -> PreviewSceneResponse:
+    """Render nhanh 3 giây phân cảnh đơn lẻ (Single-Scene Quick Preview) ở độ phân giải 480p/15fps."""
+    preview_id = f"prev-{uuid.uuid4().hex[:8]}"
+    previews_dir = PROJECT_ROOT / "output" / "previews"
+    previews_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Tìm hoặc sinh ảnh cho preview
+    img_file = _resolve_image_path(req.project_id, req.scene_index, req.image_url)
+    if not img_file or not img_file.exists():
+        art_generator = ArtworkGeneratorFactory.create()
+        target_img = previews_dir / f"{preview_id}.png"
+        img_prompt = StructuredIllustrationPrompt(
+            subject=req.text[:80] if req.text else "Whiteboard Concept Art",
+            action=req.prompt or req.text or "drawing sketch on whiteboard",
+            scene_context=req.prompt or req.text or "modern creative sketch",
+            has_color=req.has_color,
+            aspect_ratio=req.aspect_ratio,
+        )
+        img_file = await art_generator.generate_artwork(
+            img_prompt,
+            target_img,
+            width=720 if req.aspect_ratio == "9:16" else 1280,
+            height=1280 if req.aspect_ratio == "9:16" else 720,
+        )
+
+    # 2. Tạo annotation 3 giây (3000ms, vẽ 2500ms)
+    annot_file = previews_dir / f"{preview_id}.annotation.json"
+    _create_scene_annotation(
+        scene_id=preview_id,
+        image_path=img_file,
+        duration_ms=3000,
+        output_annot_path=annot_file,
+        aspect_ratio=req.aspect_ratio,
+    )
+
+    # 3. Render video preview 15fps nhanh chóng
+    raw_video = previews_dir / f"{preview_id}.mp4"
+    preview_cfg = WhiteboardRenderConfig(
+        fps=15,
+        cap_long_edge=640 if req.aspect_ratio == "9:16" else 480,
+        ink_path="skeleton",
+        color_fill="contour-wipe" if req.has_color else "none",
+        has_color=req.has_color,
+        total_ms=3000,
+        draw_ratio=0.85,
+        max_draw_ms=2500,
+        aspect_ratio=req.aspect_ratio,
+        hand_tool_id=req.hand_tool_id,
+        bare_tip=(req.hand_tool_id == "no_hand"),
+    )
+
+    adapter = WhiteboardEngineAdapter(root_dir=PROJECT_ROOT)
+    await asyncio.to_thread(
+        adapter.render_scene,
+        image_path=img_file,
+        annotation_path=annot_file,
+        output_path=raw_video,
+        config=preview_cfg,
+    )
+
+    resolution_label = "640x360@15fps" if req.aspect_ratio == "16:9" else "360x640@15fps"
+    return PreviewSceneResponse(
+        preview_url=f"/media/previews/{preview_id}.mp4",
+        duration_sec=3.0,
+        scene_index=req.scene_index,
+        resolution=resolution_label,
+        status="completed",
     )
 
