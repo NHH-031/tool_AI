@@ -96,7 +96,7 @@
 - [x] Video có tiếng bút vẽ sột soạt đồng bộ với bàn tay
 - [x] Người dùng nghe thử được nhạc nền trên giao diện web
 - [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_audio_engine.py` (4/4 tests passed)
-- [ ] Commit & push lên GitHub
+- [x] Commit & push lên GitHub (Commit `159ff0f`)
 
 ---
 
