@@ -565,8 +565,8 @@ export default function Home() {
         musicVolume: workflow.voice.musicVolume,
         musicStartOffset: workflow.voice.musicStartOffset || 0,
         musicFadeDuration: workflow.voice.musicFadeDuration !== undefined ? workflow.voice.musicFadeDuration : 2,
-        hasColor: true,
         subtitleStyle: workflow.export.subtitleStyle || "classic",
+        subtitleTypography: workflow.export.subtitleTypography,
         aspectRatio: workflow.aspectRatio || "16:9",
         handToolId: workflow.export.handToolId || "hand-pen-modern",
         multiPen: workflow.export.multiPen !== undefined ? workflow.export.multiPen : true,
@@ -987,6 +987,25 @@ export default function Home() {
                 export: { ...prev.export, subtitleStyle: style },
               }))
             }
+            subtitleTypography={workflow.export.subtitleTypography}
+            onUpdateSubtitleTypography={(typo) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                export: { ...prev.export, subtitleTypography: typo },
+              }))
+            }
+            onSubtitlesUpdated={(res) => {
+              setWorkflow((prev) => ({
+                ...prev,
+                export: {
+                  ...prev.export,
+                  videoUrl: res.video_url,
+                  srtUrl: res.srt_url,
+                  vttUrl: res.vtt_url,
+                  subtitleSegments: res.segments,
+                },
+              }));
+            }}
             drawingTools={drawingTools}
             selectedHandToolId={workflow.export.handToolId || "hand-pen-modern"}
             onSelectHandTool={(toolId) =>

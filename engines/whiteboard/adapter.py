@@ -1015,3 +1015,42 @@ class WhiteboardEngineAdapter:
         if res.returncode != 0:
             raise RuntimeError(f"Scene merging failed (code {res.returncode}): {res.stderr}")
         return output_mp4
+
+    def render_handwritten_text_scene(
+        self,
+        scene_id: str,
+        text: str,
+        output_path: Path,
+        duration_sec: float = 4.0,
+        font_family: str = "Patrick Hand",
+        font_size: Optional[int] = None,
+        color_hex: str = "#1A1A1A",
+        config: Optional[WhiteboardRenderConfig] = None,
+    ) -> Path:
+        """
+        Kết xuất một phân cảnh chữ viết tay (tiêu đề, công thức, tóm tắt) bằng bàn tay vẽ thực tế (Phase 9 - Task 9.3).
+        """
+        from core.drawing.text_handwriter import TextHandwriter
+
+        cfg = config or WhiteboardRenderConfig()
+        canvas_size = (1080, 1920) if cfg.aspect_ratio == "9:16" else (1920, 1080)
+        handwriter = TextHandwriter(
+            default_font_family=font_family,
+            canvas_size=canvas_size,
+        )
+        temp_dir = output_path.parent / f"text_scene_{scene_id}"
+        img_path, ann_path = handwriter.create_handwritten_scene_artifacts(
+            scene_id=scene_id,
+            text=text,
+            output_dir=temp_dir,
+            font_family=font_family,
+            font_size=font_size or (54 if cfg.aspect_ratio == "9:16" else 64),
+            color_hex=color_hex,
+            duration_ms=int(duration_sec * 1000),
+        )
+        return self.render_scene(
+            image_path=img_path,
+            annotation_path=ann_path,
+            output_path=output_path,
+            config=cfg,
+        )

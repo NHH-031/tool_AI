@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
-import { DrawingToolItem, MediaQAReport, ProjectWorkflow, Scene } from "../../types";
+import React, { useState } from "react";
+import { DrawingToolItem, MediaQAReport, ProjectWorkflow, Scene, SubtitleTypographyConfig, SubtitleSegment } from "../../types";
+import { SubtitleTimelineEditor } from "../subtitles/SubtitleTimelineEditor";
 
 interface ExportStepProps {
   workflow: ProjectWorkflow;
@@ -12,6 +13,9 @@ interface ExportStepProps {
   jobId?: string | null;
   subtitleStyle?: "none" | "classic" | "karaoke";
   onUpdateSubtitleStyle?: (style: "none" | "classic" | "karaoke") => void;
+  subtitleTypography?: SubtitleTypographyConfig;
+  onUpdateSubtitleTypography?: (cfg: SubtitleTypographyConfig) => void;
+  onSubtitlesUpdated?: (res: any) => void;
   drawingTools?: DrawingToolItem[];
   selectedHandToolId?: string;
   onSelectHandTool?: (toolId: string) => void;
@@ -40,6 +44,9 @@ export const ExportStep: React.FC<ExportStepProps> = ({
   jobId,
   subtitleStyle = "classic",
   onUpdateSubtitleStyle,
+  subtitleTypography,
+  onUpdateSubtitleTypography,
+  onSubtitlesUpdated,
   drawingTools = [],
   selectedHandToolId = "hand-pen-modern",
   onSelectHandTool,
@@ -58,6 +65,28 @@ export const ExportStep: React.FC<ExportStepProps> = ({
   onBackStep,
   onOpenArchiveVault,
 }) => {
+  const [isTimelineEditorOpen, setIsTimelineEditorOpen] = useState(false);
+  const [isTypographyOpen, setIsTypographyOpen] = useState(true);
+
+  // Local typography state
+  const currentTypography: SubtitleTypographyConfig = subtitleTypography || {
+    font_family: "Patrick Hand",
+    font_size_preset: "md",
+    text_color: "#FFFFFF",
+    stroke_color: "#000000",
+    stroke_width: 2,
+    bg_color: "#0F172AD0",
+    bg_enabled: true,
+    highlight_color: "#FFE600",
+    position: "bottom",
+  };
+
+  const updateTypoField = (field: keyof SubtitleTypographyConfig, value: any) => {
+    const next = { ...currentTypography, [field]: value };
+    if (onUpdateSubtitleTypography) {
+      onUpdateSubtitleTypography(next);
+    }
+  };
   const isCompleted = Boolean(videoUrl && !isRendering);
 
   // Compute total duration
@@ -403,6 +432,244 @@ export const ExportStep: React.FC<ExportStepProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Timeline Scrubbing Button (Task 9.2) */}
+            <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+              <button
+                id="btn-open-subtitle-timeline"
+                type="button"
+                onClick={() => setIsTimelineEditorOpen(true)}
+                disabled={!jobId && !videoUrl}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition ${
+                  (!jobId && !videoUrl)
+                    ? "bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed"
+                    : "bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 border-indigo-500/40 shadow-sm active:scale-95"
+                }`}
+              >
+                <span>⏱️</span>
+                <span>Chỉnh sửa mốc thời gian & chữ (.SRT)</span>
+              </button>
+              <span className="text-[10px] text-slate-400">
+                Sửa chính tả & Re-burn siêu tốc (~1.8s)
+              </span>
+            </div>
+
+            {/* Typography Customizer Accordion (Task 9.1) */}
+            {subtitleStyle !== "none" && (
+              <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-3">
+                <div
+                  onClick={() => setIsTypographyOpen(!isTypographyOpen)}
+                  className="flex items-center justify-between cursor-pointer py-1 group"
+                >
+                  <span className="text-xs font-semibold text-slate-200 group-hover:text-white flex items-center gap-1.5">
+                    <span>✨</span> Tùy biến Kiểu Chữ & Typography (Phase 9)
+                  </span>
+                  <span className="text-xs text-slate-400 group-hover:text-white">
+                    {isTypographyOpen ? "▲" : "▼"}
+                  </span>
+                </div>
+
+                {isTypographyOpen && (
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/90 space-y-3.5">
+                    {/* Font Family Selection */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                        <span>Font Chữ (Font Family):</span>
+                        <span className="text-[10px] text-indigo-400 font-mono">
+                          {currentTypography.font_family || "Patrick Hand"}
+                        </span>
+                      </label>
+                      <select
+                        value={currentTypography.font_family || "Patrick Hand"}
+                        onChange={(e) => updateTypoField("font_family", e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      >
+                        <optgroup label="✍️ Font Viết Tay / Bảng Đen">
+                          <option value="Patrick Hand">Patrick Hand (Bảng đen kinh điển)</option>
+                          <option value="Mali">Mali (Nét vẽ mềm mại, dễ thương)</option>
+                          <option value="Caveat">Caveat (Chữ ký tay phóng khoáng)</option>
+                          <option value="Comic Sans MS">Comic Sans MS (Hoạt hình vui nhộn)</option>
+                        </optgroup>
+                        <optgroup label="🏛️ Font Hiện Đại / Rõ Nét">
+                          <option value="Segoe UI">Segoe UI (Chuẩn mực hệ thống)</option>
+                          <option value="Inter">Inter (Hiện đại, tinh tế)</option>
+                          <option value="Roboto">Roboto (Hình học cân đối)</option>
+                          <option value="Arial">Arial (Cổ điển phổ biến)</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Font Size Preset & Position */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-slate-300">Cỡ Chữ:</label>
+                        <div className="grid grid-cols-4 gap-1">
+                          {(["sm", "md", "lg", "xl"] as const).map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => updateTypoField("font_size_preset", s)}
+                              className={`py-1 text-[10px] font-bold uppercase rounded border transition ${
+                                (currentTypography.font_size_preset || "md") === s
+                                  ? "bg-indigo-600 text-white border-indigo-400"
+                                  : "bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700"
+                              }`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-slate-300">Vị Trí:</label>
+                        <div className="grid grid-cols-3 gap-1">
+                          {(["bottom", "center", "top"] as const).map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => updateTypoField("position", p)}
+                              className={`py-1 text-[10px] font-semibold capitalize rounded border transition ${
+                                (currentTypography.position || "bottom") === p
+                                  ? "bg-indigo-600 text-white border-indigo-400"
+                                  : "bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700"
+                              }`}
+                            >
+                              {p === "bottom" ? "Đáy" : p === "center" ? "Giữa" : "Đỉnh"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Colors: Text, Stroke, Box */}
+                    <div className="grid grid-cols-3 gap-2.5">
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-400 block">Màu chữ:</label>
+                        <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded p-1">
+                          <input
+                            type="color"
+                            value={currentTypography.text_color || "#FFFFFF"}
+                            onChange={(e) => updateTypoField("text_color", e.target.value)}
+                            className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                          />
+                          <span className="text-[10px] font-mono text-slate-300">
+                            {currentTypography.text_color || "#FFF"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-400 block">Viền chữ (Stroke):</label>
+                        <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded p-1">
+                          <input
+                            type="color"
+                            value={currentTypography.stroke_color || "#000000"}
+                            onChange={(e) => updateTypoField("stroke_color", e.target.value)}
+                            className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                          />
+                          <span className="text-[10px] font-mono text-slate-300">
+                            {currentTypography.stroke_color || "#000"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-400 block">Khung kính nền:</label>
+                        <button
+                          type="button"
+                          onClick={() => updateTypoField("bg_enabled", !currentTypography.bg_enabled)}
+                          className={`w-full py-1 px-1.5 rounded text-[10px] font-bold border transition ${
+                            currentTypography.bg_enabled !== false
+                              ? "bg-slate-800 border-indigo-500/40 text-indigo-300"
+                              : "bg-slate-950 border-slate-800 text-slate-500"
+                          }`}
+                        >
+                          {currentTypography.bg_enabled !== false ? "Bật Khung" : "Tắt Khung"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Karaoke Highlight Color Swatches (if karaoke) */}
+                    {subtitleStyle === "karaoke" && (
+                      <div className="space-y-1.5 pt-1 border-t border-slate-800/80">
+                        <label className="text-[11px] font-semibold text-amber-300 flex items-center justify-between">
+                          <span>Màu Highlight Karaoke:</span>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {currentTypography.highlight_color || "#FFE600"}
+                          </span>
+                        </label>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {[
+                            { name: "Vàng Neon", hex: "#FFE600" },
+                            { name: "Xanh Mint", hex: "#00FFCC" },
+                            { name: "Cam Rực", hex: "#FF5500" },
+                            { name: "Vàng Kim", hex: "#FACC15" },
+                            { name: "Cyan", hex: "#06B6D4" },
+                          ].map((item) => (
+                            <button
+                              key={item.hex}
+                              type="button"
+                              onClick={() => updateTypoField("highlight_color", item.hex)}
+                              className={`px-2 py-1 rounded-md text-[10px] font-semibold flex items-center gap-1.5 border transition ${
+                                (currentTypography.highlight_color || "#FFE600").toLowerCase() === item.hex.toLowerCase()
+                                  ? "border-white bg-slate-800 text-white shadow-sm ring-1 ring-white/50"
+                                  : "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700"
+                              }`}
+                            >
+                              <span
+                                className="w-2.5 h-2.5 rounded-full inline-block shadow-sm"
+                                style={{ backgroundColor: item.hex }}
+                              />
+                              <span>{item.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Live Preview Sample */}
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+                        Xem trước mẫu chữ (Preview):
+                      </span>
+                      <div className="mt-1.5 p-3 rounded-lg bg-[#24201c] border border-amber-900/40 flex items-center justify-center">
+                        <div
+                          className="px-3 py-1.5 rounded-lg text-center transition shadow-md"
+                          style={{
+                            backgroundColor: currentTypography.bg_enabled !== false ? "rgba(15, 23, 42, 0.85)" : "transparent",
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: currentTypography.text_color || "#FFFFFF",
+                              textShadow: `0 0 2px ${currentTypography.stroke_color || "#000000"}`,
+                              fontSize: "13px",
+                              fontFamily: currentTypography.font_family || "Patrick Hand, cursive",
+                            }}
+                          >
+                            Chào mừng bạn đến với{" "}
+                            {subtitleStyle === "karaoke" ? (
+                              <span
+                                style={{
+                                  color: currentTypography.highlight_color || "#FFE600",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                Whiteboard AI
+                              </span>
+                            ) : (
+                              "Whiteboard AI"
+                            )}{" "}
+                            Studio
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Custom Drawing Tools Selection Card (Phase 4) */}
@@ -733,6 +1000,21 @@ export const ExportStep: React.FC<ExportStepProps> = ({
           </div>
         )}
       </div>
+
+      {/* Subtitle Timeline Modal (Phase 9 - Task 9.2) */}
+      <SubtitleTimelineEditor
+        jobId={jobId || ""}
+        videoUrl={videoUrl}
+        aspectRatio={workflow.aspectRatio}
+        initialTypography={currentTypography}
+        isOpen={isTimelineEditorOpen}
+        onClose={() => setIsTimelineEditorOpen(false)}
+        onApplied={(res) => {
+          if (onSubtitlesUpdated) {
+            onSubtitlesUpdated(res);
+          }
+        }}
+      />
     </div>
   );
 };

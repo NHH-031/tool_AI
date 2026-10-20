@@ -82,6 +82,8 @@ export interface ProjectWorkflow {
     srtUrl?: string | null;
     vttUrl?: string | null;
     subtitleStyle?: "none" | "classic" | "karaoke";
+    subtitleTypography?: SubtitleTypographyConfig;
+    subtitleSegments?: SubtitleSegment[];
     handToolId?: string;
     multiPen?: boolean;
     transitionType?: "cut" | "eraser" | "crossfade";
@@ -91,6 +93,35 @@ export interface ProjectWorkflow {
     qaReport?: MediaQAReport;
   };
   updatedAt: string;
+}
+
+export interface SubtitleTypographyConfig {
+  font_family?: string;
+  font_size_preset?: "sm" | "md" | "lg" | "xl";
+  font_size?: number;
+  text_color?: string;
+  stroke_color?: string;
+  stroke_width?: number;
+  bg_color?: string;
+  bg_enabled?: boolean;
+  highlight_color?: string;
+  position?: "bottom" | "center" | "top";
+  y_offset_percent?: number;
+}
+
+export interface SubtitleWord {
+  word: string;
+  start_sec: number;
+  end_sec: number;
+  duration?: number;
+}
+
+export interface SubtitleSegment {
+  index: number;
+  start_sec: number;
+  end_sec: number;
+  text: string;
+  words?: SubtitleWord[];
 }
 
 export interface DrawingToolItem {

@@ -60,10 +60,30 @@ class RenderExportRequest(BaseModel):
     sfx_name: str = "marker_draw"
     subtitle_style: str = "classic"
     subtitle_enabled: bool = True
+    subtitle_typography: Optional[Dict[str, Any]] = None
     aspect_ratio: str = "16:9"
     hand_tool_id: str = "hand-pen-modern"
     multi_pen: bool = True
     transition_type: str = "eraser"  # "cut", "eraser", "crossfade"
+
+
+class SubtitleUpdateRequest(BaseModel):
+    segments: List[Dict[str, Any]]
+    reburn_video: bool = True
+    style: Optional[str] = "classic"
+    typography: Optional[Dict[str, Any]] = None
+
+
+class RenderTextSceneRequest(BaseModel):
+    project_id: str = "default"
+    scene_id: str = "title_scene"
+    text: str
+    font_family: str = "Patrick Hand"
+    font_size: Optional[int] = None
+    color_hex: str = "#1A1A1A"
+    duration_sec: float = 4.0
+    aspect_ratio: str = "16:9"
+    hand_tool_id: str = "hand-pen-modern"
 
 
 class RenderExportResponse(BaseModel):
@@ -519,11 +539,11 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             except Exception:
                 pass
 
-        # 9. Sinh phụ đề tự động (.SRT & .VTT) và Burn-in lên video (Phase 2)
+        # 9. Sinh phụ đề tự động (.SRT & .VTT) và Burn-in lên video (Phase 2 & Phase 9)
         job_record["stage"] = "Đang tạo phụ đề tự động (.SRT) và WebVTT..."
         job_record["progress_percent"] = 93.0
 
-        from core.subtitles import SubtitleGenerator, SubtitleBurner
+        from core.subtitles import SubtitleGenerator, SubtitleBurner, SubtitleTypographyConfig
         all_segments = SubtitleGenerator.generate_project_subtitles(
             scenes_subtitles_meta,
             max_words_per_segment=4 if req.aspect_ratio == "9:16" else 6,
@@ -537,23 +557,50 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
         vtt_file.write_text(vtt_content, encoding="utf-8")
         logger.info(f"[_run_export_pipeline] Đã xuất file phụ đề: {srt_file.name} và {vtt_file.name}")
 
+        # Lưu segments json để phục vụ Visual Subtitle Timeline Editor (Phase 9 - Task 9.2)
+        segments_file = output_dir / f"{job_id}_segments.json"
+        try:
+            segments_data = [seg.model_dump() for seg in all_segments]
+            segments_file.write_text(json.dumps(segments_data, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as e_seg:
+            logger.warning(f"[_run_export_pipeline] Lỗi ghi segments json: {e_seg}")
+
+        # Luôn lưu một bản sao video sạch không có phụ đề để hỗ trợ Fast Re-burn (< 2 giây)
+        clean_video_mp4 = output_dir / f"{job_id}_clean.mp4"
+        try:
+            shutil.copyfile(str(final_output_mp4), str(clean_video_mp4))
+        except Exception as e_cp:
+            logger.warning(f"[_run_export_pipeline] Không thể tạo file clean video: {e_cp}")
+
         rel_srt_url = f"/media/export/{req.project_id}/{srt_file.name}"
         rel_vtt_url = f"/media/export/{req.project_id}/{vtt_file.name}"
         job_record["srt_url"] = rel_srt_url
         job_record["vtt_url"] = rel_vtt_url
+        job_record["project_id"] = req.project_id
+        job_record["aspect_ratio"] = req.aspect_ratio
+        job_record["subtitle_style"] = req.subtitle_style
+        job_record["subtitle_typography"] = req.subtitle_typography
 
         # Burn-in phụ đề trực tiếp lên video nếu người dùng chọn
         if req.subtitle_enabled and req.subtitle_style in ["classic", "karaoke"] and all_segments:
             job_record["stage"] = f"Đang vẽ phụ đề {req.subtitle_style.capitalize()} trực tiếp lên video..."
             job_record["progress_percent"] = 96.0
 
+            # Khởi tạo typography config từ request (Phase 9 - Task 9.1)
+            typo_cfg = None
+            if req.subtitle_typography:
+                try:
+                    typo_cfg = SubtitleTypographyConfig(**req.subtitle_typography)
+                except Exception as e_typo:
+                    logger.warning(f"[_run_export_pipeline] Lỗi parse subtitle_typography: {e_typo}")
+
             sub_video_mp4 = output_dir / f"{job_id}_subtitled.mp4"
             burner = SubtitleBurner(
-                font_size=28 if req.aspect_ratio == "9:16" else 32,
                 aspect_ratio=req.aspect_ratio,
+                typography=typo_cfg,
             )
             burner.burn_subtitles_to_video(
-                video_path=final_output_mp4,
+                video_path=clean_video_mp4 if clean_video_mp4.exists() else final_output_mp4,
                 subtitles=all_segments,
                 output_path=sub_video_mp4,
                 style=req.subtitle_style,
@@ -811,4 +858,205 @@ async def preview_scene(req: PreviewSceneRequest) -> PreviewSceneResponse:
         resolution=resolution_label,
         status="completed",
     )
+
+
+def _find_job_export_dir(job_id: str) -> Optional[Path]:
+    """Tìm thư mục chứa artifacts kết xuất của job_id."""
+    job_record = _EXPORT_JOBS.get(job_id)
+    if job_record and job_record.get("project_id"):
+        cand = PROJECT_ROOT / "output" / "export" / job_record["project_id"]
+        if cand.exists():
+            return cand
+
+    export_base = PROJECT_ROOT / "output" / "export"
+    if export_base.exists():
+        for p in export_base.iterdir():
+            if p.is_dir() and (
+                (p / f"{job_id}.srt").exists()
+                or (p / f"{job_id}_segments.json").exists()
+                or (p / f"{job_id}_final.mp4").exists()
+            ):
+                return p
+    return None
+
+
+@router.get("/{job_id}/subtitles")
+async def get_job_subtitles(job_id: str) -> Dict[str, Any]:
+    """Lấy danh sách các segment phụ đề, mốc thời gian và đường dẫn file cho Visual Timeline Editor (Phase 9 - Task 9.2)."""
+    out_dir = _find_job_export_dir(job_id)
+    if not out_dir:
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy dữ liệu phụ đề của job: {job_id}")
+
+    job_rec = _EXPORT_JOBS.get(job_id, {})
+    project_id = job_rec.get("project_id", out_dir.name)
+    segments_file = out_dir / f"{job_id}_segments.json"
+    srt_file = out_dir / f"{job_id}.srt"
+    vtt_file = out_dir / f"{job_id}.vtt"
+    clean_file = out_dir / f"{job_id}_clean.mp4"
+    final_file = out_dir / f"{job_id}_final.mp4"
+
+    segments = []
+    if segments_file.exists():
+        try:
+            segments = json.loads(segments_file.read_text(encoding="utf-8"))
+        except Exception as e:
+            logger.warning(f"Lỗi đọc {segments_file}: {e}")
+
+    return {
+        "job_id": job_id,
+        "segments": segments,
+        "srt_url": f"/media/export/{project_id}/{srt_file.name}" if srt_file.exists() else None,
+        "vtt_url": f"/media/export/{project_id}/{vtt_file.name}" if vtt_file.exists() else None,
+        "video_url": f"/media/export/{project_id}/{final_file.name}" if final_file.exists() else None,
+        "has_clean_video": clean_file.exists(),
+        "aspect_ratio": job_rec.get("aspect_ratio", "16:9"),
+        "subtitle_style": job_rec.get("subtitle_style", "classic"),
+        "subtitle_typography": job_rec.get("subtitle_typography"),
+    }
+
+
+@router.post("/{job_id}/subtitles/update")
+async def update_job_subtitles(job_id: str, req: SubtitleUpdateRequest) -> Dict[str, Any]:
+    """
+    Cập nhật mốc thời gian, sửa lỗi chính tả phụ đề và Fast Re-burn trực tiếp lên video trong 1-2s (Phase 9 - Task 9.2).
+    """
+    out_dir = _find_job_export_dir(job_id)
+    if not out_dir:
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy thư mục export của job: {job_id}")
+
+    job_rec = _EXPORT_JOBS.get(job_id, {})
+    project_id = job_rec.get("project_id", out_dir.name)
+    aspect_ratio = job_rec.get("aspect_ratio", "16:9")
+
+    from core.subtitles import (
+        SubtitleBurner,
+        SubtitleGenerator,
+        SubtitleSegment,
+        SubtitleTypographyConfig,
+        SubtitleWord,
+    )
+
+    parsed_segments: List[SubtitleSegment] = []
+    for idx, s in enumerate(req.segments, 1):
+        words = []
+        if "words" in s and isinstance(s["words"], list):
+            for w in s["words"]:
+                words.append(
+                    SubtitleWord(
+                        word=w.get("word", ""),
+                        start_sec=float(w.get("start_sec", 0.0)),
+                        end_sec=float(w.get("end_sec", 0.0)),
+                        duration=float(w.get("duration", 0.0)),
+                    )
+                )
+        parsed_segments.append(
+            SubtitleSegment(
+                index=s.get("index", idx),
+                start_sec=float(s.get("start_sec", 0.0)),
+                end_sec=float(s.get("end_sec", 0.0)),
+                text=str(s.get("text", "")).strip(),
+                words=words,
+            )
+        )
+
+    parsed_segments.sort(key=lambda seg: seg.start_sec)
+
+    # 1. Ghi lại .srt và .vtt mới
+    srt_content = SubtitleGenerator.to_srt(parsed_segments)
+    vtt_content = SubtitleGenerator.to_vtt(parsed_segments)
+    srt_file = out_dir / f"{job_id}.srt"
+    vtt_file = out_dir / f"{job_id}.vtt"
+    srt_file.write_text(srt_content, encoding="utf-8")
+    vtt_file.write_text(vtt_content, encoding="utf-8")
+
+    # 2. Cập nhật segments.json
+    segments_file = out_dir / f"{job_id}_segments.json"
+    segments_data = [seg.model_dump() for seg in parsed_segments]
+    segments_file.write_text(json.dumps(segments_data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # 3. Fast Re-burn video nếu được kích hoạt
+    final_mp4 = out_dir / f"{job_id}_final.mp4"
+    clean_mp4 = out_dir / f"{job_id}_clean.mp4"
+    video_reburnt = False
+
+    style = req.style or job_rec.get("subtitle_style", "classic")
+    typo_dict = req.typography or job_rec.get("subtitle_typography")
+    typo_cfg = SubtitleTypographyConfig(**typo_dict) if typo_dict else None
+
+    if req.reburn_video and (clean_mp4.exists() or final_mp4.exists()) and style not in ["none", "off"]:
+        source_video = clean_mp4 if clean_mp4.exists() else final_mp4
+        reburnt_temp = out_dir / f"{job_id}_reburn_temp.mp4"
+
+        burner = SubtitleBurner(
+            aspect_ratio=aspect_ratio,
+            typography=typo_cfg,
+        )
+        burner.burn_subtitles_to_video(
+            video_path=source_video,
+            subtitles=parsed_segments,
+            output_path=reburnt_temp,
+            style=style,
+        )
+
+        if reburnt_temp.exists() and reburnt_temp.stat().st_size > 1000:
+            shutil.move(str(reburnt_temp), str(final_mp4))
+            video_reburnt = True
+            logger.info(f"[update_job_subtitles] Đã re-burn thành công phụ đề vào: {final_mp4.name}")
+
+    # Cập nhật memory store nếu có
+    if job_id in _EXPORT_JOBS:
+        rec = _EXPORT_JOBS[job_id]
+        if req.typography:
+            rec["subtitle_typography"] = req.typography
+        if req.style:
+            rec["subtitle_style"] = req.style
+        _EXPORT_JOBS[job_id] = rec
+
+    import time
+    ts = int(time.time())
+    return {
+        "success": True,
+        "job_id": job_id,
+        "video_reburnt": video_reburnt,
+        "video_url": f"/media/export/{project_id}/{final_mp4.name}?v={ts}",
+        "srt_url": f"/media/export/{project_id}/{srt_file.name}?v={ts}",
+        "vtt_url": f"/media/export/{project_id}/{vtt_file.name}?v={ts}",
+        "segments": segments_data,
+    }
+
+
+@router.post("/text-scene")
+async def render_text_scene_endpoint(req: RenderTextSceneRequest) -> Dict[str, Any]:
+    """Kết xuất một phân cảnh chữ viết tay (tiêu đề/công thức/tóm tắt) bằng bàn tay vẽ hoạt họa (Phase 9 - Task 9.3)."""
+    out_dir = PROJECT_ROOT / "output" / "export" / req.project_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output_mp4 = out_dir / f"{req.scene_id}_handwritten.mp4"
+
+    adapter = WhiteboardEngineAdapter(root_dir=PROJECT_ROOT)
+    render_cfg = WhiteboardRenderConfig(
+        fps=24,
+        aspect_ratio=req.aspect_ratio,
+        hand_tool_id=req.hand_tool_id,
+        bare_tip=(req.hand_tool_id == "no_hand"),
+    )
+
+    await asyncio.to_thread(
+        adapter.render_handwritten_text_scene,
+        scene_id=req.scene_id,
+        text=req.text,
+        output_path=output_mp4,
+        duration_sec=req.duration_sec,
+        font_family=req.font_family,
+        font_size=req.font_size,
+        color_hex=req.color_hex,
+        config=render_cfg,
+    )
+
+    return {
+        "success": True,
+        "scene_id": req.scene_id,
+        "duration_sec": req.duration_sec,
+        "video_url": f"/media/export/{req.project_id}/{output_mp4.name}",
+    }
+
 

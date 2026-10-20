@@ -17,9 +17,12 @@ import {
   DrawingToolItem,
   CharacterAnchorData,
   DoodleItem,
+  SubtitleSegment,
+  SubtitleWord,
+  SubtitleTypographyConfig,
 } from "./types";
 
-export type { CharacterAnchorData, DoodleItem };
+export type { CharacterAnchorData, DoodleItem, SubtitleSegment, SubtitleWord, SubtitleTypographyConfig };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -1045,6 +1048,7 @@ export async function renderExport(payload: {
   hasColor?: boolean;
   subtitleStyle?: "none" | "classic" | "karaoke";
   subtitleEnabled?: boolean;
+  subtitleTypography?: SubtitleTypographyConfig;
   aspectRatio?: "16:9" | "9:16";
   handToolId?: string;
   multiPen?: boolean;
@@ -1073,6 +1077,7 @@ export async function renderExport(payload: {
       has_color: payload.hasColor !== undefined ? payload.hasColor : true,
       subtitle_style: payload.subtitleStyle || "classic",
       subtitle_enabled: payload.subtitleEnabled !== undefined ? payload.subtitleEnabled : (payload.subtitleStyle !== "none"),
+      subtitle_typography: payload.subtitleTypography || null,
       aspect_ratio: payload.aspectRatio || "16:9",
       hand_tool_id: payload.handToolId || "hand-pen-modern",
       multi_pen: payload.multiPen !== undefined ? payload.multiPen : true,
@@ -1374,5 +1379,132 @@ export async function deleteArchivedVideo(videoId: string): Promise<boolean> {
     return false;
   }
 }
+
+// ============================================================================
+// SUBTITLE TIMELINE & TYPOGRAPHY APIs (Phase 9 - Task 9.1 & 9.2)
+// ============================================================================
+
+export async function fetchJobSubtitles(jobId: string): Promise<{
+  job_id: string;
+  segments: SubtitleSegment[];
+  srt_url: string | null;
+  vtt_url: string | null;
+  video_url: string | null;
+  has_clean_video: boolean;
+  aspect_ratio: string;
+  subtitle_style: string;
+  subtitle_typography?: SubtitleTypographyConfig;
+}> {
+  const res = await fetch(`${API_BASE}/export/${jobId}/subtitles`, {
+    signal: AbortSignal.timeout(15000),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return {
+      ...data,
+      video_url: data.video_url
+        ? data.video_url.startsWith("http")
+          ? data.video_url
+          : `${API_BASE}${data.video_url}`
+        : null,
+      srt_url: data.srt_url
+        ? data.srt_url.startsWith("http")
+          ? data.srt_url
+          : `${API_BASE}${data.srt_url}`
+        : null,
+      vtt_url: data.vtt_url
+        ? data.vtt_url.startsWith("http")
+          ? data.vtt_url
+          : `${API_BASE}${data.vtt_url}`
+        : null,
+    };
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi tải thông tin phụ đề (HTTP ${res.status})`);
+}
+
+export async function updateJobSubtitles(
+  jobId: string,
+  payload: {
+    segments: SubtitleSegment[];
+    reburn_video?: boolean;
+    style?: string;
+    typography?: SubtitleTypographyConfig;
+  }
+): Promise<{
+  success: boolean;
+  job_id: string;
+  video_reburnt: boolean;
+  video_url: string;
+  srt_url: string;
+  vtt_url: string;
+  segments: SubtitleSegment[];
+}> {
+  const res = await fetch(`${API_BASE}/export/${jobId}/subtitles/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(45000),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return {
+      ...data,
+      video_url: data.video_url.startsWith("http") ? data.video_url : `${API_BASE}${data.video_url}`,
+      srt_url: data.srt_url.startsWith("http") ? data.srt_url : `${API_BASE}${data.srt_url}`,
+      vtt_url: data.vtt_url.startsWith("http") ? data.vtt_url : `${API_BASE}${data.vtt_url}`,
+    };
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi cập nhật mốc thời gian phụ đề (HTTP ${res.status})`);
+}
+
+// ============================================================================
+// HANDWRITTEN TEXT ANIMATION APIs (Phase 9 - Task 9.3)
+// ============================================================================
+
+export async function renderTextScene(payload: {
+  projectId: string;
+  sceneId: string;
+  text: string;
+  fontFamily?: string;
+  fontSize?: number;
+  colorHex?: string;
+  durationSec?: number;
+  aspectRatio?: string;
+  handToolId?: string;
+}): Promise<{
+  success: boolean;
+  scene_id: string;
+  duration_sec: number;
+  video_url: string;
+}> {
+  const res = await fetch(`${API_BASE}/export/text-scene`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_id: payload.projectId,
+      scene_id: payload.sceneId,
+      text: payload.text,
+      font_family: payload.fontFamily || "Patrick Hand",
+      font_size: payload.fontSize,
+      color_hex: payload.colorHex || "#1A1A1A",
+      duration_sec: payload.durationSec || 4.0,
+      aspect_ratio: payload.aspectRatio || "16:9",
+      hand_tool_id: payload.handToolId || "hand-pen-modern",
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return {
+      ...data,
+      video_url: data.video_url.startsWith("http") ? data.video_url : `${API_BASE}${data.video_url}`,
+    };
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi render chữ viết tay (HTTP ${res.status})`);
+}
+
 
 
