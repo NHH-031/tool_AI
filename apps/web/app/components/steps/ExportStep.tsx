@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MediaQAReport, ProjectWorkflow, Scene } from "../../types";
+import { DrawingToolItem, MediaQAReport, ProjectWorkflow, Scene } from "../../types";
 
 interface ExportStepProps {
   workflow: ProjectWorkflow;
@@ -12,6 +12,9 @@ interface ExportStepProps {
   jobId?: string | null;
   subtitleStyle?: "none" | "classic" | "karaoke";
   onUpdateSubtitleStyle?: (style: "none" | "classic" | "karaoke") => void;
+  drawingTools?: DrawingToolItem[];
+  selectedHandToolId?: string;
+  onSelectHandTool?: (toolId: string) => void;
   isRendering: boolean;
   renderProgress: number;
   renderStage: string;
@@ -33,6 +36,9 @@ export const ExportStep: React.FC<ExportStepProps> = ({
   jobId,
   subtitleStyle = "classic",
   onUpdateSubtitleStyle,
+  drawingTools = [],
+  selectedHandToolId = "hand-pen-modern",
+  onSelectHandTool,
   isRendering,
   renderProgress,
   renderStage,
@@ -391,6 +397,57 @@ export const ExportStep: React.FC<ExportStepProps> = ({
             </div>
           </div>
 
+          {/* Custom Drawing Tools Selection Card (Phase 4) */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span>🎨</span> Kiểu Bàn Tay & Bút Vẽ (Drawing Tools)
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                Multi-Brush Ready
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Tùy chọn phong cách công cụ vẽ hoạt họa hoặc ẩn bàn tay để nét vẽ tự động hiển thị:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {drawingTools.map((tool) => {
+                const isSelected = (selectedHandToolId || "hand-pen-modern") === tool.id;
+                return (
+                  <div
+                    key={tool.id}
+                    id={`tool-card-${tool.id}`}
+                    onClick={() => onSelectHandTool && onSelectHandTool(tool.id)}
+                    className={`p-2.5 rounded-xl border cursor-pointer transition flex items-center gap-2.5 ${
+                      isSelected
+                        ? "bg-indigo-600/20 border-indigo-500 text-white shadow-sm ring-1 ring-indigo-500"
+                        : "bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-white hover:border-slate-700"
+                    }`}
+                  >
+                    <span className="text-xl p-1.5 rounded-lg bg-slate-900 border border-slate-800 flex-shrink-0">
+                      {tool.icon}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-white truncate flex items-center gap-1.5">
+                        <span>{tool.name}</span>
+                        {tool.is_default && (
+                          <span className="text-[8px] px-1 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-mono">
+                            Mặc định
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                        {tool.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Engine & Hand Overlay Specs */}
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -400,9 +457,11 @@ export const ExportStep: React.FC<ExportStepProps> = ({
             <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
                 <span className="text-slate-400 flex items-center gap-2">
-                  <span>✍️</span> Bàn tay cầm bút marker:
+                  <span>✍️</span> Kiểu bàn tay / bút vẽ:
                 </span>
-                <span className="font-semibold text-emerald-400">drawing-hand.png (Bật)</span>
+                <span className="font-semibold text-emerald-400">
+                  {selectedHandToolId === "no_hand" ? "Ẩn bàn tay (Nét tự hiện)" : `${selectedHandToolId}.png (Bật)`}
+                </span>
               </div>
 
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">

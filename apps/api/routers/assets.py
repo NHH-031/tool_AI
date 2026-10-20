@@ -219,3 +219,60 @@ async def generate_lineart_on_demand(req: GenerateLineArtRequest) -> Dict[str, A
         "style": "Notion Doodle / Vector Comic Line Art",
     }
 
+
+class DrawingToolItem(BaseModel):
+    id: str
+    name: str
+    description: str
+    icon: str
+    preview_url: str
+    is_default: bool = False
+
+
+@router.get("/drawing-tools", response_model=List[DrawingToolItem])
+async def list_drawing_tools() -> List[DrawingToolItem]:
+    """Trả về danh mục các kiểu bàn tay và bút vẽ (Custom Drawing Tools) khả dụng."""
+    return [
+        DrawingToolItem(
+            id="hand-pen-modern",
+            name="Bút dạ đen hiện đại",
+            description="Bàn tay cầm bút dạ đen nét chuẩn, phong cách tối giản và thanh lịch.",
+            icon="✍️",
+            preview_url="/assets/drawing-tools/hand-pen-modern.png",
+            is_default=True,
+        ),
+        DrawingToolItem(
+            id="hand-marker",
+            name="Bút viết bảng Whiteboard",
+            description="Bút lông viết bảng thân dày màu xanh hoàng gia, nét vẽ dứt khoát mạnh mẽ.",
+            icon="🖍️",
+            preview_url="/assets/drawing-tools/hand-marker.png",
+            is_default=False,
+        ),
+        DrawingToolItem(
+            id="hand-quill-vintage",
+            name="Bút lông ngỗng cổ điển",
+            description="Ngòi kim loại và cán lông ngỗng chấm mực phong cách châu Âu cổ điển.",
+            icon="🪶",
+            preview_url="/assets/drawing-tools/hand-quill-vintage.png",
+            is_default=False,
+        ),
+        DrawingToolItem(
+            id="hand-calligraphy",
+            name="Bút lông thư pháp Á Đông",
+            description="Cán tre truyền thống với đầu cọ lông mềm mại, uyển chuyển đầy tính nghệ thuật.",
+            icon="🖌️",
+            preview_url="/assets/drawing-tools/hand-calligraphy.png",
+            is_default=False,
+        ),
+        DrawingToolItem(
+            id="no_hand",
+            name="Ẩn bàn tay (Nét tự hiện)",
+            description="Không hiển thị bàn tay, các nét vẽ và màu sắc tự động xuất hiện trên giấy.",
+            icon="✨",
+            preview_url="",
+            is_default=False,
+        ),
+    ]
+
+

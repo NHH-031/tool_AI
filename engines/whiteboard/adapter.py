@@ -36,6 +36,7 @@ class WhiteboardRenderConfig:
     draw_ratio: float = 0.85
     max_draw_ms: int = 15000
     aspect_ratio: str = "16:9"
+    hand_tool_id: str = "hand-pen-modern"
 
 
 class WhiteboardEngineAdapter:
@@ -848,7 +849,16 @@ class WhiteboardEngineAdapter:
     ) -> Path:
         """Thực thi kết xuất một phân cảnh thành file MP4."""
         cfg = config or WhiteboardRenderConfig()
-        hand_path = cfg.custom_hand_path or (self.assets_dir / "drawing-hand.png")
+        is_bare = cfg.bare_tip or (cfg.hand_tool_id == "no_hand")
+
+        hand_path = cfg.custom_hand_path
+        if not hand_path and cfg.hand_tool_id and cfg.hand_tool_id != "no_hand":
+            candidate = self.assets_dir / "drawing-tools" / f"{cfg.hand_tool_id}.png"
+            if candidate.exists():
+                hand_path = candidate
+
+        if not hand_path:
+            hand_path = self.assets_dir / "drawing-hand.png"
 
         script_path = self.scripts_dir / "render_stream_whiteboard.py"
         cmd = [
@@ -873,7 +883,7 @@ class WhiteboardEngineAdapter:
             cmd.extend(["--draw-ratio", str(cfg.draw_ratio)])
         if cfg.max_draw_ms is not None:
             cmd.extend(["--max-draw-ms", str(cfg.max_draw_ms)])
-        if cfg.bare_tip:
+        if is_bare:
             cmd.append("--bare-tip")
 
         env = os.environ.copy()

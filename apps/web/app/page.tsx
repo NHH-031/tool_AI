@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import {
   AudioResult,
+  DrawingToolItem,
   MusicTrackItem,
   ProjectSummary,
   ProjectWorkflow,
@@ -20,6 +21,7 @@ import {
   fetchStoryboard,
   fetchTemplates,
   fetchVoices,
+  fetchDrawingTools,
   generateStoryboardImage,
   getExportStatus,
   subscribeExportProgress,
@@ -45,6 +47,7 @@ export default function Home() {
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [voices, setVoices] = useState<VoiceItem[]>([]);
   const [musicTracks, setMusicTracks] = useState<MusicTrackItem[]>([]);
+  const [drawingTools, setDrawingTools] = useState<DrawingToolItem[]>([]);
 
   // Video Archive Vault State
   const [isArchiveVaultOpen, setIsArchiveVaultOpen] = useState<boolean>(false);
@@ -81,6 +84,7 @@ export default function Home() {
       srtUrl: null,
       vttUrl: null,
       subtitleStyle: "classic",
+      handToolId: "hand-pen-modern",
       jobId: null,
       status: "idle",
       progress: 0,
@@ -112,17 +116,19 @@ export default function Home() {
       const health = await checkBackendHealth();
       setBackendHealthy(health.ok);
 
-      const [tpls, vcs, msc, projs] = await Promise.all([
+      const [tpls, vcs, msc, projs, dTools] = await Promise.all([
         fetchTemplates(),
         fetchVoices(),
         fetchMusic(),
         fetchProjects(),
+        fetchDrawingTools(),
       ]);
 
       setTemplates(tpls);
       setVoices(vcs);
       setMusicTracks(msc);
       setProjects(projs);
+      setDrawingTools(dTools);
 
       // Tải số lượng video trong kho lưu trữ ổ D
       fetchArchiveStats().then((st) => {
@@ -459,6 +465,7 @@ export default function Home() {
         hasColor: true,
         subtitleStyle: workflow.export.subtitleStyle || "classic",
         aspectRatio: workflow.aspectRatio || "16:9",
+        handToolId: workflow.export.handToolId || "hand-pen-modern",
       });
 
       if (res.videoUrl) {
@@ -721,6 +728,14 @@ export default function Home() {
               setWorkflow((prev) => ({
                 ...prev,
                 export: { ...prev.export, subtitleStyle: style },
+              }))
+            }
+            drawingTools={drawingTools}
+            selectedHandToolId={workflow.export.handToolId || "hand-pen-modern"}
+            onSelectHandTool={(toolId) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                export: { ...prev.export, handToolId: toolId },
               }))
             }
             isRendering={isRenderingVideo}

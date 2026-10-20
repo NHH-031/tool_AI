@@ -14,6 +14,7 @@ import {
   VoiceItem,
   ArchivedVideo,
   ArchiveStats,
+  DrawingToolItem,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -461,6 +462,65 @@ export async function fetchMusic(): Promise<MusicTrackItem[]> {
   ];
 }
 
+export async function fetchDrawingTools(): Promise<DrawingToolItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/assets/drawing-tools`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data: DrawingToolItem[] = await res.json();
+      return data.map((item) => ({
+        ...item,
+        preview_url: item.preview_url && !item.preview_url.startsWith("http")
+          ? `${API_BASE}${item.preview_url}`
+          : item.preview_url,
+      }));
+    }
+  } catch (e) {
+    console.warn("[fetchDrawingTools] API error, using fallback:", e);
+  }
+  return [
+    {
+      id: "hand-pen-modern",
+      name: "Bút dạ đen hiện đại",
+      description: "Bàn tay cầm bút dạ đen nét chuẩn, phong cách tối giản và thanh lịch.",
+      icon: "✍️",
+      preview_url: `${API_BASE}/assets/drawing-tools/hand-pen-modern.png`,
+      is_default: true,
+    },
+    {
+      id: "hand-marker",
+      name: "Bút viết bảng Whiteboard",
+      description: "Bút lông viết bảng thân dày màu xanh hoàng gia, nét vẽ dứt khoát mạnh mẽ.",
+      icon: "🖍️",
+      preview_url: `${API_BASE}/assets/drawing-tools/hand-marker.png`,
+      is_default: false,
+    },
+    {
+      id: "hand-quill-vintage",
+      name: "Bút lông ngỗng cổ điển",
+      description: "Ngòi kim loại và cán lông ngỗng chấm mực phong cách châu Âu cổ điển.",
+      icon: "🪶",
+      preview_url: `${API_BASE}/assets/drawing-tools/hand-quill-vintage.png`,
+      is_default: false,
+    },
+    {
+      id: "hand-calligraphy",
+      name: "Bút lông thư pháp Á Đông",
+      description: "Cán tre truyền thống với đầu cọ lông mềm mại, uyển chuyển đầy tính nghệ thuật.",
+      icon: "🖌️",
+      preview_url: `${API_BASE}/assets/drawing-tools/hand-calligraphy.png`,
+      is_default: false,
+    },
+    {
+      id: "no_hand",
+      name: "Ẩn bàn tay (Nét tự hiện)",
+      description: "Không hiển thị bàn tay, các nét vẽ và màu sắc tự động xuất hiện trên giấy.",
+      icon: "✨",
+      preview_url: "",
+      is_default: false,
+    },
+  ];
+}
+
 export async function fetchProjects(): Promise<ProjectSummary[]> {
   try {
     const res = await fetch(`${API_BASE}/projects`, { signal: AbortSignal.timeout(2000) });
@@ -783,6 +843,7 @@ export async function renderExport(payload: {
   subtitleStyle?: "none" | "classic" | "karaoke";
   subtitleEnabled?: boolean;
   aspectRatio?: "16:9" | "9:16";
+  handToolId?: string;
 }): Promise<{
   jobId: string;
   status: string;
@@ -806,6 +867,7 @@ export async function renderExport(payload: {
       subtitle_style: payload.subtitleStyle || "classic",
       subtitle_enabled: payload.subtitleEnabled !== undefined ? payload.subtitleEnabled : (payload.subtitleStyle !== "none"),
       aspect_ratio: payload.aspectRatio || "16:9",
+      hand_tool_id: payload.handToolId || "hand-pen-modern",
     }),
     signal: AbortSignal.timeout(30000),
   });

@@ -73,12 +73,22 @@ export interface ProjectWorkflow {
     srtUrl?: string | null;
     vttUrl?: string | null;
     subtitleStyle?: "none" | "classic" | "karaoke";
+    handToolId?: string;
     jobId?: string | null;
     status: StepStatus;
     progress: number;
     qaReport?: MediaQAReport;
   };
   updatedAt: string;
+}
+
+export interface DrawingToolItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  preview_url: string;
+  is_default?: boolean;
 }
 
 export type GenerationState =

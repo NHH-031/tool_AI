@@ -51,6 +51,7 @@ class RenderExportRequest(BaseModel):
     subtitle_style: str = "classic"
     subtitle_enabled: bool = True
     aspect_ratio: str = "16:9"
+    hand_tool_id: str = "hand-pen-modern"
 
 
 class RenderExportResponse(BaseModel):
@@ -155,53 +156,16 @@ def _create_scene_annotation(
     output_annot_path: Path,
     aspect_ratio: str = "16:9",
 ) -> Path:
-    """Tạo file annotation JSON để engine render bàn tay vẽ whiteboard chính xác theo thời lượng và tỷ lệ khung hình."""
-    import cv2
+    """Tạo file annotation JSON với phân vùng vẽ ngữ nghĩa (Multi-Region Reveal) tự động."""
     import json
-    img = cv2.imread(str(image_path))
-    if img is not None:
-        h, w = img.shape[:2]
-    else:
-        h, w = (1920, 1080) if aspect_ratio == "9:16" else (1080, 1920)
+    from core.annotation.auto_segment import auto_segment_image
 
-    # Tăng thời gian vẽ lên 85% thời lượng thoại (chỉ để lại 15% cuối giữ tranh tĩnh)
-    draw_dur_ms = max(2000, int(duration_ms * 0.85))
-
-    # Bàn tay vẽ điều chỉnh theo tỷ lệ khung hình (dọc 9:16 hay ngang 16:9)
-    if aspect_ratio == "9:16" or h > w:
-        hand_start = [int(w * 0.25), int(h * 0.18)]
-        hand_end = [int(w * 0.75), int(h * 0.82)]
-    else:
-        hand_start = [int(w * 0.2), int(h * 0.25)]
-        hand_end = [int(w * 0.85), int(h * 0.75)]
-
-    annot_data = {
-        "sceneId": scene_id,
-        "canvas": {"width": w, "height": h},
-        "storyBasis": "",
-        "sceneDurationMs": duration_ms,
-        "elements": [
-            {
-                "id": f"{scene_id}_main",
-                "label": "main_artwork",
-                "sequence": 1,
-                "narrativeRole": "primary",
-                "type": "character",
-                "region": {"x": 0, "y": 0, "width": w, "height": h},
-                "reveal": {
-                    "direction": "left_to_right",
-                    "startMs": 100,
-                    "durationMs": draw_dur_ms,
-                    "maskPaddingPx": 20,
-                    "protectedRegions": [],
-                },
-                "handPath": {
-                    "start": hand_start,
-                    "end": hand_end,
-                },
-            }
-        ],
-    }
+    annot_data = auto_segment_image(
+        scene_id=scene_id,
+        image_path=image_path,
+        duration_ms=duration_ms,
+        aspect_ratio=aspect_ratio,
+    )
     output_annot_path.write_text(json.dumps(annot_data, indent=2, ensure_ascii=False), encoding="utf-8")
     return output_annot_path
 
@@ -312,6 +276,8 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                 draw_ratio=0.85,
                 max_draw_ms=draw_target_ms,
                 aspect_ratio=req.aspect_ratio,
+                hand_tool_id=req.hand_tool_id,
+                bare_tip=(req.hand_tool_id == "no_hand"),
             )
             logger.info(f"[_run_export_pipeline] Render raw video cho {scene_id} ({dur_sec:.1f}s, draw {draw_target_ms}ms)...")
             adapter.render_scene(
@@ -475,7 +441,8 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             "resolution": "720x1280" if req.aspect_ratio == "9:16" else "1280x720",
             "aspect_ratio": req.aspect_ratio,
             "fps": 24.0,
-            "drawing_hand_overlay": True,
+            "drawing_hand_overlay": req.hand_tool_id != "no_hand",
+            "hand_tool": req.hand_tool_id,
             "warm_tone_background": True,
             "bgm_track": req.music_id if has_bgm else "none",
             "bgm_volume": round(req.music_volume, 2),

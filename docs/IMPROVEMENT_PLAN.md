@@ -220,45 +220,53 @@
 ### Task 4.1: Bóc tách phân vùng vẽ tự động (Multi-Region Reveal)
 - **Mô tả:** Thay thế single-region (1 vùng toàn màn hình) bằng 2-3 vùng vẽ theo ngữ nghĩa
 - **Chi tiết thực hiện:**
-  - [ ] Tạo module `core/annotation/auto_segment.py`:
+  - [x] Tạo module `core/annotation/auto_segment.py`:
     - Phân tích ảnh bằng OpenCV (edge detection + contour grouping)
     - Chia tranh thành 2-3 khối lớn (vùng nền, vùng nhân vật chính, vùng chi tiết phụ)
     - Tạo annotation JSON với nhiều `elements` thay vì 1 element
-  - [ ] Cập nhật `_create_scene_annotation()` trong `apps/api/routers/export.py`:
+  - [x] Cập nhật `_create_scene_annotation()` trong `apps/api/routers/export.py`:
     - Gọi `auto_segment` để phân vùng thay vì tạo 1 vùng toàn cảnh
     - Gán `startMs` tuần tự theo quy tắc: nền → nhân vật → chi tiết
     - Áp dụng `protectedRegions` cho các vùng chồng lấn
-  - [ ] Kết nối với `core/pipeline/semantic_planner.py` để lấy thông tin ngữ nghĩa (nếu có)
-- **Files cần tạo mới:**
+  - [x] Kết nối với `core/pipeline/semantic_planner.py` để lấy thông tin ngữ nghĩa (nếu có)
+- **Files đã tạo mới:**
   - `core/annotation/__init__.py`
   - `core/annotation/auto_segment.py`
-- **Files cần chỉnh sửa:**
+  - `tests/test_multi_region_drawing.py`
+- **Files đã chỉnh sửa:**
   - `apps/api/routers/export.py`
 
 ### Task 4.2: Bộ sưu tập bàn tay & bút vẽ (Custom Drawing Tools)
 - **Mô tả:** Cho người dùng chọn kiểu bàn tay/bút vẽ hoặc ẩn bàn tay
 - **Chi tiết thực hiện:**
-  - [ ] Tạo thư mục `assets/drawing-tools/`:
+  - [x] Tạo thư mục `assets/drawing-tools/`:
     - `hand-pen-modern.png` (bút dạ đen - mặc định hiện tại)
     - `hand-quill-vintage.png` (bút lông ngỗng chấm mực - phong cách cổ điển)
     - `hand-calligraphy.png` (bút thư pháp - phong cách Á Đông)
     - `hand-marker.png` (bút viết bảng - phong cách whiteboard hiện đại)
-  - [ ] Thêm API catalog bút vẽ: `GET /assets/drawing-tools`
-  - [ ] Cập nhật frontend: dropdown chọn kiểu bút vẽ tại ExportStep
-  - [ ] Truyền `hand_asset_id` vào `RenderExportRequest` và pipeline render
-  - [ ] Hỗ trợ chế độ `no_hand` (ẩn bàn tay, nét vẽ tự hiện)
-- **Files cần tạo mới:**
+  - [x] Thêm API catalog bút vẽ: `GET /assets/drawing-tools`
+  - [x] Cập nhật frontend: selector chọn kiểu bút vẽ tại ExportStep
+  - [x] Truyền `hand_tool_id` vào `RenderExportRequest` và pipeline render
+  - [x] Hỗ trợ chế độ `no_hand` (ẩn bàn tay, nét vẽ tự hiện)
+- **Files đã tạo mới:**
+  - `assets/drawing-tools/hand-pen-modern.png`
+  - `assets/drawing-tools/hand-marker.png`
+  - `assets/drawing-tools/hand-quill-vintage.png`
+  - `assets/drawing-tools/hand-calligraphy.png`
+- **Files đã chỉnh sửa:**
   - `apps/api/routers/assets.py` (bổ sung endpoint drawing-tools)
-- **Files cần chỉnh sửa:**
   - `apps/api/routers/export.py`
   - `engines/whiteboard/adapter.py`
   - `apps/web/app/components/steps/ExportStep.tsx`
   - `apps/web/app/api-client.ts`
+  - `apps/web/app/types.ts`
+  - `apps/web/app/page.tsx`
 
 ### 📋 Checklist hoàn thành Phase 4:
-- [ ] Video được vẽ theo thứ tự: bối cảnh → nhân vật → chi tiết (không còn quét 1 vùng toàn màn hình)
-- [ ] Người dùng chọn được ít nhất 3 kiểu bút vẽ/bàn tay hoặc ẩn bàn tay
-- [ ] Commit & push lên GitHub
+- [x] Video được vẽ theo thứ tự: bối cảnh → nhân vật → chi tiết (không còn quét 1 vùng toàn màn hình)
+- [x] Người dùng chọn được ít nhất 3 kiểu bút vẽ/bàn tay hoặc ẩn bàn tay
+- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_multi_region_drawing.py` (8/8 tests passed)
+- [x] Commit & push lên GitHub (Phase 4)
 
 ---
 
