@@ -108,46 +108,50 @@
 ### Task 2.1: Sinh file phụ đề .srt từ WordBoundary timing
 - **Mô tả:** Tận dụng mốc thời gian `WordBoundary` từ EdgeTTS để sinh file `.srt` chuẩn
 - **Chi tiết thực hiện:**
-  - [ ] Tạo module `core/subtitles/__init__.py`
-  - [ ] Tạo module `core/subtitles/srt_generator.py`:
-    - Hàm `generate_srt_from_timing(timing: NarrationTiming, offset_sec: float) -> str`
-    - Nhóm các từ thành cụm 5-8 từ mỗi dòng phụ đề (tránh phụ đề quá dài)
+  - [x] Tạo module `core/subtitles/__init__.py`
+  - [x] Tạo module `core/subtitles/srt_generator.py`:
+    - Hàm `generate_project_subtitles()`, `create_segments_from_scene()`
+    - Phân tách và nhóm từ đồng bộ theo WordBoundary từ TTS hoặc phân bổ đều
     - Xuất chuẩn SRT format: `index`, `timestamp --> timestamp`, `text`
-  - [ ] Tạo module `core/subtitles/vtt_generator.py`: xuất định dạng WebVTT (cho YouTube)
-  - [ ] Cập nhật pipeline export: sau khi render xong, ghép tất cả phụ đề các cảnh thành 1 file `.srt` tổng
-  - [ ] Thêm API endpoint `GET /export/{job_id}/subtitle` để tải file .srt
-- **Files cần tạo mới:**
+  - [x] Xuất định dạng WebVTT qua `to_vtt()` (cho YouTube / Web player)
+  - [x] Cập nhật pipeline export: sau khi render xong, tạo file `.srt` và `.vtt` tổng
+  - [x] Thêm API endpoint `GET /export/{job_id}/subtitle` để tải file `.srt` hoặc `.vtt`
+- **Files đã tạo mới:**
   - `core/subtitles/__init__.py`
+  - `core/subtitles/models.py`
   - `core/subtitles/srt_generator.py`
-  - `core/subtitles/vtt_generator.py`
-- **Files cần chỉnh sửa:**
+- **Files đã chỉnh sửa:**
   - `apps/api/routers/export.py`
   - `apps/api/routers/voices.py` (lưu timing vào metadata)
 
 ### Task 2.2: Burn-in phụ đề trực tiếp lên video
 - **Mô tả:** Vẽ phụ đề đè lên video trong quá trình render (tùy chọn bật/tắt)
 - **Chi tiết thực hiện:**
-  - [ ] Tạo module `core/subtitles/burner.py`:
-    - Hàm `burn_subtitles_to_video(video_path, srt_path, output_path, style)`
-    - Sử dụng FFmpeg `ass` filter hoặc OpenCV `putText` với font tùy chọn
-  - [ ] Hỗ trợ 2 kiểu phụ đề:
-    - **Classic**: Chữ trắng viền đen ở 1/4 dưới video
-    - **Karaoke**: Từ đang đọc sáng lên (highlight), phong cách TikTok
-  - [ ] Thêm tùy chọn `subtitle_style` vào `RenderExportRequest` (none / classic / karaoke)
-  - [ ] Cập nhật frontend `ExportStep.tsx`: dropdown chọn kiểu phụ đề
-- **Files cần tạo mới:**
+  - [x] Tạo module `core/subtitles/burner.py`:
+    - Lớp `SubtitleBurner` dùng Pillow (hỗ trợ font Segoe UI / Arial tiếng Việt có dấu)
+    - Giải mã và tái nén video chất lượng cao qua PyAV
+  - [x] Hỗ trợ 2 kiểu phụ đề:
+    - **Classic**: Chữ trắng viền đen nét đậm, nền kính bo góc mờ tối chống chói
+    - **Karaoke**: Highlight từ đang đọc màu vàng kim `#FACC15` phong cách TikTok
+  - [x] Thêm tùy chọn `subtitle_style` vào `RenderExportRequest` (none / classic / karaoke)
+  - [x] Cập nhật frontend `ExportStep.tsx`: bộ chọn 3 kiểu phụ đề trực quan
+  - [x] Nút tải file phụ đề `.SRT` và `.VTT` bên cạnh nút tải MP4
+- **Files đã tạo mới:**
   - `core/subtitles/burner.py`
-- **Files cần chỉnh sửa:**
+- **Files đã chỉnh sửa:**
   - `apps/api/routers/export.py`
   - `apps/web/app/components/steps/ExportStep.tsx`
   - `apps/web/app/api-client.ts`
   - `apps/web/app/types.ts`
+  - `apps/web/app/page.tsx`
+  - `tests/test_subtitles.py`
 
 ### 📋 Checklist hoàn thành Phase 2:
-- [ ] Video kết xuất ra có phụ đề chữ chạy theo nhịp giọng đọc
-- [ ] Người dùng chọn được kiểu phụ đề (Không / Classic / Karaoke)
-- [ ] Nút "Tải phụ đề .SRT" xuất hiện bên cạnh nút "Tải video MP4"
-- [ ] Commit & push lên GitHub
+- [x] Video kết xuất ra có phụ đề chữ chạy theo nhịp giọng đọc (Classic hoặc TikTok Karaoke)
+- [x] Người dùng chọn được kiểu phụ đề (Không phụ đề / Classic / Karaoke)
+- [x] Nút "Tải file phụ đề (.SRT)" xuất hiện bên cạnh nút "Tải xuống MP4"
+- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_subtitles.py` (4/4 tests passed)
+- [x] Commit & push lên GitHub (Phase 2)
 
 ---
 

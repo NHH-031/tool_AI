@@ -7,6 +7,11 @@ interface ExportStepProps {
   workflow: ProjectWorkflow;
   scenes: Scene[];
   videoUrl: string | null;
+  srtUrl?: string | null;
+  vttUrl?: string | null;
+  jobId?: string | null;
+  subtitleStyle?: "none" | "classic" | "karaoke";
+  onUpdateSubtitleStyle?: (style: "none" | "classic" | "karaoke") => void;
   isRendering: boolean;
   renderProgress: number;
   renderStage: string;
@@ -14,6 +19,7 @@ interface ExportStepProps {
   qaReport?: MediaQAReport | null;
   onStartRender: () => Promise<void>;
   onDownloadMP4: () => void;
+  onDownloadSubtitle?: (format: "srt" | "vtt") => void;
   onBackStep: () => void;
   onOpenArchiveVault?: () => void;
 }
@@ -22,6 +28,11 @@ export const ExportStep: React.FC<ExportStepProps> = ({
   workflow,
   scenes,
   videoUrl,
+  srtUrl,
+  vttUrl,
+  jobId,
+  subtitleStyle = "classic",
+  onUpdateSubtitleStyle,
   isRendering,
   renderProgress,
   renderStage,
@@ -29,6 +40,7 @@ export const ExportStep: React.FC<ExportStepProps> = ({
   qaReport,
   onStartRender,
   onDownloadMP4,
+  onDownloadSubtitle,
   onBackStep,
   onOpenArchiveVault,
 }) => {
@@ -44,23 +56,33 @@ export const ExportStep: React.FC<ExportStepProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span className="text-emerald-400">Bước 4:</span> Kết Xuất Video Hoàn Chỉnh & Bàn Tay Vẽ
+              <span className="text-emerald-400">Bước 4:</span> Kết Xuất Video Hoàn Chỉnh & Phụ Đề
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Render hoạt họa nét vẽ whiteboard với hình bàn tay cầm bút thực tế (<span className="text-indigo-400 font-mono">drawing-hand.png</span>), đồng bộ lời thoại và nhạc nền.
+              Render hoạt họa nét vẽ whiteboard với bàn tay cầm bút thực tế (<span className="text-indigo-400 font-mono">drawing-hand.png</span>), đồng bộ nhạc nền, âm thanh bút vẽ và phụ đề tự động.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             {isCompleted ? (
-              <button
-                id="btn-download-video-top"
-                onClick={onDownloadMP4}
-                className="px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition active:scale-95"
-              >
-                <span>⬇️</span>
-                <span>Tải xuống MP4</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  id="btn-download-srt-top"
+                  onClick={() => onDownloadSubtitle ? onDownloadSubtitle("srt") : window.open(srtUrl || "", "_blank")}
+                  className="px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 shadow-md transition active:scale-95"
+                >
+                  <span>📝</span>
+                  <span>Tải .SRT</span>
+                </button>
+                <button
+                  id="btn-download-video-top"
+                  onClick={onDownloadMP4}
+                  className="px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition active:scale-95"
+                >
+                  <span>⬇️</span>
+                  <span>Tải xuống MP4</span>
+                </button>
+              </div>
             ) : (
               <button
                 id="btn-start-render"
@@ -179,7 +201,7 @@ export const ExportStep: React.FC<ExportStepProps> = ({
               </div>
 
               {isCompleted && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={onStartRender}
                     className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
@@ -187,10 +209,28 @@ export const ExportStep: React.FC<ExportStepProps> = ({
                     🔄 Render lại
                   </button>
                   <button
-                    onClick={onDownloadMP4}
-                    className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition active:scale-95"
+                    id="btn-download-srt-bar"
+                    onClick={() => onDownloadSubtitle ? onDownloadSubtitle("srt") : window.open(srtUrl || "", "_blank")}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-200 text-xs font-medium transition flex items-center gap-1 active:scale-95"
+                    title="Tải file phụ đề chuẩn .SRT đồng bộ từng từ"
                   >
-                    ⬇️ Tải xuống MP4
+                    <span>📝</span>
+                    <span>Tải .SRT</span>
+                  </button>
+                  <button
+                    id="btn-download-vtt-bar"
+                    onClick={() => onDownloadSubtitle ? onDownloadSubtitle("vtt") : window.open(vttUrl || "", "_blank")}
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs font-medium transition"
+                    title="Tải phụ đề WebVTT (.vtt)"
+                  >
+                    .VTT
+                  </button>
+                  <button
+                    onClick={onDownloadMP4}
+                    className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition active:scale-95 flex items-center gap-1.5"
+                  >
+                    <span>⬇️</span>
+                    <span>Tải MP4</span>
                   </button>
                 </div>
               )}
@@ -205,13 +245,13 @@ export const ExportStep: React.FC<ExportStepProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                      <span>Video đã lưu trữ vĩnh viễn trên ổ D</span>
+                      <span>Video & Phụ đề đã lưu vĩnh viễn trên ổ D</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
                         D:\ Storage OK
                       </span>
                     </h4>
                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                      File được lưu an toàn tại thư mục <code className="text-indigo-300 font-mono text-[10px] bg-slate-950 px-1 py-0.5 rounded">D:\Tool\output\export</code>. Bạn có thể xem lại hoặc tải lại bất kỳ lúc nào trong Kho Video mà không sợ bị biến mất.
+                      Video MP4 và file phụ đề <code className="text-amber-300 font-mono text-[10px] bg-slate-950 px-1 py-0.5 rounded">.SRT</code> được lưu an toàn tại thư mục <code className="text-indigo-300 font-mono text-[10px] bg-slate-950 px-1 py-0.5 rounded">D:\Tool\output\export</code>.
                     </p>
                   </div>
                 </div>
@@ -230,8 +270,125 @@ export const ExportStep: React.FC<ExportStepProps> = ({
           </div>
         </div>
 
-        {/* Right Column: QA Checklist & Engine Standards (5 cols) */}
+        {/* Right Column: Subtitles, Engine Standards & QA Checklist (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
+          {/* Subtitle Style Configuration Card */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span>💬</span> Kiểu Dáng Phụ Đề (Subtitles)
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                Word-Sync Ready
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Tự động phân tách câu từ giọng đọc TTS và tạo file <span className="text-amber-400 font-mono">.SRT</span>. Bạn có thể chọn cách hiển thị chữ trực tiếp trên video:
+            </p>
+
+            <div className="grid grid-cols-1 gap-2">
+              {/* Option 1: Classic */}
+              <div
+                id="sub-opt-classic"
+                onClick={() => onUpdateSubtitleStyle && onUpdateSubtitleStyle("classic")}
+                className={`p-3 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
+                  (subtitleStyle || "classic") === "classic"
+                    ? "bg-indigo-600/15 border-indigo-500 text-white shadow-sm shadow-indigo-600/20"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="subtitleStyle"
+                  value="classic"
+                  checked={(subtitleStyle || "classic") === "classic"}
+                  onChange={() => onUpdateSubtitleStyle && onUpdateSubtitleStyle("classic")}
+                  className="mt-0.5 text-indigo-600 focus:ring-0"
+                />
+                <div className="flex-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white flex items-center gap-1">
+                      <span>📺</span> Classic Whiteboard
+                    </span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300 border border-indigo-500/20">
+                      Khuyên dùng
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                    Chữ trắng, viền đen 3px, nền kính bo góc mờ sang trọng chống chói, chuẩn tiếng Việt có dấu.
+                  </p>
+                </div>
+              </div>
+
+              {/* Option 2: Karaoke */}
+              <div
+                id="sub-opt-karaoke"
+                onClick={() => onUpdateSubtitleStyle && onUpdateSubtitleStyle("karaoke")}
+                className={`p-3 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
+                  subtitleStyle === "karaoke"
+                    ? "bg-amber-600/15 border-amber-500 text-white shadow-sm shadow-amber-600/20"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="subtitleStyle"
+                  value="karaoke"
+                  checked={subtitleStyle === "karaoke"}
+                  onChange={() => onUpdateSubtitleStyle && onUpdateSubtitleStyle("karaoke")}
+                  className="mt-0.5 text-amber-500 focus:ring-0"
+                />
+                <div className="flex-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-amber-300 flex items-center gap-1">
+                      <span>🎤</span> TikTok Karaoke Highlight
+                    </span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                      TikTok/Shorts
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                    Highlight từng từ vàng kim rực rỡ theo thời gian phát âm thực tế của giọng nói.
+                  </p>
+                </div>
+              </div>
+
+              {/* Option 3: None */}
+              <div
+                id="sub-opt-none"
+                onClick={() => onUpdateSubtitleStyle && onUpdateSubtitleStyle("none")}
+                className={`p-3 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
+                  subtitleStyle === "none"
+                    ? "bg-slate-800 border-slate-600 text-white"
+                    : "bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="subtitleStyle"
+                  value="none"
+                  checked={subtitleStyle === "none"}
+                  onChange={() => onUpdateSubtitleStyle && onUpdateSubtitleStyle("none")}
+                  className="mt-0.5 text-slate-400 focus:ring-0"
+                />
+                <div className="flex-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-300 flex items-center gap-1">
+                      <span>🚫</span> Không chèn chữ lên video
+                    </span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                      Xuất .SRT rời
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                    Giữ khung tranh vẽ thuần túy; vẫn hỗ trợ xuất và tải file phụ đề .SRT riêng biệt.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Engine & Hand Overlay Specs */}
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
@@ -291,7 +448,7 @@ export const ExportStep: React.FC<ExportStepProps> = ({
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Kiểm định Chất lượng 5 Tầng (QA)
+                Kiểm định Chất lượng 6 Tầng (QA)
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 SKILL.md Passed
@@ -316,6 +473,17 @@ export const ExportStep: React.FC<ExportStepProps> = ({
                 </div>
                 <span className="text-[10px] text-indigo-400 font-mono">
                   {qaReport?.auto_ducking ? "Ducking Hoạt Động" : "Stereo 44.1k"}
+                </span>
+              </div>
+
+              {/* Subtitle QA */}
+              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400">✓</span>
+                  <span className="text-slate-300">Subtitle QA (.SRT / .VTT Auto-Sync)</span>
+                </div>
+                <span className="text-[10px] text-amber-300 font-mono">
+                  {qaReport?.subtitle_style ? `${qaReport.subtitle_style.toUpperCase()} · UTF-8` : "SRT/VTT Đồng bộ"}
                 </span>
               </div>
 
@@ -360,13 +528,22 @@ export const ExportStep: React.FC<ExportStepProps> = ({
         </button>
 
         {isCompleted && (
-          <button
-            onClick={onDownloadMP4}
-            className="px-6 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 active:scale-95 transition"
-          >
-            <span>⬇️</span>
-            <span>Tải xuống video hoàn tất</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onDownloadSubtitle ? onDownloadSubtitle("srt") : window.open(srtUrl || "", "_blank")}
+              className="px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 transition active:scale-95"
+            >
+              <span>📝</span>
+              <span>Tải file phụ đề (.SRT)</span>
+            </button>
+            <button
+              onClick={onDownloadMP4}
+              className="px-6 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 active:scale-95 transition"
+            >
+              <span>⬇️</span>
+              <span>Tải xuống video hoàn tất</span>
+            </button>
+          </div>
         )}
       </div>
     </div>

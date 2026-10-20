@@ -9,7 +9,7 @@ import uuid
 import json
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, BackgroundTasks
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from pydantic import BaseModel, Field
 
 from core.pipeline.whiteboard_pipeline import WhiteboardPipeline
@@ -48,6 +48,8 @@ class RenderExportRequest(BaseModel):
     sfx_enabled: bool = True
     sfx_volume: float = 0.22
     sfx_name: str = "marker_draw"
+    subtitle_style: str = "classic"
+    subtitle_enabled: bool = True
 
 
 class RenderExportResponse(BaseModel):
@@ -56,6 +58,8 @@ class RenderExportResponse(BaseModel):
     progress_percent: float
     stage: str
     video_url: Optional[str] = None
+    srt_url: Optional[str] = None
+    vtt_url: Optional[str] = None
 
 
 class ExportStatusResponse(BaseModel):
@@ -64,8 +68,11 @@ class ExportStatusResponse(BaseModel):
     progress_percent: float
     stage: str
     video_url: Optional[str] = None
+    srt_url: Optional[str] = None
+    vtt_url: Optional[str] = None
     error_message: Optional[str] = None
     qa_report: Optional[Dict[str, Any]] = None
+
 
 
 def _get_audio_duration(audio_path: Path) -> float:
@@ -129,6 +136,15 @@ def _resolve_audio_path(project_id: str, scene_idx: int, audio_url: Optional[str
         if cand.exists():
             return cand
     return None
+
+
+def _resolve_timing_path(project_id: str, scene_idx: int) -> Optional[Path]:
+    """Tìm đường dẫn file metadata timing (WordBoundary) của phân cảnh nếu có."""
+    cand = PROJECT_ROOT / "output" / "storyboard" / project_id / f"scene_{scene_idx}_timing.json"
+    if cand.exists():
+        return cand
+    return None
+
 
 
 def _create_scene_annotation(
@@ -198,6 +214,7 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
         scene_clips: List[Path] = []
         scene_audio_files: List[Path] = []
         scenes_timing_meta: List[Dict[str, Any]] = []
+        scenes_subtitles_meta: List[Dict[str, Any]] = []
         total_scenes = len(req.scenes)
 
         for idx, sc in enumerate(req.scenes, 1):
@@ -222,6 +239,7 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
 
             # 2. Tìm hoặc tổng hợp giọng đọc phân cảnh
             audio_file = _resolve_audio_path(req.project_id, scene_idx, sc.audio_url)
+            tts_words_data = None
             if not audio_file or not audio_file.exists():
                 logger.info(f"[_run_export_pipeline] Sinh giọng đọc cho {scene_id}...")
                 cfg = VoiceConfig(voice_id=req.voice_id, speed=req.speed)
@@ -229,11 +247,27 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                 ext = tts_res.format or "mp3"
                 audio_file = output_dir / f"{scene_id}_audio.{ext}"
                 audio_file.write_bytes(tts_res.audio_bytes)
+                if getattr(tts_res, "timing", None) and getattr(tts_res.timing, "words", None):
+                    tts_words_data = [w.model_dump() for w in tts_res.timing.words]
+            else:
+                t_path = _resolve_timing_path(req.project_id, scene_idx)
+                if t_path and t_path.exists():
+                    try:
+                        t_data = json.loads(t_path.read_text(encoding="utf-8"))
+                        tts_words_data = t_data.get("words")
+                    except Exception:
+                        pass
 
             dur_sec = _get_audio_duration(audio_file)
             dur_sec = max(3.0, dur_sec)
             scene_audio_files.append(audio_file)
             scenes_timing_meta.append({"scene_index": scene_idx, "duration_sec": dur_sec})
+            scenes_subtitles_meta.append({
+                "scene_index": scene_idx,
+                "text": sc.text,
+                "duration_sec": dur_sec,
+                "words_timing": tts_words_data,
+            })
 
             # 3. Tạo annotation file đặc tả bàn tay vẽ cho cảnh
             annot_file = output_dir / f"{scene_id}.annotation.json"
@@ -364,6 +398,43 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             except Exception:
                 pass
 
+        # 9. Sinh phụ đề tự động (.SRT & .VTT) và Burn-in lên video (Phase 2)
+        job_record["stage"] = "Đang tạo phụ đề tự động (.SRT) và WebVTT..."
+        job_record["progress_percent"] = 93.0
+
+        from core.subtitles import SubtitleGenerator, SubtitleBurner
+        all_segments = SubtitleGenerator.generate_project_subtitles(scenes_subtitles_meta)
+        srt_content = SubtitleGenerator.to_srt(all_segments)
+        vtt_content = SubtitleGenerator.to_vtt(all_segments)
+
+        srt_file = output_dir / f"{job_id}.srt"
+        vtt_file = output_dir / f"{job_id}.vtt"
+        srt_file.write_text(srt_content, encoding="utf-8")
+        vtt_file.write_text(vtt_content, encoding="utf-8")
+        logger.info(f"[_run_export_pipeline] Đã xuất file phụ đề: {srt_file.name} và {vtt_file.name}")
+
+        rel_srt_url = f"/media/export/{req.project_id}/{srt_file.name}"
+        rel_vtt_url = f"/media/export/{req.project_id}/{vtt_file.name}"
+        job_record["srt_url"] = rel_srt_url
+        job_record["vtt_url"] = rel_vtt_url
+
+        # Burn-in phụ đề trực tiếp lên video nếu người dùng chọn
+        if req.subtitle_enabled and req.subtitle_style in ["classic", "karaoke"] and all_segments:
+            job_record["stage"] = f"Đang vẽ phụ đề {req.subtitle_style.capitalize()} trực tiếp lên video..."
+            job_record["progress_percent"] = 96.0
+
+            sub_video_mp4 = output_dir / f"{job_id}_subtitled.mp4"
+            burner = SubtitleBurner(font_size=32)
+            burner.burn_subtitles_to_video(
+                video_path=final_output_mp4,
+                subtitles=all_segments,
+                output_path=sub_video_mp4,
+                style=req.subtitle_style,
+            )
+            if sub_video_mp4.exists() and sub_video_mp4.stat().st_size > 1000:
+                shutil.move(str(sub_video_mp4), str(final_output_mp4))
+                logger.info(f"[_run_export_pipeline] Đã hoàn tất burn phụ đề ({req.subtitle_style}) vào {final_output_mp4.name}")
+
         rel_video_url = f"/media/export/{req.project_id}/{final_output_mp4.name}"
         job_record["video_url"] = rel_video_url
         job_record["status"] = "completed"
@@ -382,6 +453,10 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             "auto_ducking": has_bgm,
             "drawing_sfx": req.sfx_name if req.sfx_enabled else "disabled",
             "sfx_volume": round(req.sfx_volume, 2) if req.sfx_enabled else 0.0,
+            "subtitle_style": req.subtitle_style if req.subtitle_enabled else "none",
+            "srt_generated": True,
+            "vtt_generated": True,
+            "subtitle_segments_count": len(all_segments),
             "visual_qa_pass": True,
         }
 
@@ -461,6 +536,8 @@ async def get_export_status(job_id: str) -> ExportStatusResponse:
         progress_percent=rec["progress_percent"],
         stage=rec["stage"],
         video_url=rec.get("video_url"),
+        srt_url=rec.get("srt_url"),
+        vtt_url=rec.get("vtt_url"),
         error_message=rec.get("error_message"),
         qa_report=rec.get("qa_report"),
     )
@@ -492,6 +569,8 @@ async def stream_export_status(job_id: str):
                     "progress_percent": progress,
                     "stage": stage,
                     "video_url": rec.get("video_url"),
+                    "srt_url": rec.get("srt_url"),
+                    "vtt_url": rec.get("vtt_url"),
                     "error_message": rec.get("error_message"),
                     "qa_report": rec.get("qa_report"),
                 }
@@ -510,5 +589,25 @@ async def stream_export_status(job_id: str):
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
         },
+    )
+
+
+@router.get("/{job_id}/subtitle")
+async def download_subtitle(job_id: str, format: str = "srt"):
+    """Tải file phụ đề (.srt hoặc .vtt) tương ứng với job_id."""
+    if job_id not in _EXPORT_JOBS:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tác vụ export với ID này")
+    rec = _EXPORT_JOBS[job_id]
+    project_id = rec.get("project_id", "default")
+    ext = "vtt" if format.lower() == "vtt" else "srt"
+    sub_file = PROJECT_ROOT / "output" / "export" / project_id / f"{job_id}.{ext}"
+    if not sub_file.exists():
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy file phụ đề .{ext} cho tác vụ này")
+    media_type = "text/vtt" if ext == "vtt" else "application/x-subrip"
+    filename = f"{rec.get('title', 'video')}_{job_id}.{ext}"
+    return FileResponse(
+        path=str(sub_file),
+        media_type=media_type,
+        filename=filename,
     )
 

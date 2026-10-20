@@ -778,7 +778,16 @@ export async function renderExport(payload: {
   musicId: string;
   musicVolume: number;
   hasColor?: boolean;
-}): Promise<{ jobId: string; status: string; videoUrl: string | null; stage: string }> {
+  subtitleStyle?: "none" | "classic" | "karaoke";
+  subtitleEnabled?: boolean;
+}): Promise<{
+  jobId: string;
+  status: string;
+  videoUrl: string | null;
+  srtUrl: string | null;
+  vttUrl: string | null;
+  stage: string;
+}> {
   const res = await fetch(`${API_BASE}/export/render`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -791,6 +800,8 @@ export async function renderExport(payload: {
       music_id: payload.musicId,
       music_volume: payload.musicVolume,
       has_color: payload.hasColor !== undefined ? payload.hasColor : true,
+      subtitle_style: payload.subtitleStyle || "classic",
+      subtitle_enabled: payload.subtitleEnabled !== undefined ? payload.subtitleEnabled : (payload.subtitleStyle !== "none"),
     }),
     signal: AbortSignal.timeout(30000),
   });
@@ -804,6 +815,16 @@ export async function renderExport(payload: {
         ? data.video_url.startsWith("http")
           ? data.video_url
           : `${API_BASE}${data.video_url}`
+        : null,
+      srtUrl: data.srt_url
+        ? data.srt_url.startsWith("http")
+          ? data.srt_url
+          : `${API_BASE}${data.srt_url}`
+        : null,
+      vttUrl: data.vtt_url
+        ? data.vtt_url.startsWith("http")
+          ? data.vtt_url
+          : `${API_BASE}${data.vtt_url}`
         : null,
       stage: data.stage,
     };
@@ -819,6 +840,8 @@ export async function getExportStatus(jobId: string): Promise<{
   progressPercent: number;
   stage: string;
   videoUrl: string | null;
+  srtUrl: string | null;
+  vttUrl: string | null;
   errorMessage?: string;
   qaReport?: any;
 }> {
@@ -838,6 +861,16 @@ export async function getExportStatus(jobId: string): Promise<{
             ? data.video_url
             : `${API_BASE}${data.video_url}`
           : null,
+        srtUrl: data.srt_url
+          ? data.srt_url.startsWith("http")
+            ? data.srt_url
+            : `${API_BASE}${data.srt_url}`
+          : null,
+        vttUrl: data.vtt_url
+          ? data.vtt_url.startsWith("http")
+            ? data.vtt_url
+            : `${API_BASE}${data.vtt_url}`
+          : null,
         errorMessage: data.error_message,
         qaReport: data.qa_report,
       };
@@ -853,6 +886,8 @@ export async function getExportStatus(jobId: string): Promise<{
     progressPercent: -1,
     stage: "Đang đồng bộ tiến trình render...",
     videoUrl: null,
+    srtUrl: null,
+    vttUrl: null,
   };
 }
 
@@ -862,6 +897,8 @@ export interface ExportProgressEvent {
   progressPercent: number;
   stage: string;
   videoUrl: string | null;
+  srtUrl?: string | null;
+  vttUrl?: string | null;
   errorMessage?: string;
   qaReport?: any;
 }
@@ -891,6 +928,16 @@ export function subscribeExportProgress(
             ? data.video_url
             : `${API_BASE}${data.video_url}`
           : null,
+        srtUrl: data.srt_url
+          ? data.srt_url.startsWith("http")
+            ? data.srt_url
+            : `${API_BASE}${data.srt_url}`
+          : null,
+        vttUrl: data.vtt_url
+          ? data.vtt_url.startsWith("http")
+            ? data.vtt_url
+            : `${API_BASE}${data.vtt_url}`
+          : null,
         errorMessage: data.error_message,
         qaReport: data.qa_report,
       };
@@ -910,8 +957,14 @@ export function subscribeExportProgress(
   };
 
   return () => {
-    es.close();
+    try {
+      es.close();
+    } catch {}
   };
+}
+
+export function getSubtitleDownloadUrl(jobId: string, format: "srt" | "vtt" = "srt"): string {
+  return `${API_BASE}/export/${jobId}/subtitle?format=${format}`;
 }
 
 // ============================================================================

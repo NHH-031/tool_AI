@@ -69,6 +69,10 @@ export interface ProjectWorkflow {
   };
   export: {
     videoUrl: string | null;
+    srtUrl?: string | null;
+    vttUrl?: string | null;
+    subtitleStyle?: "none" | "classic" | "karaoke";
+    jobId?: string | null;
     status: StepStatus;
     progress: number;
     qaReport?: MediaQAReport;
@@ -288,6 +292,10 @@ export interface MediaQAReport {
   auto_ducking?: boolean;
   drawing_sfx?: string;
   sfx_volume?: number;
+  subtitle_style?: string;
+  srt_generated?: boolean;
+  vtt_generated?: boolean;
+  subtitle_segments_count?: number;
   // Four-layer QA Architecture
   technical_qa?: TechnicalQASummary;
   drawing_qa?: DrawingQASummary;

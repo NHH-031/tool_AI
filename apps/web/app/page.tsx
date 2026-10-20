@@ -26,6 +26,7 @@ import {
   renderExport,
   synthesizeVoice,
   fetchArchiveStats,
+  getSubtitleDownloadUrl,
 } from "./api-client";
 import { StudioHeader } from "./components/StudioHeader";
 import { StepProgressBar } from "./components/StepProgressBar";
@@ -76,6 +77,10 @@ export default function Home() {
     },
     export: {
       videoUrl: null,
+      srtUrl: null,
+      vttUrl: null,
+      subtitleStyle: "classic",
+      jobId: null,
       status: "idle",
       progress: 0,
     },
@@ -446,6 +451,7 @@ export default function Home() {
         musicId: workflow.voice.musicId,
         musicVolume: workflow.voice.musicVolume,
         hasColor: true,
+        subtitleStyle: workflow.export.subtitleStyle || "classic",
       });
 
       if (res.videoUrl) {
@@ -454,6 +460,9 @@ export default function Home() {
           export: {
             ...prev.export,
             videoUrl: res.videoUrl,
+            srtUrl: res.srtUrl,
+            vttUrl: res.vttUrl,
+            jobId: res.jobId,
             status: "completed",
             progress: 100,
           },
@@ -470,6 +479,8 @@ export default function Home() {
           progressPercent: number;
           stage: string;
           videoUrl: string | null;
+          srtUrl?: string | null;
+          vttUrl?: string | null;
           errorMessage?: string;
           qaReport?: any;
         }) => {
@@ -484,6 +495,9 @@ export default function Home() {
               export: {
                 ...prev.export,
                 videoUrl: statusData.videoUrl,
+                srtUrl: statusData.srtUrl || prev.export.srtUrl,
+                vttUrl: statusData.vttUrl || prev.export.vttUrl,
+                jobId: res.jobId,
                 status: "completed",
                 progress: 100,
                 qaReport: statusData.qaReport,
@@ -545,6 +559,22 @@ export default function Home() {
     const a = document.createElement("a");
     a.href = url;
     a.download = `${workflow.projectName || "whiteboard_video"}.mp4`;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleDownloadSubtitle = (format: "srt" | "vtt" = "srt") => {
+    const jobId = workflow.export.jobId;
+    let url = format === "vtt" ? workflow.export.vttUrl : workflow.export.srtUrl;
+    if (!url && jobId) {
+      url = getSubtitleDownloadUrl(jobId, format);
+    }
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${workflow.projectName || "whiteboard_video"}.${format}`;
     a.target = "_blank";
     document.body.appendChild(a);
     a.click();
@@ -672,6 +702,16 @@ export default function Home() {
             workflow={workflow}
             scenes={workflow.script.scenes}
             videoUrl={workflow.export.videoUrl}
+            srtUrl={workflow.export.srtUrl}
+            vttUrl={workflow.export.vttUrl}
+            jobId={workflow.export.jobId}
+            subtitleStyle={workflow.export.subtitleStyle || "classic"}
+            onUpdateSubtitleStyle={(style) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                export: { ...prev.export, subtitleStyle: style },
+              }))
+            }
             isRendering={isRenderingVideo}
             renderProgress={renderProgress}
             renderStage={renderStage}
@@ -679,6 +719,7 @@ export default function Home() {
             qaReport={workflow.export.qaReport}
             onStartRender={handleStartRender}
             onDownloadMP4={handleDownloadMP4}
+            onDownloadSubtitle={handleDownloadSubtitle}
             onBackStep={() => handleStepClick(3)}
             onOpenArchiveVault={() => setIsArchiveVaultOpen(true)}
           />

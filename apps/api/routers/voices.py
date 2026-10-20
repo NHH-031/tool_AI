@@ -151,6 +151,18 @@ async def synthesize_voice(req: SynthesizeVoiceRequest) -> SynthesizeVoiceRespon
         if legacy_wav != out_audio:
             legacy_wav.write_bytes(result.audio_bytes)
 
+        # Lưu metadata timing (WordBoundary / Sentence) phục vụ sinh phụ đề SRT / Karaoke
+        if getattr(result, "timing", None):
+            try:
+                import json
+                timing_file = out_dir / f"scene_{req.scene_index}_timing.json"
+                timing_file.write_text(
+                    json.dumps(result.timing.model_dump(), ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+            except Exception as e_timing:
+                logger.warning(f"[synthesize_voice] Không thể lưu timing file: {e_timing}")
+
         rel_url = f"/media/storyboard/{req.project_id}/{out_audio.name}"
         return SynthesizeVoiceResponse(
             scene_id=req.scene_id,
