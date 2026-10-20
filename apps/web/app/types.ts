@@ -24,6 +24,10 @@ export interface Scene {
   image_status?: "idle" | "generating" | "completed" | "error";
   audio_url?: string | null;
   audio_status?: "idle" | "generating" | "completed" | "error";
+  voice_id?: string;
+  speed?: number;
+  speaker_tag?: string;
+  is_custom_audio?: boolean;
 }
 
 export interface StoryboardImage {
@@ -67,9 +71,12 @@ export interface ProjectWorkflow {
     speed: number;
     musicId: string;
     musicVolume: number;
+    musicStartOffset?: number;
+    musicFadeDuration?: number;
     audios: AudioResult[];
     status: StepStatus;
   };
+
   export: {
     videoUrl: string | null;
     srtUrl?: string | null;

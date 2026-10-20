@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -105,4 +105,78 @@ async def get_music_preview(music_id: str):
                 filename=f"{music_id}{ext}",
             )
     raise HTTPException(status_code=404, detail=f"Không tìm thấy file nhạc nền: {music_id}")
+
+
+class UploadCustomBgmRequest(BaseModel):
+    title: str = Field(min_length=1)
+    audio_data_base64: str
+    mood: Optional[str] = "Tùy Biến"
+    genre: Optional[str] = "Nhạc Cá Nhân"
+    recommended_volume: Optional[float] = 0.15
+
+
+@router.post("/upload-custom-bgm", response_model=MusicTrackItem)
+async def upload_custom_bgm(req: UploadCustomBgmRequest) -> MusicTrackItem:
+    """
+    Tải lên file nhạc nền cá nhân MP3/WAV (Task 8.3).
+    Chuẩn hóa và lưu trữ trong thư mục BGM của dự án để sử dụng cho toàn bộ video.
+    """
+    import base64
+    import uuid
+    from core.audio.mixer import AudioMixer
+
+    if not req.audio_data_base64:
+        raise HTTPException(status_code=400, detail="Dữ liệu âm thanh không được để trống")
+
+    music_dir = PROJECT_ROOT / "assets" / "audio" / "music"
+    music_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        data_str = req.audio_data_base64
+        if "," in data_str:
+            data_str = data_str.split(",", 1)[1]
+
+        raw_bytes = base64.b64decode(data_str)
+        if len(raw_bytes) < 64:
+            raise HTTPException(status_code=400, detail="Dung lượng file nhạc không hợp lệ")
+
+        custom_id = f"custom_{uuid.uuid4().hex[:8]}"
+        temp_input = music_dir / f"{custom_id}_temp.bin"
+        temp_input.write_bytes(raw_bytes)
+
+        mixer = AudioMixer()
+        audio_arr, _ = mixer.read_audio(temp_input)
+        duration_sec = int(round(audio_arr.shape[1] / float(mixer.sample_rate)))
+
+        out_mp3 = music_dir / f"{custom_id}.mp3"
+        mixer.write_audio(audio_arr, out_mp3, codec="libmp3lame")
+
+        try:
+            temp_input.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+        track_item = MusicTrackItem(
+            id=custom_id,
+            title=req.title.strip(),
+            artist="Người dùng tải lên",
+            mood=req.mood or "Tùy Biến",
+            genre=req.genre or "Nhạc Cá Nhân",
+            duration_sec=max(5, duration_sec),
+            bpm=110,
+            recommended_volume=req.recommended_volume or 0.15,
+            preview_url=f"/music/{custom_id}/preview",
+            tags=["custom", "user_upload", "bgm"],
+        )
+
+        # Chèn lên đầu danh mục nhạc khả dụng
+        MUSIC_CATALOG.insert(0, track_item)
+
+        return track_item
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi tải nhạc nền cá nhân: {str(e)}")
+
 

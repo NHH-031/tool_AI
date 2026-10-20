@@ -469,19 +469,21 @@ export default function Home() {
   const handleSynthesizeSingleVoice = async (scene: Scene) => {
     setSynthesizingSceneId(scene.id);
     try {
+      const voiceToUse = scene.voice_id || workflow.voice.voiceId;
+      const speedToUse = scene.speed || workflow.voice.speed;
       const audio = await synthesizeVoice(
         scene.id,
         scene.scene_index,
         scene.text,
-        workflow.voice.voiceId,
-        workflow.voice.speed,
+        voiceToUse,
+        speedToUse,
         workflow.projectId
       );
       setWorkflow((prev) => {
         const nextAudios = prev.voice.audios.filter((a) => a.scene_id !== scene.id);
         nextAudios.push(audio);
         const updatedScenes = prev.script.scenes.map((sc) =>
-          sc.id === scene.id ? { ...sc, audio_url: audio.audio_url, audio_status: "completed" as const } : sc
+          sc.id === scene.id ? { ...sc, audio_url: audio.audio_url, duration_sec: audio.duration_sec, is_custom_audio: false, audio_status: "completed" as const } : sc
         );
         return {
           ...prev,
@@ -500,20 +502,26 @@ export default function Home() {
     setIsSynthesizingAllVoices(true);
     try {
       for (const scene of workflow.script.scenes) {
+        // Nếu cảnh đã được ghi âm riêng qua micro hoặc tải file thật thì giữ nguyên
+        if (scene.is_custom_audio && scene.audio_url) {
+          continue;
+        }
         setSynthesizingSceneId(scene.id);
+        const voiceToUse = scene.voice_id || workflow.voice.voiceId;
+        const speedToUse = scene.speed || workflow.voice.speed;
         const audio = await synthesizeVoice(
           scene.id,
           scene.scene_index,
           scene.text,
-          workflow.voice.voiceId,
-          workflow.voice.speed,
+          voiceToUse,
+          speedToUse,
           workflow.projectId
         );
         setWorkflow((prev) => {
           const nextAudios = prev.voice.audios.filter((a) => a.scene_id !== scene.id);
           nextAudios.push(audio);
           const updatedScenes = prev.script.scenes.map((sc) =>
-            sc.id === scene.id ? { ...sc, audio_url: audio.audio_url, audio_status: "completed" as const } : sc
+            sc.id === scene.id ? { ...sc, audio_url: audio.audio_url, duration_sec: audio.duration_sec, audio_status: "completed" as const } : sc
           );
           return {
             ...prev,
@@ -555,6 +563,8 @@ export default function Home() {
         speed: workflow.voice.speed,
         musicId: workflow.voice.musicId,
         musicVolume: workflow.voice.musicVolume,
+        musicStartOffset: workflow.voice.musicStartOffset || 0,
+        musicFadeDuration: workflow.voice.musicFadeDuration !== undefined ? workflow.voice.musicFadeDuration : 2,
         hasColor: true,
         subtitleStyle: workflow.export.subtitleStyle || "classic",
         aspectRatio: workflow.aspectRatio || "16:9",
@@ -562,6 +572,7 @@ export default function Home() {
         multiPen: workflow.export.multiPen !== undefined ? workflow.export.multiPen : true,
         transitionType: workflow.export.transitionType || "eraser",
       });
+
 
       if (res.videoUrl) {
         setWorkflow((prev) => ({
@@ -892,12 +903,72 @@ export default function Home() {
                 voice: { ...prev.voice, musicVolume: v },
               }))
             }
+            musicStartOffset={workflow.voice.musicStartOffset || 0}
+            onUpdateMusicStartOffset={(off) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: { ...prev.voice, musicStartOffset: off },
+              }))
+            }
+            musicFadeDuration={workflow.voice.musicFadeDuration !== undefined ? workflow.voice.musicFadeDuration : 2}
+            onUpdateMusicFadeDuration={(fade) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: { ...prev.voice, musicFadeDuration: fade },
+              }))
+            }
+            onUpdateSceneVoice={(sceneId, voiceId, speakerTag) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                script: {
+                  ...prev.script,
+                  scenes: prev.script.scenes.map((s) =>
+                    s.id === sceneId ? { ...s, voice_id: voiceId, speaker_tag: speakerTag || s.speaker_tag } : s
+                  ),
+                },
+              }))
+            }
+            onUpdateSceneAudioResult={(audio) =>
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: {
+                  ...prev.voice,
+                  audios: [...prev.voice.audios.filter((a) => a.scene_id !== audio.scene_id), audio],
+                },
+                script: {
+                  ...prev.script,
+                  scenes: prev.script.scenes.map((s) =>
+                    s.id === audio.scene_id
+                      ? {
+                          ...s,
+                          audio_url: audio.audio_url,
+                          duration_sec: audio.duration_sec,
+                          is_custom_audio: true,
+                          audio_status: "completed" as const,
+                        }
+                      : s
+                  ),
+                },
+              }))
+            }
             onSynthesizeSingle={handleSynthesizeSingleVoice}
             onSynthesizeAll={handleSynthesizeAllVoices}
             isSynthesizing={isSynthesizingAllVoices}
             synthesizingSceneId={synthesizingSceneId}
             onBackStep={() => handleStepClick(2)}
             onNextStep={handleNextFromVoice}
+            projectId={workflow.projectId}
+            onAddCustomMusicTrack={(newTrack) => {
+              setMusicTracks((prev) => [newTrack, ...prev]);
+              setWorkflow((prev) => ({
+                ...prev,
+                voice: {
+                  ...prev.voice,
+                  musicId: newTrack.id,
+                  musicVolume: newTrack.recommended_volume,
+                },
+              }));
+            }}
           />
         )}
 

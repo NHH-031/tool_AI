@@ -40,6 +40,8 @@ class ExportSceneItem(BaseModel):
     image_url: Optional[str] = None
     audio_url: Optional[str] = None
     duration_sec: Optional[float] = 4.0
+    voice_id: Optional[str] = None
+    speed: Optional[float] = None
 
 
 class RenderExportRequest(BaseModel):
@@ -50,6 +52,8 @@ class RenderExportRequest(BaseModel):
     speed: float = 1.0
     music_id: str = "whimsical_play"
     music_volume: float = 0.15
+    music_start_offset: float = 0.0
+    music_fade_duration: float = 2.0
     has_color: bool = True
     sfx_enabled: bool = True
     sfx_volume: float = 0.22
@@ -248,13 +252,20 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                     height=1280 if req.aspect_ratio == "9:16" else 720,
                 )
 
-            # 2. Tìm hoặc tổng hợp giọng đọc phân cảnh
+            # 2. Tìm hoặc tổng hợp giọng đọc phân cảnh (Hỗ trợ đa nhân vật Task 8.1 & ElevenLabs Task 8.4)
             audio_file = _resolve_audio_path(req.project_id, scene_idx, sc.audio_url)
             tts_words_data = None
             if not audio_file or not audio_file.exists():
-                logger.info(f"[_run_export_pipeline] Sinh giọng đọc cho {scene_id}...")
-                cfg = VoiceConfig(voice_id=req.voice_id, speed=req.speed)
-                tts_res = await tts_provider.generate(sc.text, cfg)
+                sc_voice = sc.voice_id or req.voice_id
+                sc_speed = sc.speed or req.speed
+                logger.info(f"[_run_export_pipeline] Sinh giọng đọc cho {scene_id} với voice='{sc_voice}' (speed={sc_speed})...")
+                if sc_voice.startswith("eleven-"):
+                    from core.tts.elevenlabs import ElevenLabsTTSProvider
+                    target_tts = ElevenLabsTTSProvider()
+                else:
+                    target_tts = tts_provider
+                cfg = VoiceConfig(voice_id=sc_voice, speed=sc_speed)
+                tts_res = await target_tts.generate(sc.text, cfg)
                 ext = tts_res.format or "mp3"
                 audio_file = output_dir / f"{scene_id}_audio.{ext}"
                 audio_file.write_bytes(tts_res.audio_bytes)
@@ -474,8 +485,8 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                     logger.info(f"[_run_export_pipeline] Đã nạp nhạc nền BGM: {m_path.name}")
                     break
 
-        # 7c. Trộn đa luồng với Auto-Ducking và Limiter
-        logger.info(f"[_run_export_pipeline] Trộn đa luồng audio (Speech + SFX + BGM Ducking)...")
+        # 7c. Trộn đa luồng với Auto-Ducking, Trimmer và Limiter (Task 8.3)
+        logger.info(f"[_run_export_pipeline] Trộn đa luồng audio (Speech + SFX + BGM Ducking + Offset {getattr(req, 'music_start_offset', 0.0)}s)...")
         master_audio_arr = audio_mixer.mix_multi_track(
             speech_arr=master_speech_arr,
             bgm_arr=bgm_arr,
@@ -483,7 +494,11 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             bgm_volume=req.music_volume if has_bgm else 0.0,
             sfx_volume=req.sfx_volume if req.sfx_enabled else 0.0,
             enable_ducking=True,
+            bgm_start_offset=getattr(req, "music_start_offset", 0.0) or 0.0,
+            bgm_fade_in_sec=0.5,
+            bgm_fade_out_sec=getattr(req, "music_fade_duration", 2.0) or 2.0,
         )
+
 
         master_audio_file = output_dir / f"{job_id}_master_audio.aac"
         audio_mixer.write_audio(master_audio_arr, master_audio_file)

@@ -179,30 +179,43 @@ class AudioMixer:
         self,
         bgm_arr: np.ndarray,
         target_samples: int,
+        start_offset_sec: float = 0.0,
+        fade_in_sec: float = 0.5,
         fade_out_sec: float = 2.0,
     ) -> np.ndarray:
         """
-        Lặp bản nhạc BGM liền mạch nếu video dài hơn bản nhạc, và tự động fade-out cuối video.
+        Cắt đoạn bắt đầu theo start_offset_sec, lặp bản nhạc BGM liền mạch nếu video dài hơn bản nhạc,
+        và tự động áp dụng Fade-in / Fade-out (Task 8.3).
         """
-        bgm_samples = bgm_arr.shape[1]
-        if bgm_samples == 0 or target_samples == 0:
+        if bgm_arr.shape[1] == 0 or target_samples == 0:
+            return np.zeros((2, target_samples), dtype=np.float32)
+
+        # Cắt gọt đoạn nhạc bắt đầu theo start_offset_sec
+        offset_samples = int(max(0.0, start_offset_sec) * self.sample_rate)
+        if 0 < offset_samples < bgm_arr.shape[1]:
+            active_bgm = bgm_arr[:, offset_samples:]
+        else:
+            active_bgm = bgm_arr
+
+        bgm_samples = active_bgm.shape[1]
+        if bgm_samples == 0:
             return np.zeros((2, target_samples), dtype=np.float32)
 
         if target_samples <= bgm_samples:
-            result = bgm_arr[:, :target_samples].copy()
+            result = active_bgm[:, :target_samples].copy()
         else:
             repeats = int(math.ceil(target_samples / bgm_samples))
-            tiled = np.tile(bgm_arr, (1, repeats))
+            tiled = np.tile(active_bgm, (1, repeats))
             result = tiled[:, :target_samples].copy()
 
-        # Áp dụng Fade-in 0.5s ở đầu
-        fade_in_samples = min(int(0.5 * self.sample_rate), target_samples // 4)
+        # Áp dụng Fade-in ở đầu
+        fade_in_samples = min(int(max(0.0, fade_in_sec) * self.sample_rate), target_samples // 4)
         if fade_in_samples > 0:
             fade_in = np.linspace(0.0, 1.0, fade_in_samples, dtype=np.float32)
             result[:, :fade_in_samples] *= fade_in
 
         # Áp dụng Fade-out ở cuối video
-        fade_out_samples = min(int(fade_out_sec * self.sample_rate), target_samples // 2)
+        fade_out_samples = min(int(max(0.0, fade_out_sec) * self.sample_rate), target_samples // 2)
         if fade_out_samples > 0:
             fade_out = np.linspace(1.0, 0.0, fade_out_samples, dtype=np.float32)
             result[:, -fade_out_samples:] *= fade_out
@@ -218,9 +231,12 @@ class AudioMixer:
         sfx_volume: float = 0.20,
         enable_ducking: bool = True,
         target_samples: Optional[int] = None,
+        bgm_start_offset: float = 0.0,
+        bgm_fade_in_sec: float = 0.5,
+        bgm_fade_out_sec: float = 2.0,
     ) -> np.ndarray:
         """
-        Trộn 3 luồng: Giọng nói (Speech) + BGM (kèm Auto-Ducking) + SFX bút vẽ.
+        Trộn 3 luồng: Giọng nói (Speech) + BGM (kèm Auto-Ducking, Trimmer & Fade) + SFX bút vẽ.
         Áp dụng Soft-Clipping Limiter chống rè/vỡ tiếng.
         """
         num_samples = target_samples or speech_arr.shape[1]
@@ -242,7 +258,13 @@ class AudioMixer:
 
         # 2. Trộn BGM với Auto-Ducking nếu có
         if bgm_arr is not None and bgm_arr.shape[1] > 0 and bgm_volume > 0.001:
-            bgm_fit = self.loop_and_fit_bgm(bgm_arr, num_samples)
+            bgm_fit = self.loop_and_fit_bgm(
+                bgm_arr,
+                num_samples,
+                start_offset_sec=bgm_start_offset,
+                fade_in_sec=bgm_fade_in_sec,
+                fade_out_sec=bgm_fade_out_sec,
+            )
             if enable_ducking:
                 duck_env = self.compute_ducking_envelope(speech_arr, duck_ratio=0.35)
                 # Nhân envelope vào cả 2 kênh stereo

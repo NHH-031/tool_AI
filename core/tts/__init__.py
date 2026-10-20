@@ -45,3 +45,10 @@ try:
     __all__.append("LocalTTSProvider")
 except ImportError:
     pass
+
+try:
+    from .elevenlabs import ElevenLabsTTSProvider, ELEVENLABS_VOICE_MAP
+    __all__.extend(["ElevenLabsTTSProvider", "ELEVENLABS_VOICE_MAP"])
+except ImportError:
+    pass
+

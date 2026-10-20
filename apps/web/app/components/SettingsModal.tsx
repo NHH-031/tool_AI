@@ -5,6 +5,7 @@ import { DrawingToolItem, VoiceItem } from "../types";
 
 export interface StudioSettings {
   geminiApiKey: string;
+  elevenLabsApiKey?: string;
   defaultVoiceId: string;
   defaultSpeed: number;
   defaultAspectRatio: "16:9" | "9:16";
@@ -16,12 +17,14 @@ export const SETTINGS_STORAGE_KEY = "whiteboard_studio_settings_v1";
 
 export const DEFAULT_SETTINGS: StudioSettings = {
   geminiApiKey: "",
+  elevenLabsApiKey: "",
   defaultVoiceId: "vi-VN-Standard-B",
   defaultSpeed: 1.0,
   defaultAspectRatio: "16:9",
   defaultHandToolId: "hand-pen-modern",
   defaultSubtitleStyle: "classic",
 };
+
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -136,6 +139,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               * Không bắt buộc. Studio đã tích hợp bộ dịch tự động miễn phí không cần API key.
             </p>
           </div>
+
+          {/* Section: ElevenLabs API Key (Task 8.4) */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+              <span>ElevenLabs API Key (Giọng Biểu Cảm Cao Cấp)</span>
+              <span className="text-[10px] text-indigo-400 font-normal">Task 8.4 · Multilingual v2</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showApiKey ? "text" : "password"}
+                placeholder="xi-api-key..."
+                value={settings.elevenLabsApiKey || ""}
+                onChange={(e) => setSettings({ ...settings, elevenLabsApiKey: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm font-mono text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition pr-10"
+              />
+            </div>
+            <p className="text-[11px] text-slate-500">
+              * Tùy chọn. Nếu chưa điền key, hệ thống tự động sử dụng EdgeTTS miễn phí không giới hạn.
+            </p>
+          </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tỷ lệ khung hình mặc định */}

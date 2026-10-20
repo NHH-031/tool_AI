@@ -123,3 +123,6 @@ class TimingEstimator:
             words=all_words_timing,
             sentences=sentences_timing,
         )
+
+    estimate = estimate_timing
+

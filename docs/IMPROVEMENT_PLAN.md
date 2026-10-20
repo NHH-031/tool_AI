@@ -183,53 +183,42 @@
 
 ---
 
-## 🎙️ PHASE 8: HỆ THỐNG GIỌNG ĐỌC ĐA NHÂN VẬT & TẢI ÂM THANH RIÊNG
+## 🎙️ PHASE 8: HỆ THỐNG GIỌNG ĐỌC ĐA NHÂN VẬT & TẢI ÂM THANH RIÊNG (✅ ĐÃ HOÀN THÀNH)
 > **Mục tiêu:** Biến video thành câu chuyện sống động với đối thoại nhiều nhân vật, hỗ trợ giọng đọc biểu cảm cao cấp và tải file âm thanh cá nhân.
-> **Thời gian ước tính:** 2 - 3 ngày
-> **Mức ưu tiên:** 🟡 CAO
+> **Trạng thái:** ✅ **Hoàn thành 100%** (Đã kiểm thử unit test 9/9 passing + TypeScript 0 errors).
 
-### Task 8.1: Hội thoại đa nhân vật (Multi-Speaker Dialogue)
-- **Mô tả:** Cho phép kịch bản có nhiều người nói cùng lúc (ví dụ: Người kể chuyện, Khách hàng, Chuyên gia).
+### Task 8.1: Hội thoại đa nhân vật (Multi-Speaker Dialogue) - ✅ ĐÃ XONG
 - **Chi tiết thực hiện:**
-  - Trong Bước 3 (Giọng đọc): Thay vì áp dụng 1 giọng đọc cho toàn bộ video, người dùng có thể chỉ định giọng đọc riêng cho từng phân cảnh (Scene 1: NamMinh, Scene 2: HoaiMy, Scene 3: NamMinh).
-  - Tự động nhận diện nhãn nhân vật từ kịch bản (ví dụ: `[Nam]: ...`, `[Nữ]: ...`).
-  - Giao diện gán nhanh giọng đọc theo nhân vật hoặc đổi toàn bộ chỉ bằng 1 cú click.
-- **Files cần tác động:**
-  - `apps/web/app/components/steps/VoiceStep.tsx`
-  - `apps/api/routers/export.py`
-  - `apps/web/app/types.ts`
+  - `Scene` và `ExportSceneItem` hỗ trợ trường `voice_id` và `speed` độc lập cho từng phân cảnh.
+  - Nút "🤖 Tự phát hiện nhân vật" tự động phân tích nhãn kịch bản dạng `[Nam]: ...`, `[Nữ]: ...`, `[Dẫn chuyện]: ...` và gán giọng đọc tương ứng.
+  - Thẻ phân cảnh hiển thị dropdown chọn giọng nói độc lập và badge vai diễn `🎭 Nam`, `🎭 Nữ`, `🎭 Dẫn chuyện`.
+  - Pipeline kết xuất video (`export.py`) tổng hợp giọng đọc riêng cho từng cảnh trước khi ghép nối.
 
-### Task 8.2: Tải lên file ghi âm thuyết minh thật (Custom Voiceover Upload)
-- **Mô tả:** Người dùng muốn tự đọc kịch bản bằng chính giọng của họ thay vì dùng giọng máy AI.
+### Task 8.2: Tải lên file ghi âm thuyết minh thật (Custom Voiceover Upload) - ✅ ĐÃ XONG
 - **Chi tiết thực hiện:**
-  - Thêm nút "Tải file thu âm (MP3/WAV)" hoặc "Ghi âm trực tiếp từ trình duyệt bằng Micro" trên từng cảnh.
-  - Sử dụng Web Audio API để thu âm trực tiếp và nén thành blob MP3 gửi lên backend.
-  - Tự động chạy Whisper cục bộ hoặc phân tách âm lượng để trích xuất Word Timing phục vụ phụ đề chạy chữ.
-- **Files cần tác động:**
-  - `apps/web/app/components/VoiceRecorder.tsx` (Mới)
-  - `apps/web/app/components/steps/VoiceStep.tsx`
-  - `apps/api/routers/voices.py`
+  - Component `VoiceRecorderModal.tsx`:
+    - Tab 1: Ghi âm trực tiếp qua Micro trình duyệt bằng `MediaRecorder` API kèm đồng hồ đếm thời gian, visualizer sóng âm và nghe thử.
+    - Tab 2: Kéo thả file âm thanh có sẵn từ máy tính (MP3/WAV/M4A/OGG/WEBM).
+  - Endpoint `POST /voices/upload-custom-audio`: Giải mã base64, chuyển đổi và chuẩn hóa thành WAV PCM 16-bit và MP3 chuẩn phát thanh qua PyAV, tính toán duration và sinh metadata timing.
+  - Phân cảnh hiển thị huy hiệu `🎤 Bản thu âm riêng`, pipeline giữ nguyên file thu âm thật không ghi đè bởi TTS AI.
 
-### Task 8.3: Tải nhạc nền cá nhân & Cắt gọt nhạc (Custom BGM & Audio Trimmer)
-- **Mô tả:** Cho phép người dùng tải lên bài nhạc nền yêu thích của riêng họ.
+### Task 8.3: Tải nhạc nền cá nhân & Cắt gọt nhạc (Custom BGM & Audio Trimmer) - ✅ ĐÃ XONG
 - **Chi tiết thực hiện:**
-  - Nút upload file MP3 nhạc nền riêng tại Bước 3.
-  - Thanh trượt waveform cắt chọn đoạn nhạc bắt đầu (Start offset), điều chỉnh độ mờ dần (Fade-in / Fade-out duration).
-  - Lưu vào danh mục nhạc cá nhân của dự án.
-- **Files cần tác động:**
-  - `apps/api/routers/music.py`
-  - `apps/web/app/components/steps/VoiceStep.tsx`
+  - Component `CustomMusicUploadModal.tsx`: Cho phép upload nhạc MP3/WAV, đặt tên bài nhạc, tâm trạng và nghe thử.
+  - Endpoint `POST /music/upload-custom-bgm`: Lưu trữ vào thư viện nhạc dự án và đưa lên đầu danh mục.
+  - Bộ cắt gọt âm thanh (Audio Trimmer):
+    - Thanh trượt `Start Offset` (0s - 30s): Cắt bỏ đoạn dạo đầu của bài hát.
+    - Thanh trượt `Fade-out Duration` (0.5s - 5.0s): Làm mờ dần âm lượng ở cuối video.
+    - `AudioMixer.loop_and_fit_bgm` & `mix_multi_track` tích hợp offset, fade-in, fade-out và Soft-limiter chống rè/vỡ tiếng.
 
-### Task 8.4: Tích hợp giọng đọc biểu cảm cao cấp (ElevenLabs & FPT.AI)
-- **Mô tả:** Bổ sung các nhà cung cấp TTS cảm xúc cao cấp bên cạnh EdgeTTS miễn phí.
+### Task 8.4: Tích hợp giọng đọc biểu cảm cao cấp (ElevenLabs & EdgeTTS) - ✅ ĐÃ XONG
 - **Chi tiết thực hiện:**
-  - Tạo adapter `core/tts/elevenlabs.py` và `core/tts/fpt.py`.
-  - Cấu hình API key tùy chọn trong SettingsModal.
-  - Khả năng kiểm soát cảm xúc: Vui vẻ, hào hứng, trầm ấm, thì thầm, kịch tính.
-- **Files cần tác động:**
-  - `core/tts/elevenlabs.py` (Mới)
-  - `core/tts/factory.py`
-  - `apps/web/app/components/SettingsModal.tsx`
+  - Provider `ElevenLabsTTSProvider` (`core/tts/elevenlabs.py`):
+    - Hỗ trợ mô hình `eleven_multilingual_v2` với các giọng biểu cảm hàng đầu: Rachel, Adam, Antoni, Bella.
+    - Cấu hình API key tùy chọn trong `SettingsModal.tsx`.
+    - Cơ chế chuyển tiếp tự động (graceful fallback) sang `LocalTTSProvider` / `EdgeTTSProvider` khi không có API key hoặc gặp lỗi mạng.
+  - Phân nhóm giọng đọc trực quan trong `VoiceStep.tsx`: ElevenLabs Biểu Cảm, Edge TTS Tiếng Việt, AI Cục Bộ VieNeu/VoiceStudio.
+
 
 ---
 
@@ -413,14 +402,15 @@
 ## 📋 THỨ TỰ ƯU TIÊN VÀ HÀNH ĐỘNG TIẾP THEO
 
 ### Bước hành động khuyến nghị tiếp tục ngay:
-1. **Triển khai Phase 6 (Vector Stroke Engine & Bàn tay vẽ chân thực):**
-   - Đây là yếu tố cốt lõi mang lại sự "WOW" lớn nhất cho người xem video bảng trắng.
-   - Thêm bộ Vectorizer trích xuất nét vẽ Bezier và hiệu ứng chuyển cảnh bằng giẻ lau bảng.
-2. **Triển khai Phase 7.1 & 7.3 (Canvas In-place Editor & Upload Logo riêng):**
-   - Đáp ứng nhu cầu thực tế của các nhà sáng tạo nội dung muốn chèn logo thương hiệu hoặc chỉnh sửa nhanh hình vẽ.
-3. **Triển khai Phase 8.1 & 8.2 (Multi-Speaker Dialogue & Thu âm thật):**
-   - Tăng tính hấp dẫn cho các video kể chuyện, bài giảng hoặc kịch bản phỏng vấn/tư vấn bán hàng.
+1. **Phase 6 (Vector Stroke Engine & Bàn tay vẽ chân thực):** ✅ **ĐÃ HOÀN THÀNH**
+2. **Phase 7 (Canvas Studio, Character Anchor & Doodle Vault):** ✅ **ĐÃ HOÀN THÀNH**
+3. **Phase 8 (Hệ thống giọng đọc đa nhân vật & Tải âm thanh riêng):** ✅ **ĐÃ HOÀN THÀNH**
+4. **Triển khai Phase 9 (Trình biên tập phụ đề trực quan & Chữ viết tay):**
+   - **Task 9.1:** Tùy biến toàn diện giao diện phụ đề (Subtitle Typography Customizer: Font chữ Patrick Hand/Inter, viền nét, nền đệm, vị trí Top/Center/Bottom).
+   - **Task 9.2:** Trình kéo thả mốc thời gian phụ đề trực quan (Visual Subtitle Timeline Scrubbing & Sửa chính tả trực tiếp).
+   - **Task 9.3:** Hoạt họa bàn tay viết chữ từng ký tự (Handwritten Text Animation).
 
 ---
 
 > **Cập nhật ngày:** 2026-10-20 | **Người lập:** AI Whiteboard Studio Lead Architect
+

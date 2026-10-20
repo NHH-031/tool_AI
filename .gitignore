@@ -39,3 +39,7 @@ data/*.db-wal
 data/*.db-shm
 data/*.sqlite
 
+# User uploaded custom assets
+assets/audio/music/custom_*
+
+

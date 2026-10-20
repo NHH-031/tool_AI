@@ -947,6 +947,91 @@ export async function synthesizeVoice(
   }
 }
 
+export async function uploadCustomAudio(payload: {
+  projectId: string;
+  sceneId: string;
+  sceneIndex: number;
+  audioDataBase64: string;
+  filename?: string;
+  text?: string;
+}): Promise<AudioResult> {
+  try {
+    const res = await fetch(`${API_BASE}/voices/upload-custom-audio`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: payload.projectId,
+        scene_id: payload.sceneId,
+        scene_index: payload.sceneIndex,
+        audio_data_base64: payload.audioDataBase64,
+        filename: payload.filename || "custom_voice.wav",
+        text: payload.text,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const audioUrl = data.audio_url.startsWith("http")
+        ? data.audio_url
+        : `${API_BASE}${data.audio_url}`;
+      return {
+        scene_id: payload.sceneId,
+        scene_index: payload.sceneIndex,
+        audio_url: audioUrl,
+        duration_sec: data.duration_sec,
+        voice_id: "custom_upload",
+        status: "completed",
+      };
+    } else {
+      const errText = await res.text();
+      throw new Error(`Upload audio failed (${res.status}): ${errText}`);
+    }
+  } catch (e: any) {
+    console.error("[uploadCustomAudio] Lỗi tải audio:", e);
+    throw new Error(e?.message || "Không thể tải file âm thanh lên hệ thống");
+  }
+}
+
+export async function uploadCustomBgm(payload: {
+  title: string;
+  audioDataBase64: string;
+  mood?: string;
+  genre?: string;
+  recommendedVolume?: number;
+}): Promise<MusicTrackItem> {
+  try {
+    const res = await fetch(`${API_BASE}/music/upload-custom-bgm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: payload.title,
+        audio_data_base64: payload.audioDataBase64,
+        mood: payload.mood || "Tùy Biến",
+        genre: payload.genre || "Nhạc Cá Nhân",
+        recommended_volume: payload.recommendedVolume || 0.15,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (res.ok) {
+      const data: MusicTrackItem = await res.json();
+      return {
+        ...data,
+        preview_url: data.preview_url.startsWith("http")
+          ? data.preview_url
+          : `${API_BASE}${data.preview_url}`,
+      };
+    } else {
+      const errText = await res.text();
+      throw new Error(`Upload BGM failed (${res.status}): ${errText}`);
+    }
+  } catch (e: any) {
+    console.error("[uploadCustomBgm] Lỗi tải BGM:", e);
+    throw new Error(e?.message || "Không thể tải bài nhạc nền lên hệ thống");
+  }
+}
+
 export async function renderExport(payload: {
   projectId: string;
   title: string;
@@ -955,6 +1040,8 @@ export async function renderExport(payload: {
   speed: number;
   musicId: string;
   musicVolume: number;
+  musicStartOffset?: number;
+  musicFadeDuration?: number;
   hasColor?: boolean;
   subtitleStyle?: "none" | "classic" | "karaoke";
   subtitleEnabled?: boolean;
@@ -981,6 +1068,8 @@ export async function renderExport(payload: {
       speed: payload.speed,
       music_id: payload.musicId,
       music_volume: payload.musicVolume,
+      music_start_offset: payload.musicStartOffset || 0.0,
+      music_fade_duration: payload.musicFadeDuration !== undefined ? payload.musicFadeDuration : 2.0,
       has_color: payload.hasColor !== undefined ? payload.hasColor : true,
       subtitle_style: payload.subtitleStyle || "classic",
       subtitle_enabled: payload.subtitleEnabled !== undefined ? payload.subtitleEnabled : (payload.subtitleStyle !== "none"),
