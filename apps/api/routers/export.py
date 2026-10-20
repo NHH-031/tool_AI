@@ -50,6 +50,7 @@ class RenderExportRequest(BaseModel):
     sfx_name: str = "marker_draw"
     subtitle_style: str = "classic"
     subtitle_enabled: bool = True
+    aspect_ratio: str = "16:9"
 
 
 class RenderExportResponse(BaseModel):
@@ -152,14 +153,27 @@ def _create_scene_annotation(
     image_path: Path,
     duration_ms: int,
     output_annot_path: Path,
+    aspect_ratio: str = "16:9",
 ) -> Path:
-    """Tạo file annotation JSON để engine render bàn tay vẽ whiteboard chính xác theo thời lượng."""
+    """Tạo file annotation JSON để engine render bàn tay vẽ whiteboard chính xác theo thời lượng và tỷ lệ khung hình."""
     import cv2
     import json
     img = cv2.imread(str(image_path))
-    h, w = (1080, 1920) if img is None else img.shape[:2]
+    if img is not None:
+        h, w = img.shape[:2]
+    else:
+        h, w = (1920, 1080) if aspect_ratio == "9:16" else (1080, 1920)
+
     # Tăng thời gian vẽ lên 85% thời lượng thoại (chỉ để lại 15% cuối giữ tranh tĩnh)
     draw_dur_ms = max(2000, int(duration_ms * 0.85))
+
+    # Bàn tay vẽ điều chỉnh theo tỷ lệ khung hình (dọc 9:16 hay ngang 16:9)
+    if aspect_ratio == "9:16" or h > w:
+        hand_start = [int(w * 0.25), int(h * 0.18)]
+        hand_end = [int(w * 0.75), int(h * 0.82)]
+    else:
+        hand_start = [int(w * 0.2), int(h * 0.25)]
+        hand_end = [int(w * 0.85), int(h * 0.75)]
 
     annot_data = {
         "sceneId": scene_id,
@@ -182,8 +196,8 @@ def _create_scene_annotation(
                     "protectedRegions": [],
                 },
                 "handPath": {
-                    "start": [int(w * 0.2), int(h * 0.25)],
-                    "end": [int(w * 0.85), int(h * 0.75)],
+                    "start": hand_start,
+                    "end": hand_end,
                 },
             }
         ],
@@ -234,8 +248,14 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                     action=sc.prompt or sc.text,
                     scene_context=sc.prompt or sc.text,
                     has_color=req.has_color,
+                    aspect_ratio=req.aspect_ratio,
                 )
-                img_file = await art_generator.generate_artwork(img_prompt, target_img)
+                img_file = await art_generator.generate_artwork(
+                    img_prompt,
+                    target_img,
+                    width=720 if req.aspect_ratio == "9:16" else 1280,
+                    height=1280 if req.aspect_ratio == "9:16" else 720,
+                )
 
             # 2. Tìm hoặc tổng hợp giọng đọc phân cảnh
             audio_file = _resolve_audio_path(req.project_id, scene_idx, sc.audio_url)
@@ -276,6 +296,7 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                 image_path=img_file,
                 duration_ms=int(round(dur_sec * 1000)),
                 output_annot_path=annot_file,
+                aspect_ratio=req.aspect_ratio,
             )
 
             # 4. Render video hoạt họa bàn tay vẽ cho phân cảnh (vẽ chậm rãi, trải dài 85% câu thoại)
@@ -283,13 +304,14 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             draw_target_ms = int(round(dur_sec * 1000 * 0.85))
             seg_cfg = WhiteboardRenderConfig(
                 fps=24,
-                cap_long_edge=720,
+                cap_long_edge=1280 if req.aspect_ratio == "9:16" else 720,
                 ink_path="skeleton",
                 color_fill="contour-wipe" if req.has_color else "none",
                 has_color=req.has_color,
                 total_ms=int(round(dur_sec * 1000)),
                 draw_ratio=0.85,
                 max_draw_ms=draw_target_ms,
+                aspect_ratio=req.aspect_ratio,
             )
             logger.info(f"[_run_export_pipeline] Render raw video cho {scene_id} ({dur_sec:.1f}s, draw {draw_target_ms}ms)...")
             adapter.render_scene(
@@ -403,7 +425,10 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
         job_record["progress_percent"] = 93.0
 
         from core.subtitles import SubtitleGenerator, SubtitleBurner
-        all_segments = SubtitleGenerator.generate_project_subtitles(scenes_subtitles_meta)
+        all_segments = SubtitleGenerator.generate_project_subtitles(
+            scenes_subtitles_meta,
+            max_words_per_segment=4 if req.aspect_ratio == "9:16" else 6,
+        )
         srt_content = SubtitleGenerator.to_srt(all_segments)
         vtt_content = SubtitleGenerator.to_vtt(all_segments)
 
@@ -424,7 +449,10 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             job_record["progress_percent"] = 96.0
 
             sub_video_mp4 = output_dir / f"{job_id}_subtitled.mp4"
-            burner = SubtitleBurner(font_size=32)
+            burner = SubtitleBurner(
+                font_size=28 if req.aspect_ratio == "9:16" else 32,
+                aspect_ratio=req.aspect_ratio,
+            )
             burner.burn_subtitles_to_video(
                 video_path=final_output_mp4,
                 subtitles=all_segments,
@@ -444,7 +472,8 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
             "is_valid_mp4": True,
             "duration_sec": round(total_duration, 2),
             "video_codec": "h264",
-            "resolution": "1280x720",
+            "resolution": "720x1280" if req.aspect_ratio == "9:16" else "1280x720",
+            "aspect_ratio": req.aspect_ratio,
             "fps": 24.0,
             "drawing_hand_overlay": True,
             "warm_tone_background": True,

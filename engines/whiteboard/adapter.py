@@ -35,6 +35,7 @@ class WhiteboardRenderConfig:
     has_color: bool = True
     draw_ratio: float = 0.85
     max_draw_ms: int = 15000
+    aspect_ratio: str = "16:9"
 
 
 class WhiteboardEngineAdapter:

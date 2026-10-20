@@ -10,6 +10,8 @@ interface ScriptStepProps {
   onUpdateRawText: (text: string) => void;
   inputMode: "text" | "srt";
   onUpdateInputMode: (mode: "text" | "srt") => void;
+  aspectRatio?: "16:9" | "9:16";
+  onUpdateAspectRatio?: (ratio: "16:9" | "9:16") => void;
   scenes: Scene[];
   onUpdateScenes: (scenes: Scene[]) => void;
   templates: TemplateItem[];
@@ -27,6 +29,8 @@ export const ScriptStep: React.FC<ScriptStepProps> = ({
   onUpdateRawText,
   inputMode,
   onUpdateInputMode,
+  aspectRatio = "16:9",
+  onUpdateAspectRatio,
   scenes,
   onUpdateScenes,
   templates,
@@ -141,6 +145,45 @@ export const ScriptStep: React.FC<ScriptStepProps> = ({
                   placeholder="Ví dụ: Pin năng lượng mặt trời hoạt động thế nào"
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-100 placeholder-slate-500 text-sm outline-none transition"
                 />
+              </div>
+
+              {/* Aspect Ratio Selector */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Tỷ lệ khung hình Video
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => onUpdateAspectRatio && onUpdateAspectRatio("16:9")}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition ${
+                      aspectRatio === "16:9"
+                        ? "bg-indigo-600/20 border-indigo-500 text-white ring-1 ring-indigo-500"
+                        : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                    }`}
+                  >
+                    <span className="text-lg">🖥️</span>
+                    <div>
+                      <div className="text-xs font-bold leading-none">16:9 Ngang</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">YouTube / Web (1280x720)</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateAspectRatio && onUpdateAspectRatio("9:16")}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition ${
+                      aspectRatio === "9:16"
+                        ? "bg-indigo-600/20 border-indigo-500 text-white ring-1 ring-indigo-500"
+                        : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                    }`}
+                  >
+                    <span className="text-lg">📱</span>
+                    <div>
+                      <div className="text-xs font-bold leading-none">9:16 Dọc</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">TikTok / Shorts / Reels</div>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {/* Mode Selector Tabs */}

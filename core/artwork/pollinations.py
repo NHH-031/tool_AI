@@ -35,16 +35,20 @@ class PollinationsArtProvider(ImageGeneratorProvider):
         retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
         reraise=True,
     )
-    async def _fetch_pollinations(self, refined_prompt: str) -> bytes:
+    async def _fetch_pollinations(self, refined_prompt: str, aspect_ratio: str = "16:9") -> bytes:
         encoded_prompt = urllib.parse.quote(refined_prompt[:280])
         seed = random.randint(1000, 999999)
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed={seed}&model=turbo"
+        if aspect_ratio == "9:16":
+            req_w, req_h = 720, 1280
+        else:
+            req_w, req_h = 1280, 720
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={req_w}&height={req_h}&nologo=true&seed={seed}&model=turbo"
 
         async with httpx.AsyncClient(timeout=25.0) as client:
             resp = await client.get(url, headers=headers)
             if resp.status_code != 200:
-                url_def = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed={seed}"
+                url_def = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={req_w}&height={req_h}&nologo=true&seed={seed}"
                 resp = await client.get(url_def, headers=headers)
             resp.raise_for_status()
             return resp.content
@@ -57,6 +61,15 @@ class PollinationsArtProvider(ImageGeneratorProvider):
         height: int = 1080,
     ) -> Path:
         output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        aspect_ratio = getattr(prompt, "aspect_ratio", "16:9") or "16:9"
+        if aspect_ratio == "9:16":
+            # Chuyển kích thước canvas sang dọc nếu người gọi truyền kích thước ngang mặc định
+            if width > height:
+                width, height = height, width
+            format_tag = "vertical 9:16 portrait orientation, vertical composition, mobile display"
+        else:
+            format_tag = "1080p widescreen"
 
         scene_ctx = getattr(prompt, "scene_context", "").strip()
         full_p = getattr(prompt, "full_prompt", "").strip()
@@ -75,12 +88,12 @@ class PollinationsArtProvider(ImageGeneratorProvider):
                     else:
                         refined_prompt = (
                             f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
-                            f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+                            f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, {format_tag}, no text"
                         )
                 except Exception:
                     refined_prompt = (
                         f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
-                        f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, 1080p widescreen, no text"
+                        f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, {format_tag}, no text"
                     )
         else:
             if scene_ctx and any(k in scene_ctx.lower() for k in ["comic", "graphic novel", "lianhuanhua", "manhua", "illustration"]):
@@ -96,19 +109,19 @@ class PollinationsArtProvider(ImageGeneratorProvider):
                         refined_prompt = (
                             f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, "
                             f"{prompt.subject}. {prompt.action}. Clear distinct 2D contour lines, muted vintage watercolor wash, flat matte coloring on warm vintage cream paper #F5EBD7, "
-                            f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, 1080p widescreen, no text, no watermark"
+                            f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, {format_tag}, no text, no watermark"
                         )
                 except Exception:
                     refined_prompt = (
                         f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, "
                         f"{prompt.subject}. {prompt.action}. Clear distinct 2D contour lines, muted vintage watercolor wash, flat matte coloring on warm vintage cream paper #F5EBD7, "
-                        f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, 1080p widescreen, no text, no watermark"
+                        f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, {format_tag}, no text, no watermark"
                     )
 
-        logger.info(f"[PollinationsArtProvider] Requesting image for prompt: '{refined_prompt[:80]}...'")
+        logger.info(f"[PollinationsArtProvider] Requesting image ({aspect_ratio}, {width}x{height}) for prompt: '{refined_prompt[:80]}...'")
 
         try:
-            content = await self._fetch_pollinations(refined_prompt)
+            content = await self._fetch_pollinations(refined_prompt, aspect_ratio=aspect_ratio)
 
             # Giải mã ảnh từ memory buffer
             nparr = np.frombuffer(content, np.uint8)

@@ -47,6 +47,7 @@ export interface AudioResult {
 export interface ProjectWorkflow {
   projectId: string;
   projectName: string;
+  aspectRatio?: "16:9" | "9:16";
   currentStep: WizardStep;
   completedSteps: WizardStep[];
   script: {

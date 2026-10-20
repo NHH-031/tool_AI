@@ -28,8 +28,9 @@ class SubtitleBurner:
         "arial.ttf",
     ]
 
-    def __init__(self, font_size: int = 34):
+    def __init__(self, font_size: int = 34, aspect_ratio: str = "16:9"):
         self.font_size = font_size
+        self.aspect_ratio = aspect_ratio
         self._font: Optional[ImageFont.FreeTypeFont] = None
         self._font_bold: Optional[ImageFont.FreeTypeFont] = None
         self._init_fonts()
@@ -61,8 +62,10 @@ class SubtitleBurner:
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
 
-        x = (width - text_w) // 2
-        y = height - text_h - int(height * 0.08)
+        # Vùng an toàn (safe-zone): 9:16 cần nâng cao hơn để tránh bị che bởi UI TikTok/Shorts
+        margin_ratio = 0.16 if (self.aspect_ratio == "9:16" or height > width) else 0.08
+        x = max(10, (width - text_w) // 2)
+        y = height - text_h - int(height * margin_ratio)
 
         pad_x, pad_y = 20, 10
         # Nền tối bán trong suốt (Slate 950 alpha 210)
@@ -112,8 +115,10 @@ class SubtitleBurner:
         total_w += space_w * (len(words) - 1)
         max_h = max(m[2] for m in word_metrics)
 
-        start_x = (width - total_w) // 2
-        y = height - max_h - int(height * 0.08)
+        # Vùng an toàn (safe-zone): 9:16 cần nâng cao hơn để tránh bị che bởi UI TikTok/Shorts
+        margin_ratio = 0.16 if (self.aspect_ratio == "9:16" or height > width) else 0.08
+        start_x = max(10, (width - total_w) // 2)
+        y = height - max_h - int(height * margin_ratio)
 
         pad_x, pad_y = 24, 12
         # Nền tối bán trong suốt

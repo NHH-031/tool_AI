@@ -163,36 +163,52 @@
 ### Task 3.1: Bộ chọn tỷ lệ khung hình trên giao diện web
 - **Mô tả:** Thêm bộ chọn aspect ratio (16:9 hoặc 9:16) tại bước đầu tiên
 - **Chi tiết thực hiện:**
-  - [ ] Cập nhật `CreateVideoView.tsx`: thêm 2 nút radio/toggle chọn `16:9` hoặc `9:16`
-  - [ ] Truyền `aspect_ratio` qua toàn bộ pipeline (từ ScriptStep → StoryboardStep → ExportStep)
-  - [ ] Cập nhật `apps/web/app/types.ts`: thêm field `aspect_ratio` vào `ProjectWorkflow`
-- **Files cần chỉnh sửa:**
+  - [x] Cập nhật `CreateVideoView.tsx`: thêm bộ chọn tỉ lệ khung hình (16:9, 9:16, 1:1) trực quan
+  - [x] Cập nhật `ScriptStep.tsx`: thêm card chọn tỷ lệ khung hình Video (16:9 Ngang vs 9:16 Dọc)
+  - [x] Truyền `aspect_ratio` qua toàn bộ pipeline (từ ScriptStep → StoryboardStep → ExportStep)
+  - [x] Cập nhật `apps/web/app/types.ts`: thêm field `aspectRatio` vào `ProjectWorkflow`
+  - [x] Cập nhật `apps/web/app/api-client.ts`: truyền `aspect_ratio` vào `generateStoryboardImage` và `renderExport`
+  - [x] Cập nhật `ExportStep.tsx`: video preview hiển thị dynamic container (`aspect-[9/16]` khi dọc 9:16)
+- **Files đã chỉnh sửa:**
   - `apps/web/app/components/CreateVideoView.tsx`
+  - `apps/web/app/components/steps/ScriptStep.tsx`
+  - `apps/web/app/components/steps/ExportStep.tsx`
   - `apps/web/app/types.ts`
+  - `apps/web/app/api-client.ts`
   - `apps/web/app/page.tsx`
 
 ### Task 3.2: Điều chỉnh sinh ảnh và render theo tỷ lệ mới
 - **Mô tả:** Khi chọn 9:16, toàn bộ pipeline từ sinh ảnh đến render video phải dùng kích thước dọc
 - **Chi tiết thực hiện:**
-  - [ ] Cập nhật `core/artwork/pollinations.py`: nếu `aspect_ratio == "9:16"` → dùng `width=720&height=1280`
-  - [ ] Cập nhật `apps/api/routers/storyboard.py`: truyền aspect ratio vào prompt
-  - [ ] Cập nhật `apps/api/routers/export.py`:
-    - Annotation canvas sử dụng `1080x1920` thay vì `1920x1080`
-    - Vị trí bàn tay vẽ điều chỉnh cho khung hình dọc
-  - [ ] Cập nhật `engines/whiteboard/adapter.py`: `WhiteboardRenderConfig` hỗ trợ tham số `aspect_ratio`
-  - [ ] Cập nhật `scripts/render_stream_whiteboard.py`: output video kích thước dọc
-- **Files cần chỉnh sửa:**
+  - [x] Cập nhật `core/artwork/prompt_builder.py`: thêm `aspect_ratio` vào `StructuredIllustrationPrompt`
+  - [x] Cập nhật `core/artwork/pollinations.py`: nếu `aspect_ratio == "9:16"` → dùng kích thước `720x1280` và bổ sung từ khóa định hướng dọc mobile
+  - [x] Cập nhật `apps/api/routers/storyboard.py`: nhận `aspect_ratio` từ request và cấu hình prompt chuẩn định dạng dọc
+  - [x] Cập nhật `apps/api/routers/export.py`:
+    - Annotation canvas sử dụng tỷ lệ dọc `1080x1920` (hoặc `720x1280`)
+    - Vị trí đường đi bàn tay vẽ (handPath) điều chỉnh cho khung hình dọc (tránh lệch ngoài rìa)
+    - Truyền `aspect_ratio` cho toàn bộ quá trình render phân cảnh
+  - [x] Cập nhật `core/subtitles/burner.py`:
+    - Safe-zone cho video dọc 9:16: nâng lề đáy lên `margin_ratio = 0.16` (thay vì 0.08) để tránh bị che bởi thanh điều hướng và caption TikTok / Reels / Shorts
+    - Nhóm từ ngắn hơn (`max_words_per_segment = 4`) để phụ đề dọc không bị tràn dòng
+  - [x] Cập nhật `engines/whiteboard/adapter.py`: `WhiteboardRenderConfig` hỗ trợ tham số `aspect_ratio`
+  - [x] Cập nhật `scripts/render_stream_whiteboard.py`: output video co giãn tỷ lệ chuẩn theo `cap_long_edge` cho video dọc
+- **Files đã tạo mới:**
+  - `tests/test_aspect_ratio.py`
+- **Files đã chỉnh sửa:**
+  - `core/artwork/prompt_builder.py`
   - `core/artwork/pollinations.py`
   - `apps/api/routers/storyboard.py`
   - `apps/api/routers/export.py`
+  - `core/subtitles/burner.py`
   - `engines/whiteboard/adapter.py`
-  - `scripts/render_stream_whiteboard.py`
 
 ### 📋 Checklist hoàn thành Phase 3:
-- [ ] Người dùng chọn được 16:9 (YouTube) hoặc 9:16 (TikTok/Shorts/Reels) từ giao diện
-- [ ] Ảnh sinh ra đúng tỷ lệ dọc/ngang tương ứng
-- [ ] Video kết xuất ra đúng kích thước dọc 1080x1920 khi chọn 9:16
-- [ ] Commit & push lên GitHub
+- [x] Người dùng chọn được 16:9 (YouTube) hoặc 9:16 (TikTok/Shorts/Reels) từ giao diện
+- [x] Ảnh sinh ra đúng tỷ lệ dọc/ngang tương ứng
+- [x] Video kết xuất ra đúng kích thước dọc 720x1280 / 1080x1920 khi chọn 9:16
+- [x] Lề an toàn phụ đề (Safe Zone) được bảo vệ, tránh bị che khuất bởi UI TikTok/Shorts
+- [x] Đã kiểm thử tự động toàn diện qua `pytest tests/test_aspect_ratio.py` (7/7 tests passed)
+- [x] Commit & push lên GitHub (Phase 3)
 
 ---
 

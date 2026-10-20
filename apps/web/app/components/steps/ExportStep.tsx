@@ -128,13 +128,15 @@ export const ExportStep: React.FC<ExportStepProps> = ({
                   ✍️ Hand Overlay ON
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
-                  1080p 30fps
+                  {workflow.aspectRatio === "9:16" ? "720x1280 (9:16)" : "1280x720 (16:9)"}
                 </span>
               </div>
             </div>
 
             {/* Video Canvas Container */}
-            <div className="relative aspect-video w-full rounded-xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center shadow-2xl">
+            <div className={`relative w-full rounded-xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center shadow-2xl ${
+              workflow.aspectRatio === "9:16" ? "aspect-[9/16] max-h-[580px] mx-auto" : "aspect-video"
+            }`}>
               {videoUrl ? (
                 <video
                   controls
@@ -197,7 +199,7 @@ export const ExportStep: React.FC<ExportStepProps> = ({
               <div className="flex items-center gap-4 text-xs text-slate-400 font-mono">
                 <span>Số cảnh: <strong className="text-slate-200">{scenes.length}</strong></span>
                 <span>Thời lượng: <strong className="text-slate-200">~{totalDuration.toFixed(1)}s</strong></span>
-                <span>Tỷ lệ: <strong className="text-slate-200">16:9</strong></span>
+                <span>Tỷ lệ: <strong className="text-slate-200">{workflow.aspectRatio || "16:9"}</strong></span>
               </div>
 
               {isCompleted && (

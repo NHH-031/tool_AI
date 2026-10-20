@@ -685,7 +685,8 @@ export async function generateStoryboardImage(
   sceneIndex: number,
   prompt: string,
   projectId: string = "default",
-  forceRegenerate: boolean = false
+  forceRegenerate: boolean = false,
+  aspectRatio: string = "16:9"
 ): Promise<StoryboardImage> {
   try {
     const res = await fetch(`${API_BASE}/storyboard/generate-image`, {
@@ -697,6 +698,7 @@ export async function generateStoryboardImage(
         prompt,
         project_id: projectId,
         force_regenerate: forceRegenerate,
+        aspect_ratio: aspectRatio,
       }),
       signal: AbortSignal.timeout(120000),
     });
@@ -780,6 +782,7 @@ export async function renderExport(payload: {
   hasColor?: boolean;
   subtitleStyle?: "none" | "classic" | "karaoke";
   subtitleEnabled?: boolean;
+  aspectRatio?: "16:9" | "9:16";
 }): Promise<{
   jobId: string;
   status: string;
@@ -802,6 +805,7 @@ export async function renderExport(payload: {
       has_color: payload.hasColor !== undefined ? payload.hasColor : true,
       subtitle_style: payload.subtitleStyle || "classic",
       subtitle_enabled: payload.subtitleEnabled !== undefined ? payload.subtitleEnabled : (payload.subtitleStyle !== "none"),
+      aspect_ratio: payload.aspectRatio || "16:9",
     }),
     signal: AbortSignal.timeout(30000),
   });

@@ -22,6 +22,7 @@ class StructuredIllustrationPrompt(BaseModel):
     full_prompt: str = Field(default="", description="Toàn văn prompt hoàn chỉnh ghép nối từ 9 thành phần")
     scene_context: str = Field(default="", description="Bối cảnh kịch bản thoại gốc")
     has_color: bool = Field(default=True, description="Chế độ đổ màu (True: Flat vintage watercolor/gouache, False: Comic ink line art)")
+    aspect_ratio: str = Field(default="16:9", description="Tỷ lệ khung hình: '16:9' (Widescreen) hoặc '9:16' (Vertical TikTok/Shorts)")
 
 
 class IllustrationPromptBuilder:

@@ -22,6 +22,7 @@ class GenerateImageRequest(BaseModel):
     prompt: str = Field(min_length=1)
     project_id: str = "default"
     force_regenerate: bool = False
+    aspect_ratio: str = "16:9"
 
 
 class GenerateImageResponse(BaseModel):
@@ -31,7 +32,7 @@ class GenerateImageResponse(BaseModel):
     status: str = "completed"
 
 
-def _ensure_skill_md_prompt_gate(prompt_text: str) -> str:
+def _ensure_skill_md_prompt_gate(prompt_text: str, aspect_ratio: str = "16:9") -> str:
     """Đảm bảo prompt tuân thủ nghiêm ngặt chuẩn SKILL.md và phong cách truyện tranh 2D (cấm 3D)."""
     p_lower = prompt_text.lower()
     prefix_parts = []
@@ -57,7 +58,10 @@ def _ensure_skill_md_prompt_gate(prompt_text: str) -> str:
     if "no 3d" not in p_lower:
         suffix_parts.append("strictly 2D flat art, NO 3D render, NO CGI, NO plastic gloss, NO 3D models")
     if "no text" not in p_lower:
-        suffix_parts.append("masterpiece quality, 1080p widescreen, no text, no speech bubbles, no watermark")
+        if aspect_ratio == "9:16":
+            suffix_parts.append("vertical 9:16 portrait orientation, vertical composition, mobile display, no text, no speech bubbles, no watermark")
+        else:
+            suffix_parts.append("masterpiece quality, 1080p widescreen, no text, no speech bubbles, no watermark")
 
     result = prompt_text.rstrip(". ")
     if prefix_parts:
@@ -121,22 +125,26 @@ async def generate_scene_image(req: GenerateImageRequest) -> GenerateImageRespon
         )
 
     # Enforce quality prompt gate
-    guaranteed_prompt = _ensure_skill_md_prompt_gate(req.prompt)
+    guaranteed_prompt = _ensure_skill_md_prompt_gate(req.prompt, aspect_ratio=req.aspect_ratio)
 
     try:
         generator = ArtworkGeneratorFactory.create()
+        is_vertical = req.aspect_ratio == "9:16"
+        target_w, target_h = (1080, 1920) if is_vertical else (1920, 1080)
+
         prompt_struct = StructuredIllustrationPrompt(
             subject=req.prompt[:120],
             action="",
             full_prompt=guaranteed_prompt,
             scene_context=guaranteed_prompt,
             has_color=True,
+            aspect_ratio=req.aspect_ratio,
         )
         saved_file = await generator.generate_artwork(
             prompt=prompt_struct,
             output_path=out_path,
-            width=1920,
-            height=1080,
+            width=target_w,
+            height=target_h,
         )
         rel_url = f"/media/storyboard/{req.project_id}/{saved_file.name}?t={timestamp}"
         return GenerateImageResponse(

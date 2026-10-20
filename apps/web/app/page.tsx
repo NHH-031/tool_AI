@@ -54,6 +54,7 @@ export default function Home() {
   const [workflow, setWorkflow] = useState<ProjectWorkflow>({
     projectId: "proj-solar-panels-01",
     projectName: "Pin năng lượng mặt trời hoạt động thế nào?",
+    aspectRatio: "16:9",
     currentStep: 1,
     completedSteps: [],
     script: {
@@ -174,6 +175,7 @@ export default function Home() {
     setWorkflow({
       projectId: proj.id,
       projectName: proj.title,
+      aspectRatio: (proj.aspect_ratio as any) === "9:16" ? "9:16" : "16:9",
       currentStep: proj.status === "completed" ? 4 : 1,
       completedSteps: proj.status === "completed" ? [1, 2, 3, 4] : [],
       script: {
@@ -210,6 +212,7 @@ export default function Home() {
     setWorkflow({
       projectId: newId,
       projectName: newTitle,
+      aspectRatio: "16:9",
       currentStep: 1,
       completedSteps: [],
       script: {
@@ -300,7 +303,8 @@ export default function Home() {
         scene.scene_index,
         scene.prompt,
         workflow.projectId,
-        true
+        true,
+        workflow.aspectRatio || "16:9"
       );
       setWorkflow((prev) => {
         const nextImages = prev.storyboard.images.filter((i) => i.scene_id !== scene.id);
@@ -330,7 +334,9 @@ export default function Home() {
           scene.id,
           scene.scene_index,
           scene.prompt,
-          workflow.projectId
+          workflow.projectId,
+          false,
+          workflow.aspectRatio || "16:9"
         );
         setWorkflow((prev) => {
           const nextImages = prev.storyboard.images.filter((i) => i.scene_id !== scene.id);
@@ -452,6 +458,7 @@ export default function Home() {
         musicVolume: workflow.voice.musicVolume,
         hasColor: true,
         subtitleStyle: workflow.export.subtitleStyle || "classic",
+        aspectRatio: workflow.aspectRatio || "16:9",
       });
 
       if (res.videoUrl) {
@@ -623,6 +630,10 @@ export default function Home() {
                 ...prev,
                 script: { ...prev.script, inputMode: mode },
               }))
+            }
+            aspectRatio={workflow.aspectRatio || "16:9"}
+            onUpdateAspectRatio={(ratio) =>
+              setWorkflow((prev) => ({ ...prev, aspectRatio: ratio }))
             }
             scenes={workflow.script.scenes}
             onUpdateScenes={(scenes) =>
