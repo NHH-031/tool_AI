@@ -38,6 +38,7 @@ class WhiteboardRenderConfig:
     aspect_ratio: str = "16:9"
     hand_tool_id: str = "hand-pen-modern"
     multi_pen: bool = True  # Đổi bút dạ quang khi sang giai đoạn tô màu
+    hwaccel: str = "auto"  # "auto" | "nvenc" | "qsv" | "videotoolbox" | "cpu"
 
 
 class WhiteboardEngineAdapter:
@@ -888,6 +889,8 @@ class WhiteboardEngineAdapter:
             cmd.append("--bare-tip")
         if getattr(cfg, "multi_pen", False):
             cmd.append("--multi-pen")
+        if getattr(cfg, "hwaccel", None):
+            cmd.extend(["--hwaccel", str(cfg.hwaccel)])
 
         env = os.environ.copy()
         env["PYTHONUTF8"] = "1"

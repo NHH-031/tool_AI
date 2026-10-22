@@ -1,43 +1,73 @@
 version: "3.8"
 
 services:
+  # ────────────────────────────────────────────────────────────
+  # 1. Backend API & Video Rendering Engine (FastAPI + Workers)
+  # ────────────────────────────────────────────────────────────
   api:
     build:
       context: .
       dockerfile: Dockerfile.api
-    container_name: whiteboard-studio-api
+    container_name: whiteboard-api
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - HF_TOKEN=${HF_TOKEN:-}
-      - IMAGE_GENERATOR_PROVIDER=${IMAGE_GENERATOR_PROVIDER:-hybrid_flux}
-      - COMFYUI_URL=${COMFYUI_URL:-http://host.docker.internal:8188}
-      - VIDEO_ARCHIVE_ROOT=/app/data/archive
+      - HOST=0.0.0.0
+      - PORT=8000
+      - APP_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+      - IMAGE_GENERATOR_PROVIDER=pollinations
+      - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000
     volumes:
-      - ./data:/app/data
       - ./output:/app/output
       - ./assets:/app/assets
-    restart: unless-stopped
-    networks:
-      - whiteboard-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Cấu hình GPU Passthrough (Tự động kích hoạt khi host có NVIDIA Container Toolkit)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video, compute]
 
+  # ────────────────────────────────────────────────────────────
+  # 2. Frontend Studio User Interface (Next.js 15)
+  # ────────────────────────────────────────────────────────────
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
-    container_name: whiteboard-studio-web
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: whiteboard-web
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=production
     depends_on:
       - api
-    restart: unless-stopped
-    networks:
-      - whiteboard-network
 
-networks:
-  whiteboard-network:
-    driver: bridge
+  # ────────────────────────────────────────────────────────────
+  # 3. Message Broker & Task Queue (Redis 7)
+  # ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: whiteboard-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis_data:
+    driver: local

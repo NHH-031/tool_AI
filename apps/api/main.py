@@ -115,6 +115,17 @@ def create_app() -> FastAPI:
     app.include_router(export_router)
     app.include_router(archive_router)
 
+    # Worker Queue Lifecycle (Task 10.2)
+    @app.on_event("startup")
+    async def on_startup():
+        from core.queue import global_worker_queue
+        await global_worker_queue.initialize()
+
+    @app.on_event("shutdown")
+    async def on_shutdown():
+        from core.queue import global_worker_queue
+        await global_worker_queue.shutdown()
+
     return app
 
 

@@ -29,7 +29,10 @@ import {
   synthesizeVoice,
   fetchArchiveStats,
   getSubtitleDownloadUrl,
+  duplicateProject,
+  importProjectPackage,
 } from "./api-client";
+
 import { StudioHeader } from "./components/StudioHeader";
 import { StepProgressBar } from "./components/StepProgressBar";
 import { ScriptStep } from "./components/steps/ScriptStep";
@@ -701,20 +704,54 @@ export default function Home() {
     document.body.removeChild(a);
   };
 
+  const handleDuplicateProject = async (projectId: string) => {
+    try {
+      const duplicated = await duplicateProject(projectId);
+      setProjects((prev) => [duplicated, ...prev]);
+      setWorkflow((prev) => ({
+        ...prev,
+        projectId: duplicated.id,
+        projectName: duplicated.title,
+      }));
+      alert(`Đã nhân bản thành công dự án: ${duplicated.title}`);
+    } catch (e: any) {
+      alert(`Lỗi nhân bản dự án: ${e.message || e}`);
+    }
+  };
+
+  const handleImportProject = async (file: File) => {
+    try {
+      const imported = await importProjectPackage(file);
+      setProjects((prev) => [imported, ...prev]);
+      setWorkflow((prev) => ({
+        ...prev,
+        projectId: imported.id,
+        projectName: imported.title,
+      }));
+      alert(`Đã khôi phục thành công dự án: ${imported.title}`);
+    } catch (e: any) {
+      alert(`Lỗi nhập file dự án: ${e.message || e}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* 1. Header with Project Selector & New Script */}
       <StudioHeader
         currentProjectTitle={workflow.projectName}
+        currentProjectId={workflow.projectId}
         projects={projects}
         onSelectProject={handleSelectProject}
         onNewProject={handleNewProject}
+        onDuplicateProject={handleDuplicateProject}
+        onImportProject={handleImportProject}
         backendHealthy={backendHealthy}
         archiveCount={archiveVideosCount}
         onOpenArchiveVault={() => setIsArchiveVaultOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         isLocked={isAnyLoading}
       />
+
 
       {/* 2. Step Progress Bar (4 Linear Steps) */}
       <StepProgressBar

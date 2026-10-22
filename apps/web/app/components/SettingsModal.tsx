@@ -11,6 +11,7 @@ export interface StudioSettings {
   defaultAspectRatio: "16:9" | "9:16";
   defaultHandToolId: string;
   defaultSubtitleStyle: "none" | "classic" | "karaoke";
+  defaultHwaccel?: "auto" | "nvenc" | "qsv" | "videotoolbox" | "cpu";
 }
 
 export const SETTINGS_STORAGE_KEY = "whiteboard_studio_settings_v1";
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: StudioSettings = {
   defaultAspectRatio: "16:9",
   defaultHandToolId: "hand-pen-modern",
   defaultSubtitleStyle: "classic",
+  defaultHwaccel: "auto",
 };
 
 
@@ -46,6 +48,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [settings, setSettings] = useState<StudioSettings>(DEFAULT_SETTINGS);
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [hardwareInfo, setHardwareInfo] = useState<any>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -58,8 +61,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       } catch (e) {
         console.warn("[SettingsModal] Lỗi đọc cài đặt:", e);
       }
+
+      // Fetch GPU hardware info
+      fetch("/api/system/hardware")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setHardwareInfo(data);
+        })
+        .catch(() => {
+          // Fallback fetch direct port 8000
+          fetch("http://localhost:8000/system/hardware")
+            .then((r) => r.json())
+            .then((d) => setHardwareInfo(d))
+            .catch(() => {});
+        });
     }
   }, [isOpen]);
+
 
   if (!isOpen) return null;
 
@@ -255,6 +273,60 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span>0.8x (Chậm rãi)</span>
               <span>1.0x (Tự nhiên)</span>
               <span>1.4x (Nhanh)</span>
+            </div>
+          </div>
+
+          {/* Cấu hình Tăng tốc phần cứng GPU (Phase 10 - Task 10.1) */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 border border-indigo-500/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">⚡</span>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  Tăng Tốc Phần Cứng GPU (Hardware Acceleration)
+                </span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                {hardwareInfo?.has_gpu ? `${hardwareInfo.gpus[0]?.vendor?.toUpperCase()} GPU` : "CPU Mode"}
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Card đồ họa phát hiện:</span>
+                <span className="font-semibold text-slate-200">
+                  {hardwareInfo?.gpus && hardwareInfo.gpus.length > 0
+                    ? `${hardwareInfo.gpus[0].name} (${hardwareInfo.gpus[0].memory})`
+                    : "Không phát hiện card rời (Dùng CPU)"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Bộ mã hóa tối ưu:</span>
+                <span className="font-mono text-emerald-400">
+                  {hardwareInfo?.best_encoder_name || "CPU Multi-threaded x264"}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">
+                Lựa chọn Bộ mã hóa GPU xuất video:
+              </label>
+              <select
+                value={settings.defaultHwaccel || "auto"}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    defaultHwaccel: e.target.value as "auto" | "nvenc" | "qsv" | "videotoolbox" | "cpu",
+                  })
+                }
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:border-indigo-500 outline-none"
+              >
+                <option value="auto">🚀 Tự động nhận diện GPU tốt nhất (Khuyên dùng)</option>
+                <option value="nvenc">🟢 NVIDIA NVENC (GeForce / RTX / Quadro) — Siêu tốc ~10s</option>
+                <option value="qsv">🔵 Intel QuickSync Video (QSV)</option>
+                <option value="videotoolbox">🍏 Apple Silicon VideoToolbox (M1/M2/M3/M4)</option>
+                <option value="cpu">⚙️ CPU Đa Luồng (libx264 Phần mềm thuần túy)</option>
+              </select>
             </div>
           </div>
 

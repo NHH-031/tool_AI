@@ -577,6 +577,8 @@ def _parse_args(argv=None):
                    help="Tỉ lệ thời gian vẽ tay trên tổng thời lượng cảnh (mặc định 0.85 = vẽ chậm rãi trong 85% thời lượng)")
     p.add_argument("--max-draw-ms", type=int, default=15000,
                    help="Thời gian vẽ tay tối đa cho một phân cảnh (ms, mặc định 15000ms)")
+    p.add_argument("--hwaccel", default="auto", choices=["auto", "nvenc", "qsv", "videotoolbox", "cpu"],
+                   help="Bộ tăng tốc giải mã/mã hóa phần cứng GPU (auto, nvenc, qsv, videotoolbox, cpu)")
     return p.parse_args(argv)
 
 
@@ -638,7 +640,7 @@ def main(argv=None) -> int:
           f"笔迹: {cfg.ink_path_mode}, 上色: {cfg.color_fill}")
 
     renderer.render_to(raw_path, total_ms, draw_ratio=args.draw_ratio, max_draw_ms=args.max_draw_ms)
-    final = sr.transcode_h264(raw_path, out_path)
+    final = sr.transcode_h264(raw_path, out_path, hwaccel=args.hwaccel)
 
     size_mb = final.stat().st_size / (1024 * 1024)
     print(f"\n最终视频: {final}  ({size_mb:.2f} MB)")

@@ -30,3 +30,7 @@ anyio>=4.0.0
 
 # Translation & NLP
 deep-translator>=1.11.0
+
+# File Upload & Queue
+python-multipart>=0.0.9
+redis>=5.0.0

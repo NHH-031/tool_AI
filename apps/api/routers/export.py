@@ -65,6 +65,7 @@ class RenderExportRequest(BaseModel):
     hand_tool_id: str = "hand-pen-modern"
     multi_pen: bool = True
     transition_type: str = "eraser"  # "cut", "eraser", "crossfade"
+    hwaccel: str = "auto"  # "auto", "nvenc", "qsv", "videotoolbox", "cpu"
 
 
 class SubtitleUpdateRequest(BaseModel):
@@ -118,6 +119,7 @@ class PreviewSceneRequest(BaseModel):
     hand_tool_id: str = "hand-pen-modern"
     has_color: bool = True
     multi_pen: bool = True
+    hwaccel: str = "auto"
 
 
 class PreviewSceneResponse(BaseModel):
@@ -329,6 +331,7 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                 hand_tool_id=req.hand_tool_id,
                 bare_tip=(req.hand_tool_id == "no_hand"),
                 multi_pen=getattr(req, "multi_pen", True),
+                hwaccel=getattr(req, "hwaccel", "auto"),
             )
             final_scene_mp4 = output_dir / f"{scene_id}_final.mp4"
 
@@ -699,6 +702,13 @@ async def start_render(
     )
 
 
+@router.get("/hardware-info")
+async def get_hardware_info() -> Dict[str, Any]:
+    """Phát hiện chip đồ họa GPU và thông số mã hóa phần cứng (Task 10.1)."""
+    from core.hardware.gpu_detector import GPUDetector
+    return GPUDetector.detect_hardware()
+
+
 @router.get("/status/{job_id}", response_model=ExportStatusResponse)
 async def get_export_status(job_id: str) -> ExportStatusResponse:
     """Lấy trạng thái và tiến độ render video."""
@@ -839,6 +849,7 @@ async def preview_scene(req: PreviewSceneRequest) -> PreviewSceneResponse:
         hand_tool_id=req.hand_tool_id,
         bare_tip=(req.hand_tool_id == "no_hand"),
         multi_pen=getattr(req, "multi_pen", True),
+        hwaccel=getattr(req, "hwaccel", "auto"),
     )
 
     adapter = WhiteboardEngineAdapter(root_dir=PROJECT_ROOT)
@@ -1058,5 +1069,124 @@ async def render_text_scene_endpoint(req: RenderTextSceneRequest) -> Dict[str, A
         "duration_sec": req.duration_sec,
         "video_url": f"/media/export/{req.project_id}/{output_mp4.name}",
     }
+
+
+class ConvertFormatRequest(BaseModel):
+    format: str = "gif"  # "gif", "webm_transparent", "rescale", "watermark"
+    resolution: Optional[str] = "1080p"  # "480p", "720p", "1080p", "4k"
+    watermark_text: Optional[str] = ""
+    watermark_position: Optional[str] = "bottom-right"
+    watermark_opacity: Optional[float] = 0.75
+    gif_fps: Optional[int] = 12
+    gif_scale: Optional[int] = 480
+
+
+@router.post("/{job_id}/convert-format")
+async def convert_export_format(job_id: str, req: ConvertFormatRequest) -> Dict[str, Any]:
+    """
+    Xuất đa định dạng (GIF, WebM trong suốt, 4K UHD, Watermark) từ video đã kết xuất (Phase 10 - Task 10.3).
+    """
+    from core.export.format_converter import FormatConverter
+
+    out_dir = _find_job_export_dir(job_id)
+    if not out_dir:
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy dữ liệu video của job: {job_id}")
+
+    job_rec = _EXPORT_JOBS.get(job_id, {})
+    project_id = job_rec.get("project_id", out_dir.name)
+    aspect_ratio = job_rec.get("aspect_ratio", "16:9")
+
+    # Tìm source video
+    source_video = out_dir / f"{job_id}_final.mp4"
+    if not source_video.exists():
+        cand = out_dir / f"{job_id}_clean.mp4"
+        if cand.exists():
+            source_video = cand
+        else:
+            raise HTTPException(status_code=404, detail=f"Chưa có video hoàn tất để chuyển đổi định dạng: {job_id}")
+
+    fmt = req.format.lower().strip()
+    out_file: Path
+
+    if fmt == "gif":
+        out_file = out_dir / f"{job_id}.gif"
+        await asyncio.to_thread(
+            FormatConverter.convert_to_gif,
+            video_path=source_video,
+            output_path=out_file,
+            fps=req.gif_fps or 12,
+            scale_width=req.gif_scale or 480,
+        )
+    elif fmt in ["webm", "webm_transparent", "transparent"]:
+        out_file = out_dir / f"{job_id}_transparent.webm"
+        await asyncio.to_thread(
+            FormatConverter.convert_to_transparent_webm,
+            video_path=source_video,
+            output_path=out_file,
+            bg_hex="#F5EBD7",
+        )
+    elif fmt in ["rescale", "resolution"]:
+        res_label = (req.resolution or "1080p").lower()
+        out_file = out_dir / f"{job_id}_{res_label}.mp4"
+        await asyncio.to_thread(
+            FormatConverter.rescale_video,
+            video_path=source_video,
+            output_path=out_file,
+            preset=res_label,
+            aspect_ratio=aspect_ratio,
+        )
+    elif fmt == "watermark":
+        out_file = out_dir / f"{job_id}_watermarked.mp4"
+        await asyncio.to_thread(
+            FormatConverter.apply_watermark,
+            video_path=source_video,
+            output_path=out_file,
+            watermark_text=req.watermark_text or "AI Whiteboard Studio",
+            position=req.watermark_position or "bottom-right",
+            opacity=float(req.watermark_opacity or 0.75),
+        )
+    else:
+        raise HTTPException(status_code=400, detail=f"Định dạng không được hỗ trợ: {req.format}")
+
+    if not out_file.exists():
+        raise HTTPException(status_code=500, detail="Không thể tạo file sau khi chuyển đổi định dạng")
+
+    import time
+    ts = int(time.time())
+    file_size_mb = round(out_file.stat().st_size / (1024 * 1024), 2)
+
+    return {
+        "success": True,
+        "job_id": job_id,
+        "format": fmt,
+        "filename": out_file.name,
+        "download_url": f"/media/export/{project_id}/{out_file.name}?v={ts}",
+        "size_mb": file_size_mb,
+    }
+
+
+@router.get("/{job_id}/formats")
+async def list_job_formats(job_id: str) -> Dict[str, Any]:
+    """Danh sách các định dạng đã được tạo cho job (GIF, WebM, 4K, Watermark)."""
+    out_dir = _find_job_export_dir(job_id)
+    if not out_dir:
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy job: {job_id}")
+
+    job_rec = _EXPORT_JOBS.get(job_id, {})
+    project_id = job_rec.get("project_id", out_dir.name)
+
+    formats = []
+    for f in out_dir.iterdir():
+        if f.is_file() and f.name.startswith(job_id):
+            if f.suffix in [".gif", ".webm", ".mp4", ".srt", ".vtt"]:
+                formats.append({
+                    "name": f.name,
+                    "suffix": f.suffix,
+                    "size_mb": round(f.stat().st_size / (1024 * 1024), 2),
+                    "url": f"/media/export/{project_id}/{f.name}",
+                })
+
+    return {"job_id": job_id, "formats": formats}
+
 
 

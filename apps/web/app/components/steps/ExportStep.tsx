@@ -67,6 +67,11 @@ export const ExportStep: React.FC<ExportStepProps> = ({
 }) => {
   const [isTimelineEditorOpen, setIsTimelineEditorOpen] = useState(false);
   const [isTypographyOpen, setIsTypographyOpen] = useState(true);
+  const [convertingFormat, setConvertingFormat] = useState<string | null>(null);
+  const [convertStatusMsg, setConvertStatusMsg] = useState<string>("");
+  const [convertedOutputs, setConvertedOutputs] = useState<Array<{ name: string; url: string; size_mb: number; format: string }>>([]);
+  const [watermarkInput, setWatermarkInput] = useState<string>("AI Whiteboard Studio");
+  const [selectedResPreset, setSelectedResPreset] = useState<string>("4k");
 
   // Local typography state
   const currentTypography: SubtitleTypographyConfig = subtitleTypography || {
@@ -88,6 +93,65 @@ export const ExportStep: React.FC<ExportStepProps> = ({
     }
   };
   const isCompleted = Boolean(videoUrl && !isRendering);
+
+  const handleConvertFormat = async (formatType: "gif" | "webm_transparent" | "rescale" | "watermark") => {
+    if (!jobId && !videoUrl) {
+      alert("Chưa có video xuất xưởng để chuyển đổi định dạng.");
+      return;
+    }
+    const targetJobId = jobId || "current";
+    setConvertingFormat(formatType);
+    setConvertStatusMsg("Đang xử lý chuyển đổi định dạng...");
+
+    try {
+      const payload: any = { format: formatType };
+      if (formatType === "rescale") {
+        payload.resolution = selectedResPreset;
+      } else if (formatType === "watermark") {
+        payload.watermark_text = watermarkInput;
+        payload.watermark_position = "bottom-right";
+        payload.watermark_opacity = 0.75;
+      }
+
+      let res = await fetch(`/api/export/${targetJobId}/convert-format`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        // Fallback port 8000
+        res = await fetch(`http://localhost:8000/export/${targetJobId}/convert-format`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || `Chuyển đổi thất bại (Mã lỗi ${res.status})`);
+      }
+
+      const data = await res.json();
+      setConvertedOutputs((prev) => [
+        {
+          name: data.filename || `File_${formatType}`,
+          url: data.download_url,
+          size_mb: data.size_mb || 0,
+          format: formatType,
+        },
+        ...prev.filter((item) => item.format !== formatType),
+      ]);
+      setConvertStatusMsg("Chuyển đổi định dạng thành công!");
+      setTimeout(() => setConvertStatusMsg(""), 3500);
+    } catch (e: any) {
+      alert(`Lỗi chuyển đổi định dạng: ${e.message || e}`);
+    } finally {
+      setConvertingFormat(null);
+    }
+  };
+
 
   // Compute total duration
   const totalDuration = scenes.reduce((acc, sc) => acc + (sc.duration_sec || 4), 0);
@@ -967,7 +1031,168 @@ export const ExportStep: React.FC<ExportStepProps> = ({
         </div>
       </div>
 
+      {/* Multi-Format Export Hub (Phase 10 - Task 10.3) */}
+      {isCompleted && (
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900/90 to-indigo-950/30 border border-indigo-500/30 rounded-2xl p-6 shadow-xl space-y-5 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-xl text-indigo-400">
+                📦
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>Xuất Đa Định Dạng & Độ Phân Giải</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    Phase 10 Multi-Format
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Tạo nhanh GIF động, WebM trong suốt lồng slide, bản 4K UHD hoặc đóng dấu bản quyền
+                </p>
+              </div>
+            </div>
+
+            {convertStatusMsg && (
+              <div className="text-xs px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium animate-pulse">
+                ✓ {convertStatusMsg}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Option 1: Animated GIF */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">🎞️</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">GIF</span>
+                </div>
+                <div className="text-xs font-bold text-white">Ảnh Động GIF Hoạt Họa</div>
+                <p className="text-[11px] text-slate-400 leading-snug">
+                  Two-pass palettegen tối ưu. Thích hợp nhúng bài viết Blog, Email marketing hoặc Notion Docs.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={Boolean(convertingFormat)}
+                onClick={() => handleConvertFormat("gif")}
+                className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/30 transition active:scale-95 disabled:opacity-50"
+              >
+                {convertingFormat === "gif" ? "⏳ Đang tạo GIF..." : "Tạo GIF 480p"}
+              </button>
+            </div>
+
+            {/* Option 2: Transparent WebM */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">🪟</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Alpha</span>
+                </div>
+                <div className="text-xs font-bold text-white">WebM Nền Trong Suốt</div>
+                <p className="text-[11px] text-slate-400 leading-snug">
+                  Khử nền kem #F5EBD7. Bàn tay vẽ có thể lồng ghép trực tiếp đè lên slide bài giảng khác.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={Boolean(convertingFormat)}
+                onClick={() => handleConvertFormat("webm_transparent")}
+                className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-amber-600/20 hover:bg-amber-600/40 text-amber-200 border border-amber-500/30 transition active:scale-95 disabled:opacity-50"
+              >
+                {convertingFormat === "webm_transparent" ? "⏳ Đang khử nền..." : "Tạo WebM Trong Suốt"}
+              </button>
+            </div>
+
+            {/* Option 3: Rescale Resolution */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">📺</span>
+                  <select
+                    value={selectedResPreset}
+                    onChange={(e) => setSelectedResPreset(e.target.value)}
+                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 outline-none"
+                  >
+                    <option value="480p">480p</option>
+                    <option value="720p">720p</option>
+                    <option value="1080p">1080p</option>
+                    <option value="4k">4K UHD</option>
+                  </select>
+                </div>
+                <div className="text-xs font-bold text-white">Độ Phân Giải Tùy Chọn</div>
+                <p className="text-[11px] text-slate-400 leading-snug">
+                  Mã hóa Lanczos chuẩn nét cao cho hội trường, TV hoặc bản nháp kích thước nhỏ.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={Boolean(convertingFormat)}
+                onClick={() => handleConvertFormat("rescale")}
+                className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-200 border border-emerald-500/30 transition active:scale-95 disabled:opacity-50"
+              >
+                {convertingFormat === "rescale" ? `⏳ Đang render ${selectedResPreset.toUpperCase()}...` : `Xuất bản ${selectedResPreset.toUpperCase()}`}
+              </button>
+            </div>
+
+            {/* Option 4: Watermark */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl">🏷️</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">Logo</span>
+                </div>
+                <div className="text-xs font-bold text-white">Đóng Dấu Watermark</div>
+                <input
+                  type="text"
+                  value={watermarkInput}
+                  onChange={(e) => setWatermarkInput(e.target.value)}
+                  placeholder="Tên thương hiệu..."
+                  className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={Boolean(convertingFormat)}
+                onClick={() => handleConvertFormat("watermark")}
+                className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-violet-600/20 hover:bg-violet-600/40 text-violet-200 border border-violet-500/30 transition active:scale-95 disabled:opacity-50"
+              >
+                {convertingFormat === "watermark" ? "⏳ Đang đóng dấu..." : "Áp dụng Watermark"}
+              </button>
+            </div>
+          </div>
+
+          {/* List of Converted Formats Download Cards */}
+          {convertedOutputs.length > 0 && (
+            <div className="pt-3 border-t border-slate-800 space-y-2">
+              <span className="text-xs font-semibold text-slate-300 block">Các file định dạng đã tạo:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {convertedOutputs.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs">
+                    <div className="truncate pr-2">
+                      <div className="font-semibold text-white truncate">{item.name}</div>
+                      <div className="text-[10px] text-slate-400">{item.size_mb} MB</div>
+                    </div>
+                    <a
+                      href={item.url}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[11px] transition flex items-center gap-1 flex-shrink-0"
+                    >
+                      <span>⬇️</span>
+                      <span>Tải về</span>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Navigation Footer */}
+
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
         <button
           onClick={onBackStep}

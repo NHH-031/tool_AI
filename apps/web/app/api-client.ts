@@ -1506,5 +1506,62 @@ export async function renderTextScene(payload: {
   throw new Error(err.detail || `Lỗi render chữ viết tay (HTTP ${res.status})`);
 }
 
+// ============================================================================
+// PROJECT MANAGEMENT & IMPORT/EXPORT PACKAGE APIs (Phase 10 - Task 10.4)
+// ============================================================================
+
+export async function createProject(
+  title: string,
+  description: string = "",
+  templateId: string = "notion_minimal",
+  aspectRatio: string = "16:9",
+): Promise<ProjectSummary> {
+  const res = await fetch(`${API_BASE}/projects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title,
+      description,
+      template_id: templateId,
+      aspect_ratio: aspectRatio,
+    }),
+  });
+  if (res.ok) {
+    return await res.json();
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi tạo dự án mới (HTTP ${res.status})`);
+}
+
+export async function duplicateProject(projectId: string): Promise<ProjectSummary> {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/duplicate`, {
+    method: "POST",
+  });
+  if (res.ok) {
+    return await res.json();
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi nhân bản dự án (HTTP ${res.status})`);
+}
+
+export function getExportProjectPackageUrl(projectId: string): string {
+  return `${API_BASE}/projects/${projectId}/export-package`;
+}
+
+export async function importProjectPackage(file: File): Promise<ProjectSummary> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/projects/import-package`, {
+    method: "POST",
+    body: formData,
+  });
+  if (res.ok) {
+    return await res.json();
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.detail || `Lỗi nhập file dự án .whiteboard (HTTP ${res.status})`);
+}
+
 
 

@@ -5,9 +5,12 @@ import { ProjectSummary } from "../types";
 
 interface StudioHeaderProps {
   currentProjectTitle: string;
+  currentProjectId?: string;
   projects: ProjectSummary[];
   onSelectProject: (projectId: string) => void;
   onNewProject: () => void;
+  onDuplicateProject?: (projectId: string) => void;
+  onImportProject?: (file: File) => void;
   backendHealthy: boolean;
   archiveCount?: number;
   onOpenArchiveVault?: () => void;
@@ -17,9 +20,12 @@ interface StudioHeaderProps {
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   currentProjectTitle,
+  currentProjectId = "default",
   projects,
   onSelectProject,
   onNewProject,
+  onDuplicateProject,
+  onImportProject,
   backendHealthy,
   archiveCount,
   onOpenArchiveVault,
@@ -28,6 +34,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -133,9 +141,65 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                   ))
                 )}
               </div>
+
+              {/* Deep Project Management Actions (Phase 10 - Task 10.4) */}
+              <div className="p-2 border-t border-slate-800 bg-slate-950/80 flex flex-col gap-1 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onDuplicateProject) onDuplicateProject(currentProjectId);
+                      setDropdownOpen(false);
+                    }}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center gap-1.5 transition text-[11px] font-medium"
+                    title="Nhân bản kịch bản và tài nguyên sang dự án mới"
+                  >
+                    <span>📋</span>
+                    <span>Nhân bản</span>
+                  </button>
+
+                  <a
+                    href={`/api/projects/${currentProjectId}/export-package`}
+                    download
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 hover:text-white flex items-center justify-center gap-1.5 transition text-[11px] font-medium border border-indigo-500/30"
+                    title="Tải về file đóng gói .whiteboard"
+                  >
+                    <span>📦</span>
+                    <span>Xuất file</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (fileInputRef.current) fileInputRef.current.click();
+                      setDropdownOpen(false);
+                    }}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 hover:text-white flex items-center justify-center gap-1.5 transition text-[11px] font-medium border border-emerald-500/30"
+                    title="Khôi phục dự án từ file .whiteboard"
+                  >
+                    <span>📥</span>
+                    <span>Nhập file</span>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".whiteboard,.zip"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && onImportProject) {
+                        onImportProject(file);
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
+
 
         {/* Right Actions: Health + "+ Kịch bản mới" */}
         <div className="flex items-center gap-3">

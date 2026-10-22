@@ -1618,38 +1618,43 @@ class StreamBoardRenderer:
 
 
 # ──────────────────────────────────────────────────────────────
-# 转码（系统 ffmpeg 优先，PyAV 备选，两者都没有则保留 mp4v）
+# 转码（GPU Hardware Acceleration 优先，PyAV / ffmpeg 备选，两者都没有则保留 mp4v）
 # ──────────────────────────────────────────────────────────────
-def transcode_h264(src: Path, dst: Path) -> Path:
+def transcode_h264(src: Path, dst: Path, hwaccel: str = "auto") -> Path:
     """
     把 mp4v 原始视频转码为 H.264（yuv420p），提升播放器兼容性。
-
-    优先级：
-      1. 系统 ffmpeg 子进程（编码效率最高、体积最小，CRF=20）
-      2. PyAV（纯 pip 安装，无需系统 ffmpeg；编码效率稍逊，用 CRF=28 控制体积）
-      3. 两者都没有：保留原始 mp4v 编码并告警
+    Hỗ trợ tăng tốc GPU Hardware Acceleration (NVIDIA NVENC, Intel QSV, Apple VideoToolbox, CPU x264).
     """
-    # 路径1：系统 ffmpeg（推荐，体积最优）
+    try:
+        from core.hardware.gpu_detector import GPUDetector
+        enc_cfg = GPUDetector.get_encoder_config(hwaccel)
+    except Exception:
+        enc_cfg = None
+
+    # 路径1：系统 ffmpeg（如果存在）
     ffmpeg = shutil.which("ffmpeg")
     if ffmpeg is not None:
         cmd = [
             ffmpeg, "-y", "-loglevel", "error",
             "-i", str(src),
-            "-c:v", "libx264",
-            "-crf", "20",
-            "-pix_fmt", "yuv420p",
-            str(dst),
         ]
+        if enc_cfg and enc_cfg.ffmpeg_args:
+            cmd.extend(enc_cfg.ffmpeg_args)
+        else:
+            cmd.extend(["-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p"])
+        cmd.append(str(dst))
+
         res = subprocess.run(cmd, capture_output=True, text=True)
         if res.returncode == 0:
             src.unlink(missing_ok=True)
-            print(f"  H.264 转码完成(ffmpeg): {dst}")
+            encoder_label = enc_cfg.name if enc_cfg else "libx264"
+            print(f"  H.264 转码完成(ffmpeg - {encoder_label}): {dst}")
             return dst
-        print(f"  [warn] ffmpeg 转码失败: {res.stderr.strip()}")
+        print(f"  [warn] ffmpeg 转码失败: {res.stderr.strip()} -> fallback to PyAV")
 
-    # 路径2：PyAV（备选，纯 pip 安装）
+    # 路径2：PyAV（支持 h264_nvenc, libx264, h264）
     try:
-        return _transcode_with_pyav(src, dst)
+        return _transcode_with_pyav(src, dst, hwaccel=hwaccel)
     except ImportError:
         pass
     except Exception as e:
@@ -1661,11 +1666,10 @@ def transcode_h264(src: Path, dst: Path) -> Path:
     return src
 
 
-def _transcode_with_pyav(src: Path, dst: Path) -> Path:
+def _transcode_with_pyav(src: Path, dst: Path, hwaccel: str = "auto") -> Path:
     """
-    用 PyAV 在 Python 内做 H.264 转码。PyAV 未装时抛 ImportError。
-    PyAV 自带的 libx264 编码效率低于系统 ffmpeg（同 CRF 下体积大数倍），
-    故用 CRF=28 平衡体积与画质。
+    用 PyAV 在 Python 内做 H.264 转码。
+    Hỗ trợ chọn GPU codec (h264_nvenc) và tự động fallback libx264 / h264 nếu cần.
     """
     import av
     input_container = av.open(str(src), mode="r")
@@ -1674,12 +1678,36 @@ def _transcode_with_pyav(src: Path, dst: Path) -> Path:
     height = in_stream.codec_context.height
     fps = in_stream.average_rate
 
+    # Xác định codec mã hóa phần cứng ưu tiên
+    target_codec = "h264"
+    stream_options: dict[str, str] = {"crf": "26", "preset": "medium"}
+
+    try:
+        from core.hardware.gpu_detector import GPUDetector
+        enc_info = GPUDetector.get_encoder_config(hwaccel)
+        if enc_info.codec in av.codec.codecs_available:
+            target_codec = enc_info.codec
+            if enc_info.pyav_options:
+                stream_options = enc_info.pyav_options.copy()
+    except Exception:
+        pass
+
     output_container = av.open(str(dst), mode="w")
-    out_stream = output_container.add_stream("h264", rate=fps)
+    try:
+        out_stream = output_container.add_stream(target_codec, rate=fps)
+    except Exception as e_codec:
+        # Fallback to standard h264 if hardware encoder init errors
+        print(f"  [warn] Không thể mở codec {target_codec} ({e_codec}), fallback sang h264 chuẩn")
+        out_stream = output_container.add_stream("h264", rate=fps)
+        stream_options = {"crf": "28", "preset": "fast"}
+
     out_stream.width = width
     out_stream.height = height
     out_stream.pix_fmt = "yuv420p"
-    out_stream.options = {"crf": "28", "preset": "medium"}
+    try:
+        out_stream.options = stream_options
+    except Exception:
+        pass
 
     for frame in input_container.decode(video=0):
         packet = out_stream.encode(frame)
@@ -1693,7 +1721,7 @@ def _transcode_with_pyav(src: Path, dst: Path) -> Path:
     output_container.close()
     input_container.close()
     src.unlink(missing_ok=True)
-    print(f"  H.264 转码完成(PyAV): {dst}")
+    print(f"  H.264 转码完成(PyAV - {target_codec}): {dst}")
     return dst
 
 

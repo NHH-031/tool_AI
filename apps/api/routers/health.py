@@ -21,3 +21,11 @@ class HealthResponse(BaseModel):
 async def get_health() -> HealthResponse:
     """Kiểm tra tình trạng sống của API server."""
     return HealthResponse()
+
+
+@router.get("/system/hardware")
+async def get_system_hardware():
+    """Lấy thông tin chip đồ họa GPU, encoder phần cứng và thông số máy chủ (Task 10.1)."""
+    from core.hardware.gpu_detector import GPUDetector
+    return GPUDetector.detect_hardware()
+
