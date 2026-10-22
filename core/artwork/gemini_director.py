@@ -34,6 +34,14 @@ class GeminiScriptDirector:
         "strictly no 3D rendering, no CGI, widescreen 16:9, no text, no watermark"
     )
 
+    CANDIDATE_MODELS = [
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-flash-latest",
+        "gemini-3.8-flash",
+        "gemini-flash-lite-latest",
+    ]
+
     @classmethod
     def get_api_key(cls) -> Optional[str]:
         key = os.getenv("GEMINI_API_KEY", "").strip()
@@ -66,16 +74,8 @@ class GeminiScriptDirector:
         """
         api_key = cls.get_api_key()
         if not api_key:
-            logger.warning("[GeminiScriptDirector] GEMINI_API_KEY not found. Using fallback single-scene.")
-            return [
-                StoryboardScene(
-                    scene_index=1,
-                    title="Phân cảnh tổng quan",
-                    narration=idea,
-                    visual_prompt=cls.create_single_scene_prompt(idea, has_color=has_color),
-                    estimated_duration_sec=max(5.0, round(len(idea.split()) / 2.8, 1)),
-                )
-            ]
+            logger.warning("[GeminiScriptDirector] GEMINI_API_KEY not found. Returning empty list.")
+            return []
 
         try:
             from google import genai
@@ -113,8 +113,9 @@ class GeminiScriptDirector:
 
             system_instruction = (
                 f"Bạn là đạo diễn kịch bản storyboard chuyên nghiệp cho {style_guide}\n"
-                f"Nhiệm vụ: Phân tích ý tưởng hoặc câu chuyện thành chính xác {scenes_count} phân cảnh liền mạch, "
-                f"tổng thời lượng video đạt chính xác khoảng {effective_dur:.0f} giây.\n"
+                f"YÊU CẦU QUAN TRỌNG: Phân tích ý tưởng hoặc câu chuyện thành CHÍNH XÁC {scenes_count} phân cảnh riêng biệt (từ scene_index 1 đến {scenes_count}).\n"
+                f"Tuyệt đối KHÔNG gộp thành 1 cảnh. Phải tạo đủ {scenes_count} cảnh trong mảng JSON.\n"
+                f"Tổng thời lượng video đạt khoảng {effective_dur:.0f} giây.\n"
                 f"QUY ĐỊNH ĐỘ DÀI LỜI THOẠI (NARRATION):\n"
                 f"- Mỗi phân cảnh kéo dài khoảng {dur_per_scene:.0f} giây.\n"
                 f"- Lời thuyết minh (narration) tiếng Việt của MỖI phân cảnh BẮT BUỘC DÀI KHOẢNG {words_per_scene} từ "
@@ -130,7 +131,7 @@ class GeminiScriptDirector:
                 "Cảnh 1 (khởi đầu gian khó & đam mê nghệ thuật), Cảnh 2 (bứt phá thành danh MC/hài kịch quốc dân), "
                 "Cảnh 3 (đỉnh cao đạo diễn phim trăm tỷ / tác phẩm điện ảnh để đời), Cảnh 4 (biểu tượng cống hiến & triân khán giả).\n"
                 "  + Visual prompt: Phải mô tả nhân vật người nghệ sĩ Việt Nam lịch lãm, tài hoa, đang biểu diễn với micro trên sân khấu rực rỡ ánh đèn, "
-                "hoặc đứng chỉ đạo sau máy quay điện ảnh chuyên nghiệp, hoặc nhận tràng pháo tay tri ân của khán giả.\n"
+                "hoặc đứng chỉ đạo sau máy quay điện ảnh chuyên nghiệp, hoặc nhận tràng pháo tay tri ấn của khán giả.\n"
                 "- Nếu câu chuyện có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog, toad, or amphibian limbs or wide amphibian mouth'.\n"
                 "- Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', tuyệt đối KHÔNG mô tả con mồi là ếch để tránh nhầm lẫn hình thể.\n"
                 "- Nếu có chuột hoặc mèo: mô tả đúng hành động trong bối cảnh gian phòng/kho hàng.\n"
@@ -144,14 +145,8 @@ class GeminiScriptDirector:
             )
 
             prompt_text = f"Ý tưởng / Kịch bản: {idea}"
-            candidate_models = [
-                "gemini-2.5-flash",
-                "gemini-1.5-flash",
-                "gemini-2.0-flash",
-            ]
-
             raw_text = None
-            for model_name in candidate_models:
+            for model_name in cls.CANDIDATE_MODELS:
                 try:
                     resp = client.models.generate_content(
                         model=model_name,
@@ -185,16 +180,8 @@ class GeminiScriptDirector:
             return scenes
 
         except Exception as e:
-            logger.error(f"[GeminiScriptDirector] Error creating storyboard: {e}. Falling back to single scene.")
-            return [
-                StoryboardScene(
-                    scene_index=1,
-                    title="Phân cảnh tổng quan",
-                    narration=idea,
-                    visual_prompt=cls.create_single_scene_prompt(idea, has_color=has_color),
-                    estimated_duration_sec=max(5.0, round(len(idea.split()) / 2.8, 1)),
-                )
-            ]
+            logger.error(f"[GeminiScriptDirector] Error creating storyboard: {e}. Returning empty list for smart fallback.")
+            return []
 
     @classmethod
     def create_single_scene_prompt(cls, scene_text: str, has_color: bool = True) -> str:
@@ -226,7 +213,7 @@ class GeminiScriptDirector:
                 "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
                 f"Câu văn: {scene_text}"
             )
-            for m in ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"]:
+            for m in cls.CANDIDATE_MODELS:
                 try:
                     resp = client.models.generate_content(model=m, contents=prompt)
                     desc_en = resp.text.strip().replace("\n", " ")

@@ -663,8 +663,11 @@ export async function analyzeScript(
   text: string,
   inputMode: "text" | "srt" = "text",
   targetScenes?: number,
-  targetDurationSec: number = 60.0
+  targetDurationSec?: number
 ): Promise<{ title: string; scenes: Scene[] }> {
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  const computedDuration = targetDurationSec || Math.max(30.0, Math.ceil(wordCount / 2.5));
+
   try {
     const res = await fetch(`${API_BASE}/scripts/analyze`, {
       method: "POST",
@@ -673,7 +676,7 @@ export async function analyzeScript(
         text,
         input_mode: inputMode.toUpperCase(),
         target_scenes: targetScenes,
-        target_duration_sec: targetDurationSec,
+        target_duration_sec: computedDuration,
         has_color: true,
       }),
       signal: AbortSignal.timeout(60000),
@@ -698,20 +701,49 @@ export async function analyzeScript(
     console.warn("[analyzeScript] Backend API unavailable or timed out, falling back to local client parsing:", e);
   }
 
-  // Fallback client-side sentence splitter
+  // Fallback client-side parser:
+  // 1. Nhận diện các phân cảnh có cấu trúc sẵn (PHÂN CẢNH 1, CẢNH 1...)
+  const structuredRegex = /(?:^|\n)\s*(?:PHÂN\s+CẢNH|Phân\s+cảnh|CẢNH|Cảnh|SCENE|Scene|Hồi|Đoạn)\s*(\d+)[\s:.-]*([^\n]*)\n?(.*?)(?=(?:\n\s*(?:PHÂN\s+CẢNH|Phân\s+cảnh|CẢNH|Cảnh|SCENE|Scene|Hồi|Đoạn)\s*\d+[\s:.-]*)|\Z)/gims;
+  const structuredMatches = Array.from(text.matchAll(structuredRegex));
+
+  if (structuredMatches.length >= 2) {
+    const scenes: Scene[] = structuredMatches.map((m, idx) => {
+      const sceneNum = parseInt(m[1], 10) || (idx + 1);
+      const title = m[2]?.trim() || `Phân cảnh ${sceneNum}`;
+      const body = m[3]?.trim() || "";
+      const lines = body.split("\n").map((l) => l.trim()).filter(Boolean);
+      const narration = lines.filter((l) => !/^(bối cảnh|hình ảnh|mô tả|visual|prompt):/i.test(l)).join(" ") || body;
+      return {
+        id: `scene-${idx + 1}`,
+        scene_index: idx + 1,
+        text: narration,
+        prompt: `Whiteboard illustration representing: ${title}. ${narration.slice(0, 60)}, crisp clean dark ink contour outlines on warm vintage cream paper #F5EBD7, 1080p widescreen, no text`,
+        duration_sec: Math.max(3.5, Math.round(narration.split(/\s+/).length / 2.6)),
+        image_status: "idle",
+        audio_status: "idle",
+      };
+    });
+    return {
+      title: text.slice(0, 30).trim().replace(/\n/g, " ") + "...",
+      scenes,
+    };
+  }
+
+  // 2. Phân chia đều các câu văn theo targetScenes (Bucket distribution)
   const sentences = text
-    .split(/[.!?\n]+/)
+    .split(/(?<=[.!?])\s+|\n+/)
     .map((s) => s.trim())
     .filter(Boolean);
   const total = sentences.length || 1;
   const count = targetScenes || Math.max(1, Math.ceil(total / 2));
-  const chunkSize = Math.max(1, Math.ceil(total / count));
 
   const fallbackScenes: Scene[] = [];
   for (let i = 0; i < count; i++) {
-    const chunk = sentences.slice(i * chunkSize, (i + 1) * chunkSize);
-    if (chunk.length === 0) break;
-    const sceneText = chunk.join(". ") + ".";
+    const startIdx = Math.floor((i * total) / count);
+    const endIdx = Math.floor(((i + 1) * total) / count);
+    const chunk = sentences.slice(startIdx, endIdx);
+    if (chunk.length === 0) continue;
+    const sceneText = chunk.join(" ");
     fallbackScenes.push({
       id: `scene-${i + 1}`,
       scene_index: i + 1,
@@ -724,7 +756,7 @@ export async function analyzeScript(
   }
 
   return {
-    title: text.slice(0, 30) + "...",
+    title: text.slice(0, 30).trim().replace(/\n/g, " ") + "...",
     scenes: fallbackScenes,
   };
 }
