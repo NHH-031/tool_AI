@@ -27,11 +27,12 @@ class GeminiScriptDirector:
     """
 
     DEFAULT_STYLE_SUFFIX = (
-        "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, "
-        "crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, "
-        "and muted vintage watercolor and gouache wash on warm vintage cream paper #F5EBD7. "
-        "{scene_description}. Clean distinct 2D linework, flat matte coloring, dynamic comic composition, "
-        "strictly no 3D rendering, no CGI, widescreen 16:9, no text, no watermark"
+        "Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
+        "bold crisp black ink outlines with variable brush stroke thickness, "
+        "clean flat cel-shaded coloring with muted earthy watercolor tones, "
+        "screentone-style halftone shading, expressive manga character design, on warm vintage cream paper #F5EBD7. "
+        "{scene_description}. Distinct 2D manga linework, clean flat coloring, dynamic manga composition, "
+        "strictly no 3D rendering, no CGI, absolutely no 3D models or plastic sheen, widescreen 16:9, no text, no watermark"
     )
 
     CANDIDATE_MODELS = [
@@ -102,13 +103,13 @@ class GeminiScriptDirector:
             words_per_scene = max(15, int(dur_per_scene * 2.7))
 
             style_guide = (
-                "video hoạt họa vẽ tay 2D phong cách truyện tranh lịch sử / graphic novel cổ điển đỉnh cao "
-                "(Masterpiece 2D Vintage Comic Book & Graphic Novel Illustration on warm vintage cream paper #F5EBD7).\n"
-                "visual_prompt: prompt tiếng Anh mô tả chi tiết tác phẩm tranh vẽ 2D TRUYỆN TRANH với NÉT MỰC ĐEN RÕ RÀNG (crisp dark ink contours), "
-                "ĐÁNH NÉT GẠCH BÓNG TRUYỆN TRANH (fine pen-and-ink cross-hatching), "
-                "và PHỦ MÀU NƯỚC CỔ ĐIỂN MỘC MẠC (muted earthy vintage watercolor and flat matte gouache wash) trên nền giấy kem ấm cổ điển #F5EBD7.\n"
-                "TUYỆT ĐỐI KHÔNG 3D, KHÔNG CGI, KHÔNG ĐỔ BÓNG KHỐI NHỰA (strictly NO 3D render, NO CGI, NO 3D models, NO plastic gloss).\n"
-                "Cấu trúc bắt buộc: 'Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, muted earthy vintage watercolor wash on warm vintage cream paper #F5EBD7. [Mô tả chi tiết nhân vật/sinh vật/bối cảnh và hành động tương tác]. Distinct 2D comic linework, flat matte coloring, dynamic composition, strictly no 3D effects, 1080p widescreen, no text, no watermark'"
+                "video hoạt họa vẽ tay 2D phong cách manga Nhật Bản / truyện tranh truyền thống đỉnh cao "
+                "(Masterpiece 2D Japanese Manga Illustration on warm vintage cream paper #F5EBD7).\n"
+                "visual_prompt: prompt tiếng Anh mô tả chi tiết tác phẩm tranh vẽ 2D MANGA với NÉT MỰC ĐEN RÕ RÀNG (bold crisp black ink outlines), "
+                "ĐÁNH BÓNG SCREENTONE / HALFTONE (screentone-style halftone shading), "
+                "và ĐỔ MÀU PHẲNG CEL-SHADING / MÀU NƯỚC MỘC MẠC (clean flat cel-shaded coloring with muted earthy watercolor tones) trên nền giấy kem ấm cổ điển #F5EBD7.\n"
+                "TUYỆT ĐỐI KHÔNG 3D, KHÔNG CGI, KHÔNG ĐỔ BÓNG KHỐI NHỰA (strictly NO 3D render, NO CGI, NO 3D models, NO plastic sheen, NO volumetric lighting).\n"
+                "Cấu trúc bắt buộc: 'Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, bold crisp black ink outlines with variable brush stroke thickness, clean flat cel-shaded coloring with muted earthy watercolor tones, screentone-style halftone shading on warm vintage cream paper #F5EBD7. [Mô tả chi tiết nhân vật + TẤT CẢ đồ vật/đạo cụ tương tác + bối cảnh]. Distinct 2D manga linework, clean flat coloring, dynamic manga composition, strictly no 3D effects, 1080p widescreen, no text, no watermark'"
             )
 
             system_instruction = (
@@ -135,6 +136,14 @@ class GeminiScriptDirector:
                 "- Nếu câu chuyện có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog, toad, or amphibian limbs or wide amphibian mouth'.\n"
                 "- Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', tuyệt đối KHÔNG mô tả con mồi là ếch để tránh nhầm lẫn hình thể.\n"
                 "- Nếu có chuột hoặc mèo: mô tả đúng hành động trong bối cảnh gian phòng/kho hàng.\n"
+                "QUY TẮC BẮT BUỘC VỀ ĐẠO CỤ & VẬT THỂ TƯƠNG TÁC (OBJECT FIDELITY MANDATE):\n"
+                "- Đọc kỹ lời thuyết minh (narration) của từng phân cảnh.\n"
+                "- Liệt kê và đưa vào visual_prompt TẤT CẢ các đồ vật, đạo cụ, vật phẩm xuất hiện hoặc tham gia vào hành động trong narration "
+                "(ví dụ: cốc nước, ly trà, ổ bánh mì, cuốn sách, cây gậy, chiếc xe, bó hoa, bức thư, chìa khóa, điện thoại, bát đĩa...).\n"
+                "- Visual prompt BẮT BUỘC mô tả TỪNG vật thể một cách riêng biệt và rõ ràng: tên vật thể + trạng thái vật lý (đang rơi vỡ lơ lửng, đang cầm chắc trên tay, đang đặt trên bàn...) + vị trí cụ thể trong khung hình.\n"
+                "- Ví dụ ĐÚNG: 'an elderly woman in a worn dark robe, her wrinkled hands accidentally dropping a translucent glass of water which is tumbling mid-air with water droplets splashing out, in an old rustic kitchen'.\n"
+                "- Ví dụ SAI: 'an elderly woman in a kitchen' (TUYỆT ĐỐI CẤM vì bỏ sót cốc nước đang rơi - chi tiết cốt lõi của hành động!).\n"
+                "- BẮT BUỘC KHÔNG ĐƯỢC bỏ sót bất kỳ vật thể tương tác nào được đề cập trong lời thoại.\n"
                 "Mỗi phân cảnh PHẢI có một nội dung hình ảnh riêng biệt, ăn khớp 100% với lời thuyết minh của phân cảnh đó.\n"
                 "Yêu cầu xuất ra định dạng JSON mảng các object với các trường:\n"
                 "- scene_index: số nguyên thứ tự (1, 2, 3...)\n"
@@ -191,10 +200,10 @@ class GeminiScriptDirector:
         """
         api_key = cls.get_api_key()
         base_style_template = (
-            "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, "
-            "crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, "
-            "and muted vintage watercolor wash on warm vintage cream paper #F5EBD7. "
-            "{content}. Distinct 2D comic linework, flat matte coloring, strictly no 3D rendering, no CGI, 1080p widescreen, no text, no watermark"
+            "Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
+            "bold crisp black ink outlines with variable brush stroke thickness, "
+            "clean flat cel-shaded coloring with muted earthy watercolor tones, screentone-style halftone shading on warm vintage cream paper #F5EBD7. "
+            "{content}. Distinct 2D manga linework, clean flat coloring, strictly no 3D rendering, no CGI, absolutely no 3D models or plastic gloss, 1080p widescreen, no text, no watermark"
         )
         if not api_key:
             return base_style_template.format(content=scene_text)
@@ -204,13 +213,16 @@ class GeminiScriptDirector:
 
             client = genai.Client(api_key=api_key)
             prompt = (
-                "Bạn là đạo diễn hình ảnh storyboard chuyên nghiệp. "
-                "Nhiệm vụ: Chuyển câu văn sau thành 1 mô tả trực quan chi tiết sinh động bằng tiếng Anh cho tác phẩm tranh vẽ minh họa: "
-                "- Xác định rõ tất cả các thực thể chủ chốt và hành động tương tác. "
-                "- Nếu có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog or amphibian limbs or wide mouth'. "
-                "- Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', KHÔNG dùng từ frog. "
-                "- Bối cảnh môi trường chi tiết (cây cối, đất đá, cỏ lau, ánh sáng). "
-                "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
+                "Bạn là đạo diễn hình ảnh storyboard manga chuyên nghiệp. "
+                "Nhiệm vụ: Chuyển câu văn sau thành 1 mô tả trực quan chi tiết sinh động bằng tiếng Anh cho tác phẩm tranh vẽ 2D manga: "
+                "QUY TẮC QUAN TRỌNG: "
+                "1. Xác định rõ TẤT CẢ thực thể (nhân vật + TẤT CẢ đồ vật/đạo cụ tương tác dù lớn hay nhỏ). "
+                "2. Mỗi đồ vật PHẢI được mô tả riêng biệt kèm trạng thái vật lý cụ thể (đang rơi, đang cầm, đang vỡ, đang nằm trên bàn, đang bay...). "
+                "3. TUYỆT ĐỐI KHÔNG bỏ sót bất kỳ đồ vật hay chi tiết hành động nào được nhắc đến trong câu văn (ví dụ: làm rơi cốc nước thì BẮT BUỘC phải mô tả rõ cái cốc nước đang rơi lơ lửng kèm giọt nước bắn ra). "
+                "4. Nếu có con rắn (snake): BẮT BUỘC mô tả là 'an elegant elongated slender serpentine green pit viper snake with coiled scaly body, distinct triangular head, reptilian slit eyes, flicking forked tongue; strictly serpentine reptile anatomy, strictly NO frog or amphibian limbs or wide mouth'. "
+                "5. Nếu con rắn săn mồi: mô tả con mồi là 'a small cute field mouse or small rodent hiding cautiously among the grass blades', KHÔNG dùng từ frog. "
+                "6. Bối cảnh môi trường chi tiết (cây cối, đất đá, cỏ lau, ánh sáng) và phong cách 2D manga phẳng. "
+                "Không có chữ trong tranh, không thêm lời dẫn giải, chỉ trả về duy nhất nội dung tiếng Anh mô tả bối cảnh và hành động.\n"
                 f"Câu văn: {scene_text}"
             )
             for m in cls.CANDIDATE_MODELS:

@@ -16,10 +16,10 @@ class StructuredIllustrationPrompt(BaseModel):
     relationship: str = Field(default="", description="Mối quan hệ và sự tiếp xúc vật lý cụ thể")
     composition: str = Field(default="", description="Bố cục khung hình 16:9, vị trí và khoảng trống âm")
     pose: str = Field(default="", description="Đặc tả tư thế giải phẫu và chuyển động của nhân vật")
-    line_style: str = Field(default="crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching", description="Quy chuẩn nét vẽ phác thảo tay truyện tranh (comic line art)")
-    whiteboard_style: str = Field(default="traditional 2D vintage comic book and graphic novel illustration", description="Đặc trưng mỹ học 2D Comic Whiteboard Animation")
+    line_style: str = Field(default="bold crisp black ink outlines with variable brush stroke thickness and fine manga hatching", description="Quy chuẩn nét vẽ phác thảo tay manga 2D (manga line art)")
+    whiteboard_style: str = Field(default="traditional 2D Japanese manga illustration, flat cel-shaded panel art with screentone textures", description="Đặc trưng mỹ học 2D Manga Whiteboard Animation")
     background: str = Field(default="warm vintage cream paper #F5EBD7", description="Đặc tả nền giấy kem ấm cũ (#F5EBD7)")
-    negative_constraints: str = Field(default="strictly 2D flat art, NO 3D render, NO CGI, NO 3D models, NO plastic sheen, NO text, NO speech bubbles, NO watermark", description="Danh sách các điều cấm kỵ tuyệt đối")
+    negative_constraints: str = Field(default="strictly 2D flat art, absolutely NO 3D render, NO CGI, NO 3D models, NO Octane render, NO Unreal Engine, NO plastic sheen, NO volumetric lighting, NO smooth 3D gradient shading, NO raytracing, NO photorealism, NO photographic textures, NO glossy surfaces, NO specular highlights, NO depth of field blur, NO ambient occlusion, NO subsurface scattering, NO text, NO speech bubbles, NO watermark", description="Danh sách các điều cấm kỵ tuyệt đối")
     full_prompt: str = Field(default="", description="Toàn văn prompt hoàn chỉnh ghép nối từ 9 thành phần")
     scene_context: str = Field(default="", description="Bối cảnh kịch bản thoại gốc")
     has_color: bool = Field(default=True, description="Chế độ đổ màu (True: Flat vintage watercolor/gouache, False: Comic ink line art)")
@@ -77,8 +77,15 @@ class IllustrationPromptBuilder:
                 subject_parts.append(f"A clear, recognizable {name}{role}")
         for se in secondary_entities:
             name = se.label.replace("_", " ")
-            role = f" as {se.visual_role}" if se.visual_role else ""
-            subject_parts.append(f"a distinct {name}{role}")
+            action_desc = ""
+            if getattr(se, "actions", None):
+                action_desc = f" actively {se.actions[0].replace('_', ' ')}"
+            elif getattr(se, "action", None):
+                action_desc = f" actively {se.action.replace('_', ' ')}"
+            role = f" ({se.visual_role})" if getattr(se, "visual_role", None) else ""
+            subject_parts.append(
+                f"a clearly visible {name}{action_desc}{role} (MUST be prominently shown in the scene)"
+            )
         subject_desc = ", accompanied by ".join(subject_parts) if subject_parts else "A hand-drawn whiteboard scene"
 
         # 2. ACTION: Trích xuất hành động từ Scene Graph
@@ -139,14 +146,16 @@ class IllustrationPromptBuilder:
 
         has_color = getattr(scene_graph, "has_color", True)
 
-        # 6. LINE STYLE & WHITEBOARD AESTHETIC (Master 2D Comic Artwork with crisp ink lines & flat wash)
+        # 6. LINE STYLE & WHITEBOARD AESTHETIC (Master 2D Japanese Manga Artwork with bold ink lines & flat cel-shading)
         line_desc = (
-            f"Crisp expressive dark ink contours and outlines ({profile.primary_line_color}) with fine pen-and-ink cross-hatching and flat matte watercolor washes. "
-            f"Traditional 2D hand-drawn graphic novel and historical comic book line art, distinct character silhouettes, smooth connected outlines on vintage cream paper."
+            f"Bold crisp black ink outlines ({profile.primary_line_color}) with variable brush stroke thickness, "
+            f"authentic Japanese manga line art, fine screentone hatching, and clean flat cel-shaded coloring. "
+            f"Traditional hand-drawn 2D manga panel art, sharp character silhouettes, and precise line details on vintage cream paper."
         )
         wb_desc = (
-            f"Masterpiece 2D vintage graphic novel and comic illustration, rich earthy muted colors and crisp dark ink outlines. "
-            f"Clear distinct 2D contour lines, traditional pen-and-ink hatching, flat cel-shaded coloring, aesthetic storybook panel."
+            f"Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
+            f"bold expressive ink outlines, flat cel-shaded coloring with muted earthy watercolor tones, "
+            f"screentone-style halftone shading, expressive manga character design, aesthetic manga composition."
         )
 
         # 8. BACKGROUND
@@ -155,11 +164,13 @@ class IllustrationPromptBuilder:
             f"(RGB 245, 235, 215 / BGR 215, 235, 245). Absolutely NO pure harsh white (#FFFFFF) background."
         )
 
-        # 9. NEGATIVE CONSTRAINTS (Strictly forbid 3D rendering and digital CGI)
+        # 9. NEGATIVE CONSTRAINTS (Strictly forbid 3D rendering, CGI, and digital sheen)
         neg_desc = (
             "STRICT PROHIBITIONS: STRICTLY NO 3D rendering, NO CGI, NO 3D models, NO Octane render, NO Unreal Engine, "
             "NO plastic sheen, NO volumetric lighting, NO smooth 3D gradient shading, NO raytracing, NO photorealism, "
-            "NO photographic textures, NO text, NO words, NO letters, NO numbers, NO labels, NO typography, "
+            "NO photographic textures, NO glossy surfaces, NO specular highlights, NO depth of field blur, "
+            "NO ambient occlusion, NO subsurface scattering, NO metallic materials, NO glass reflections, "
+            "NO text, NO words, NO letters, NO numbers, NO labels, NO typography, "
             "NO speech bubbles, NO watermarks, NO signatures, NO stick figures, NO shoddy oval-and-stick primitives."
         )
 

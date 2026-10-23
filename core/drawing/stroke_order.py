@@ -34,6 +34,10 @@ class NaturalStrokeSorter:
         "stem": 70,
         "shading": 80,
         "hatch": 80,
+        "color_fill": 90,
+        "fill": 90,
+        "color": 90,
+        "wash": 90,
     }
 
     @classmethod

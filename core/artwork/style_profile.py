@@ -63,8 +63,8 @@ class WhiteboardVisualStyleProfile(BaseModel):
         description="Mức độ phức tạp: trung bình (đủ nhận diện, không rối nét)"
     )
     character_style: str = Field(
-        default="expressive simplified cartoon",
-        description="Phong cách nhân vật: hoạt họa tối giản giàu biểu cảm, silhouette rõ ràng"
+        default="expressive manga character with bold ink outlines",
+        description="Phong cách nhân vật: manga 2D truyền thống giàu biểu cảm, silhouette rõ ràng"
     )
     background_complexity: Literal["none", "low", "medium"] = Field(
         default="low",

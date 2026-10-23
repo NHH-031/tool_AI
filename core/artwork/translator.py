@@ -117,7 +117,7 @@ def auto_translate_vi_to_en(text: str, max_chars: int = 500) -> str:
 
 def create_whiteboard_art_prompt(scene_text_vi: str, scene_index: int = 1, aspect_ratio: str = "16:9") -> str:
     """
-    Tạo prompt hình ảnh hoàn chỉnh với phong cách Comic Doodle Whiteboard từ kịch bản tiếng Việt,
+    Tạo prompt hình ảnh hoàn chỉnh với phong cách 2D Manga Whiteboard từ kịch bản tiếng Việt,
     sử dụng auto_translate_vi_to_en để diễn đạt chính xác nội dung phân cảnh.
     """
     translated_subject = auto_translate_vi_to_en(scene_text_vi)
@@ -125,9 +125,9 @@ def create_whiteboard_art_prompt(scene_text_vi: str, scene_index: int = 1, aspec
     aspect_desc = "9:16 vertical composition for mobile" if aspect_ratio == "9:16" else "16:9 widescreen composition"
 
     prompt = (
-        f"Masterpiece storybook watercolor and ink illustration of {translated_subject}, {aspect_desc}. "
-        f"Crisp expressive dark ink contours, smooth connected outlines, and rich vibrant harmonious watercolor fills "
-        f"on warm vintage cream paper #F5EBD7. Traditional 2D vintage comic book and whiteboard doodle illustration, "
-        f"strictly 2D flat art, no 3D render, no CGI, no text, no speech bubbles, no watermark."
+        f"Masterpiece 2D Japanese manga illustration of {translated_subject}, {aspect_desc}. "
+        f"Bold crisp black ink outlines with variable brush stroke thickness, clean flat cel-shaded coloring with muted earthy watercolor tones, "
+        f"screentone-style halftone shading on warm vintage cream paper #F5EBD7. Traditional hand-drawn 2D manga panel art, "
+        f"strictly 2D flat art, NO 3D render, NO CGI, NO plastic sheen, NO volumetric lighting, no text, no speech bubbles, no watermark."
     )
     return prompt

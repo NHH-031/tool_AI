@@ -85,6 +85,9 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
                 logger.warning(f"[FluxCloudArtProvider] Gemini translation fallback: {e_gem}")
 
         for bp in [
+            "Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, bold crisp black ink outlines with variable brush stroke thickness, clean flat cel-shaded coloring with muted earthy watercolor tones, screentone-style halftone shading on warm vintage cream paper #F5EBD7.",
+            "Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, bold crisp black ink outlines with variable brush stroke thickness, clean flat cel-shaded coloring with muted earthy watercolor tones, screentone-style halftone shading, expressive manga character design, on warm vintage cream paper #F5EBD7.",
+            "Masterpiece 2D Japanese manga ink line art illustration, authentic black dip-pen and brush drawing, bold crisp dark ink outlines with variable line weight, intricate manga screentone and hatching textures.",
             "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, muted earthy vintage watercolor wash on warm vintage cream paper #F5EBD7.",
             "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, and muted vintage watercolor and gouache wash on warm vintage cream paper #F5EBD7.",
             "Masterpiece 2D vintage comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contour outlines with fine pen-and-ink cross-hatching, and muted vintage watercolor wash on warm vintage cream paper #F5EBD7.",
@@ -96,6 +99,8 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
             if clean_desc.startswith(bp):
                 clean_desc = clean_desc[len(bp):].strip()
         for sf in [
+            "Distinct 2D manga linework, clean flat coloring, dynamic manga composition, strictly no 3D rendering, no CGI, absolutely no 3D models or plastic sheen, widescreen 16:9, no text, no watermark",
+            "Distinct 2D manga linework, clean flat coloring, strictly no 3D rendering, no CGI, absolutely no 3D models or plastic gloss, 1080p widescreen, no text, no watermark",
             "Distinct 2D comic linework, flat matte coloring, dynamic composition, strictly no 3D effects, 1080p widescreen, no text, no watermark",
             "Distinct 2D comic linework, flat matte coloring, strictly no 3D rendering, no CGI, 1080p widescreen, no text, no watermark",
             "Clean distinct 2D linework, flat matte coloring, dynamic comic composition, strictly no 3D rendering, no CGI, widescreen 16:9, no text, no watermark",
@@ -113,15 +118,16 @@ class FluxCloudArtProvider(ImageGeneratorProvider):
 
         if not is_color:
             flux_prompt = (
-                f"Masterpiece 2D vintage comic book ink line art illustration, pristine black ink drawing on warm vintage cream paper #F5EBD7. "
-                f"{desc}. Crisp expressive dark ink contour outlines with fine line cross-hatching, generous negative space, absolutely NO colors, "
-                f"strictly 2D flat line art, NO 3D render, NO CGI, masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
+                f"Masterpiece 2D Japanese manga ink line art illustration, authentic black ink drawing on warm vintage cream paper #F5EBD7. "
+                f"{desc}. Bold crisp dark ink outlines with variable brush stroke thickness, intricate manga hatching, generous negative space, absolutely NO colors, "
+                f"strictly 2D flat line art, NO 3D render, NO CGI, NO plastic sheen, masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
             )
         else:
             flux_prompt = (
-                f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art on warm vintage cream paper #F5EBD7. "
-                f"{desc}. Crisp dark ink contour outlines with fine line cross-hatching, muted vintage watercolor wash, flat matte coloring, "
-                f"strictly 2D flat art, NO 3D render, NO CGI, NO plastic gloss, masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
+                f"Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art on warm vintage cream paper #F5EBD7. "
+                f"{desc}. Bold crisp black ink outlines with variable brush stroke thickness, clean flat cel-shaded coloring with muted earthy watercolor tones, "
+                f"screentone-style halftone shading, strictly 2D flat art, NO 3D render, NO CGI, NO 3D models, NO plastic sheen, NO volumetric lighting, "
+                f"masterpiece, 1080p widescreen, no text, no words, no labels, no watermark"
             )
 
         logger.info(f"[FluxCloudArtProvider] Requesting AI line-art for: '{flux_prompt[:80]}...'")

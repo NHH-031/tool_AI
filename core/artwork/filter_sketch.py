@@ -173,10 +173,80 @@ class SketchFilter:
 
         return np.clip(final_bgr, 0, 255).astype(np.uint8)
 
+    def extract_lineart_layer(
+        self,
+        img_bgr: np.ndarray,
+        contrast: float = 1.2,
+        line_strength: float = 1.4,
+    ) -> np.ndarray:
+        """
+        Trích xuất riêng lớp nét vẽ mực đen (Line-art Layer) trên nền giấy kem ấm #F5EBD7.
+        Dành riêng cho pha vẽ nét của cánh tay robot / hoạt họa whiteboard (vẽ nét TRƯỚC khi đổ màu).
+        """
+        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        gray_smooth = cv2.medianBlur(gray, 5)
+        edges = cv2.adaptiveThreshold(
+            gray_smooth,
+            maxValue=255,
+            adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            thresholdType=cv2.THRESH_BINARY,
+            blockSize=9,
+            C=4,
+        )
+
+        if line_strength > 1.0:
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+            edges = cv2.erode(edges, kernel, iterations=1)
+
+        edge_mask = (edges.astype(np.float32) / 255.0)[:, :, np.newaxis]
+        paper_bgr = self.canvas_bgr.astype(np.float32)
+        ink_bgr = np.array([26, 26, 26], dtype=np.float32)
+
+        lineart_bgr = edge_mask * paper_bgr + (1.0 - edge_mask) * ink_bgr
+
+        if contrast != 1.0:
+            lineart_norm = lineart_bgr / 255.0
+            lineart_norm = np.clip((lineart_norm - 0.5) * contrast + 0.5, 0.0, 1.0)
+            lineart_bgr = lineart_norm * 255.0
+
+        return np.clip(lineart_bgr, 0, 255).astype(np.uint8)
+
+    def extract_color_layer(
+        self,
+        img_bgr: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Trích xuất riêng lớp màu nước / flat cel-shade (Color Wash Layer) hòa trộn với nền kem ấm #F5EBD7.
+        Được dùng để fade-in hoặc tô màu SAU KHI toàn bộ nét vẽ line-art đã hoàn thành 100%.
+        """
+        color_smooth = img_bgr.copy()
+        for _ in range(2):
+            color_smooth = cv2.bilateralFilter(color_smooth, d=9, sigmaColor=50, sigmaSpace=50)
+
+        paper_norm = self.canvas_bgr.astype(np.float32) / 255.0
+        color_norm = color_smooth.astype(np.float32) / 255.0
+        tinted_color = color_norm * (0.65 * paper_norm + 0.35) * 255.0
+        return np.clip(tinted_color, 0, 255).astype(np.uint8)
+
+    def extract_dual_layers(
+        self,
+        img_bgr: np.ndarray,
+        contrast: float = 1.15,
+        line_strength: float = 1.4,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Tách ảnh hoàn chỉnh thành 2 lớp độc lập phục vụ Dual-Layer Rendering:
+        - Layer 1 (Line-art): Nét mực contour đen trên nền giấy kem (vẽ trước hoàn toàn)
+        - Layer 2 (Color wash): Lớp màu phẳng cel-shade (fade-in sau)
+        """
+        lineart = self.extract_lineart_layer(img_bgr, contrast=contrast, line_strength=line_strength)
+        color = self.extract_color_layer(img_bgr)
+        return lineart, color
+
     def process_image(
         self,
         image_input: Union[str, Path, bytes, np.ndarray],
-        style: str = "watercolor_comic",  # "watercolor_comic" | "pure_ink"
+        style: str = "watercolor_comic",  # "watercolor_comic" | "pure_ink" | "lineart" | "color"
         target_size: Tuple[int, int] = (1920, 1080),
         contrast: float = 1.2,
         line_strength: float = 1.3,
@@ -207,5 +277,11 @@ class SketchFilter:
         # Áp dụng bộ lọc tùy biến theo style
         if style == "pure_ink":
             return self.convert_to_pure_ink(padded, contrast=contrast, line_strength=line_strength)
+        elif style == "lineart":
+            return self.extract_lineart_layer(padded, contrast=contrast, line_strength=line_strength)
+        elif style == "color":
+            return self.extract_color_layer(padded)
+        elif style == "dual_layer":
+            return self.extract_dual_layers(padded, contrast=contrast, line_strength=line_strength)
         else:
             return self.convert_to_watercolor_comic(padded, contrast=contrast, line_strength=line_strength)

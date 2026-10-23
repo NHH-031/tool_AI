@@ -76,9 +76,9 @@ class PollinationsArtProvider(ImageGeneratorProvider):
         is_color = getattr(prompt, "has_color", True)
 
         if not is_color:
-            if scene_ctx and any(k in scene_ctx.lower() for k in ["ink line art", "cross-hatching", "comic book"]):
+            if scene_ctx and any(k in scene_ctx.lower() for k in ["ink line art", "cross-hatching", "manga", "comic"]):
                 refined_prompt = scene_ctx
-            elif full_p and any(k in full_p.lower() for k in ["ink line art", "cross-hatching", "comic book"]):
+            elif full_p and any(k in full_p.lower() for k in ["ink line art", "cross-hatching", "manga", "comic"]):
                 refined_prompt = full_p
             else:
                 try:
@@ -87,18 +87,22 @@ class PollinationsArtProvider(ImageGeneratorProvider):
                         refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx, has_color=False)
                     else:
                         refined_prompt = (
-                            f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
-                            f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, {format_tag}, no text"
+                            f"Masterpiece 2D Japanese manga ink line art illustration, authentic black dip-pen and brush drawing, "
+                            f"bold crisp dark ink outlines with variable line weight, intricate manga screentone and hatching textures. "
+                            f"{prompt.subject}. {prompt.action}. Dynamic manga anatomy, expressive panel composition on vintage warm cream paper #F5EBD7, "
+                            f"absolutely NO colors, NO watercolor washes, NO gray smudges, pristine 2D black line art masterpiece, strictly NO 3D rendering, NO CGI, {format_tag}, no text"
                         )
                 except Exception:
                     refined_prompt = (
-                        f"Masterpiece comic book ink line art illustration, fine charcoal and dip-pen drawing, crisp expressive dark ink contours, intricate cross-hatching and hatching shading textures. "
-                        f"{prompt.subject}. {prompt.action}. Dynamic expressive anatomy, lush detailed environment on vintage warm cream paper #F5EBD7, absolutely NO colors, NO watercolor washes, NO gray smudges, pristine black line art masterpiece, {format_tag}, no text"
+                        f"Masterpiece 2D Japanese manga ink line art illustration, authentic black dip-pen and brush drawing, "
+                        f"bold crisp dark ink outlines with variable line weight, intricate manga screentone and hatching textures. "
+                        f"{prompt.subject}. {prompt.action}. Dynamic manga anatomy, expressive panel composition on vintage warm cream paper #F5EBD7, "
+                        f"absolutely NO colors, NO watercolor washes, NO gray smudges, pristine 2D black line art masterpiece, strictly NO 3D rendering, NO CGI, {format_tag}, no text"
                     )
         else:
-            if scene_ctx and any(k in scene_ctx.lower() for k in ["comic", "graphic novel", "lianhuanhua", "manhua", "illustration"]):
+            if scene_ctx and any(k in scene_ctx.lower() for k in ["manga", "comic", "graphic novel", "lianhuanhua", "manhua", "illustration"]):
                 refined_prompt = scene_ctx
-            elif full_p and any(k in full_p.lower() for k in ["comic", "graphic novel", "lianhuanhua", "manhua", "illustration"]):
+            elif full_p and any(k in full_p.lower() for k in ["manga", "comic", "graphic novel", "lianhuanhua", "manhua", "illustration"]):
                 refined_prompt = full_p
             else:
                 try:
@@ -107,15 +111,19 @@ class PollinationsArtProvider(ImageGeneratorProvider):
                         refined_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_ctx, has_color=True)
                     else:
                         refined_prompt = (
-                            f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, "
-                            f"{prompt.subject}. {prompt.action}. Clear distinct 2D contour lines, muted vintage watercolor wash, flat matte coloring on warm vintage cream paper #F5EBD7, "
-                            f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, {format_tag}, no text, no watermark"
+                            f"Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
+                            f"bold crisp black ink outlines with variable brush stroke thickness, "
+                            f"{prompt.subject}. {prompt.action}. Clear distinct 2D manga linework, clean flat cel-shaded coloring with muted earthy watercolor tones, "
+                            f"screentone-style halftone shading on warm vintage cream paper #F5EBD7, "
+                            f"strictly NO 3D rendering, NO CGI, NO 3D models, NO plastic sheen, NO volumetric lighting, {format_tag}, no text, no watermark"
                         )
                 except Exception:
                     refined_prompt = (
-                        f"Masterpiece 2D vintage historical comic book illustration, traditional hand-drawn graphic novel art, crisp expressive dark ink contours with fine line cross-hatching, "
-                        f"{prompt.subject}. {prompt.action}. Clear distinct 2D contour lines, muted vintage watercolor wash, flat matte coloring on warm vintage cream paper #F5EBD7, "
-                        f"strictly NO 3D rendering, NO CGI, NO plastic gloss, NO 3D models, {format_tag}, no text, no watermark"
+                        f"Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
+                        f"bold crisp black ink outlines with variable brush stroke thickness, "
+                        f"{prompt.subject}. {prompt.action}. Clear distinct 2D manga linework, clean flat cel-shaded coloring with muted earthy watercolor tones, "
+                        f"screentone-style halftone shading on warm vintage cream paper #F5EBD7, "
+                        f"strictly NO 3D rendering, NO CGI, NO 3D models, NO plastic sheen, NO volumetric lighting, {format_tag}, no text, no watermark"
                     )
 
         logger.info(f"[PollinationsArtProvider] Requesting image ({aspect_ratio}, {width}x{height}) for prompt: '{refined_prompt[:80]}...'")
