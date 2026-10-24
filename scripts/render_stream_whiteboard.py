@@ -453,7 +453,16 @@ class RegionStreamRenderer:
                 writer.write(snap)
             cur_ms += n * ms_per_frame
 
+        is_monochrome = (cfg.color_fill in ["none", "off"])
+
         try:
+            # ── GIAI ĐOẠN 1: VẼ NÉT TOÀN BỘ CÁC PHÂN VÙNG (INK DRAWING PHASE) ──
+            # Cánh tay vẽ toàn bộ nét mực đen trên nền giấy kem ấm #F5EBD7.
+            # TUYỆT ĐỐI KHÔNG đổ màu trong giai đoạn này để tránh hiện tượng
+            # "chưa vẽ xong đã có màu" hoặc để lại ô trắng lồi lõm ở giữa nền đã tô màu.
+            element_allowed_list = []
+            element_centers_list = []
+
             for idx, element in enumerate(elements):
                 reveal = element["reveal"]
                 start_ms = int(round(reveal["startMs"] * time_scale))
@@ -461,13 +470,12 @@ class RegionStreamRenderer:
                 fill_static(start_ms)
 
                 allowed = self._allowed_mask(element, elements[idx + 1:])
-                is_monochrome = (cfg.color_fill in ["none", "off"])
+                element_allowed_list.append(allowed)
+
                 if is_monochrome:
                     ink_frames = max(1, round(dur_ms * cfg.fps / 1000))
-                    color_frames = 0
                 else:
                     ink_frames = max(1, round(dur_ms * cfg.ink_weight / weight_sum * cfg.fps / 1000))
-                    color_frames = max(1, round(dur_ms * cfg.color_weight / weight_sum * cfg.fps / 1000))
 
                 if cfg.ink_path_mode == "skeleton":
                     strokes = self._region_skeleton_strokes(allowed)
@@ -495,23 +503,38 @@ class RegionStreamRenderer:
                         self._lay_ink(writer, ink_frames, [], set(), allowed)
                         centers = []
 
+                element_centers_list.append(centers)
                 cur_ms += ink_frames * ms_per_frame
+                # Chỉ cập nhật nét vẽ đơn sắc (mono ink) lên canvas, TUYỆT ĐỐI chưa cập nhật raw_color_img
+                self.drawn[allowed] = self.mono_img[allowed].astype(np.float32)
 
-                if not is_monochrome:
-                    if cfg.color_fill == "contour-wipe":
-                        self._wash_contour(writer, color_frames, allowed)
-                    else:
-                        self._wash_brush(writer, color_frames, centers, allowed)
-                    cur_ms += color_frames * ms_per_frame
-                    self.drawn[allowed] = self.raw_color_img[allowed].astype(np.float32)
-                else:
-                    self.drawn[allowed] = self.mono_img[allowed].astype(np.float32)
+            # Đảm bảo toàn bộ nét vẽ của mọi element đã hoàn tất trọn vẹn 100% trên nền giấy kem
+            self.drawn[...] = self.mono_img.astype(np.float32)
 
-            # Hoàn thiện 100% toàn bộ tác phẩm trên toàn canvas
+            # ── GIAI ĐOẠN 2: TÔ MÀU TOÀN CẢNH (UNIFIED COLOR WASH / CEL-SHADE PHASE) ──
+            # Sau khi 100% nét mực đen của TOÀN BỘ bức tranh đã được vẽ hoàn chỉnh trên giấy kem,
+            # tiến hành đổ màu nước/cel-shading mượt mà trên TOÀN BỘ canvas (full_allowed).
+            # TUYỆT ĐỐI KHÔNG cắt lỗ hình chữ nhật (protectedRegions) trong giai đoạn tô màu,
+            # loại bỏ triệt để hiện tượng ô trắng cutout ở giữa màn hình!
             if not is_monochrome:
+                total_color_frames = sum(
+                    max(1, round(max(int(1000 / cfg.fps * 4), int(round(e["reveal"]["durationMs"] * time_scale))) * cfg.color_weight / weight_sum * cfg.fps / 1000))
+                    for e in elements
+                ) if elements else max(12, int(cfg.fps * 1.5))
+                total_color_frames = max(12, total_color_frames)
+
+                full_allowed = np.ones((self.out_h, self.out_w), dtype=bool)
+
+                if cfg.color_fill == "contour-wipe":
+                    self._wash_contour(writer, total_color_frames, full_allowed)
+                else:
+                    all_centers = []
+                    for c_list in element_centers_list:
+                        all_centers.extend(c_list)
+                    self._wash_brush(writer, total_color_frames, all_centers, full_allowed)
+
+                cur_ms += total_color_frames * ms_per_frame
                 self.drawn[...] = self.raw_color_img.astype(np.float32)
-            else:
-                self.drawn[...] = self.mono_img.astype(np.float32)
 
             # 2. Giai đoạn tĩnh (Hold phase): Rút tay về, giữ nguyên bức tranh mỹ thuật 100% hoàn hảo
             # trong toàn bộ thời gian thuyết minh còn lại của audio (ví dụ từ giây thứ 2 đến giây thứ 5)

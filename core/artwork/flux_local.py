@@ -25,9 +25,10 @@ class FluxLocalArtProvider(ImageGeneratorProvider):
     - Tự động fallback sang Cloud / PollinationsArtProvider nếu ComfyUI offline.
     """
     PROMPT_QUALITY_SUFFIX = (
-        "Masterpiece 2D vintage comic book illustration, traditional graphic novel art, crisp expressive dark ink contour outlines with fine line cross-hatching, "
-        "muted vintage watercolor wash on warm vintage cream paper #F5EBD7, strictly 2D flat art, NO 3D render, NO CGI, NO plastic gloss, "
-        "1080p widescreen, no text, no watermark"
+        "Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
+        "bold crisp black ink outlines with variable brush stroke thickness, clean flat cel-shaded coloring with muted earthy watercolor tones, "
+        "screentone-style halftone shading on warm vintage cream paper #F5EBD7, strictly 2D flat art, absolutely NO 3D render, NO CGI, NO 3D models, "
+        "NO plastic sheen, NO volumetric lighting, 1080p widescreen, no text, no watermark"
     )
 
     def __init__(

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Cache nội bộ tránh gọi dịch lại nhiều lần cùng một câu
 _TRANSLATION_CACHE: Dict[str, str] = {}
 
-# Từ điển ánh xạ từ vựng khoa học / phổ biến làm fallback ngoại tuyến
+# Từ điển ánh xạ từ vựng khoa học / quân sự / phổ biến làm fallback ngoại tuyến
 _OFFLINE_VI_EN_DICT: Dict[str, str] = {
     "pin năng lượng mặt trời": "solar panels",
     "mặt trời": "sun",
@@ -39,6 +39,15 @@ _OFFLINE_VI_EN_DICT: Dict[str, str] = {
     "cây cối": "trees and nature",
     "thành phố": "modern city",
     "vũ trụ": "outer space and stars",
+    "tầng tầng lớp lớp binh lính": "battalions of infantry soldier troops deployed across the terrain",
+    "binh lính": "infantry soldiers",
+    "chiếc dù": "military parachutes descending from the sky",
+    "nhảy dù": "paratroopers descending with parachutes",
+    "pháo đài": "military fortress outpost with soldiers",
+    "dây thép gai": "barbed wire entanglements",
+    "vũ khí": "military weapons and crates",
+    "máy bay": "military transport airplanes",
+    "làm rơi cốc nước": "person accidentally dropping a glass of water spilling droplets",
 }
 
 
@@ -52,6 +61,9 @@ def auto_translate_vi_to_en(text: str, max_chars: int = 500) -> str:
     """
     Dịch tự động văn bản tiếng Việt sang tiếng Anh cho việc sinh hình ảnh Whiteboard.
     Hoàn toàn an toàn, không bao giờ ném Exception, tự động chuyển tầng fallback.
+    Tier 1: Google Gemini (thấu hiểu ngữ cảnh, trích xuất đầy đủ đạo cụ/binh lính/chi tiết)
+    Tier 2: deep-translator (MyMemory & Google Translator)
+    Tier 3: Dictionary & Pattern-based Fallback ngoại tuyến
     """
     if not text or not text.strip():
         return ""
@@ -62,7 +74,33 @@ def auto_translate_vi_to_en(text: str, max_chars: int = 500) -> str:
     if text in _TRANSLATION_CACHE:
         return _TRANSLATION_CACHE[text]
 
-    # 1. Thử qua deep-translator MyMemory (nhanh, miễn phí, không cần API key)
+    # 1. Tier 1: Thử Gemini nếu có API key (Hiểu sâu câu chuyện, không bỏ sót đồ vật hay binh lính)
+    try:
+        from core.artwork.gemini_director import GeminiScriptDirector
+        if GeminiScriptDirector.is_available():
+            # Chỉ dịch trích xuất nội dung thực thể
+            from google import genai
+            client = genai.Client(api_key=GeminiScriptDirector.get_api_key())
+            prompt = (
+                "Translate and extract visual narrative details from this Vietnamese scene into English for a 2D manga drawing. "
+                "CRITICAL: Do NOT omit any characters, soldiers, objects, weapons, or actions mentioned. "
+                "Output ONLY the English descriptive scene context, nothing else.\n"
+                f"Vietnamese: {text}"
+            )
+            for m in GeminiScriptDirector.CANDIDATE_MODELS:
+                try:
+                    resp = client.models.generate_content(model=m, contents=prompt)
+                    if resp and resp.text:
+                        translated = _clean_text_for_prompt(resp.text)
+                        if len(translated) > 5:
+                            _TRANSLATION_CACHE[text] = translated
+                            return translated
+                except Exception:
+                    continue
+    except Exception as e_gemini:
+        logger.debug(f"[Translator] Gemini pass: {e_gemini}")
+
+    # 2. Tier 2a: Thử qua deep-translator MyMemory (nhanh, miễn phí, không cần API key)
     try:
         from deep_translator import MyMemoryTranslator
         translator = MyMemoryTranslator(source="vi-VN", target="en-GB")
@@ -75,7 +113,7 @@ def auto_translate_vi_to_en(text: str, max_chars: int = 500) -> str:
     except Exception as e_mymemory:
         logger.debug(f"[Translator] MyMemory pass: {e_mymemory}")
 
-    # 2. Thử qua deep-translator GoogleTranslator
+    # 2. Tier 2b: Thử qua deep-translator GoogleTranslator
     try:
         from deep_translator import GoogleTranslator
         translator = GoogleTranslator(source="vi", target="en")
@@ -87,18 +125,7 @@ def auto_translate_vi_to_en(text: str, max_chars: int = 500) -> str:
     except Exception as e_google:
         logger.debug(f"[Translator] GoogleTranslator pass: {e_google}")
 
-    # 3. Thử Gemini nếu có API key
-    try:
-        from core.artwork.gemini_director import GeminiScriptDirector
-        if GeminiScriptDirector.is_available():
-            translated = GeminiScriptDirector.create_single_scene_prompt(text)
-            if translated and len(translated.strip()) > 10:
-                _TRANSLATION_CACHE[text] = translated
-                return translated
-    except Exception as e_gemini:
-        logger.debug(f"[Translator] Gemini pass: {e_gemini}")
-
-    # 4. Fallback ngoại tuyến: Tra cứu từ điển nội bộ và trích xuất thực thể
+    # 3. Fallback ngoại tuyến: Tra cứu từ điển nội bộ và trích xuất thực thể
     text_lower = text.lower()
     matched_terms = []
     for vi_term, en_term in _OFFLINE_VI_EN_DICT.items():
@@ -118,10 +145,20 @@ def auto_translate_vi_to_en(text: str, max_chars: int = 500) -> str:
 def create_whiteboard_art_prompt(scene_text_vi: str, scene_index: int = 1, aspect_ratio: str = "16:9") -> str:
     """
     Tạo prompt hình ảnh hoàn chỉnh với phong cách 2D Manga Whiteboard từ kịch bản tiếng Việt,
-    sử dụng auto_translate_vi_to_en để diễn đạt chính xác nội dung phân cảnh.
+    sử dụng GeminiScriptDirector nếu có để bảo tồn 100% mọi chi tiết nhỏ (cốc nước rơi, binh lính, dù...).
     """
+    try:
+        from core.artwork.gemini_director import GeminiScriptDirector
+        if GeminiScriptDirector.is_available():
+            full_prompt = GeminiScriptDirector.create_single_scene_prompt(scene_text_vi)
+            if full_prompt and len(full_prompt) > 20:
+                if aspect_ratio == "9:16" and "9:16" not in full_prompt:
+                    full_prompt = full_prompt.replace("1080p widescreen", "vertical 9:16 portrait composition for mobile display")
+                return full_prompt
+    except Exception as e:
+        logger.debug(f"[create_whiteboard_art_prompt] Gemini director pass: {e}")
+
     translated_subject = auto_translate_vi_to_en(scene_text_vi)
-    
     aspect_desc = "9:16 vertical composition for mobile" if aspect_ratio == "9:16" else "16:9 widescreen composition"
 
     prompt = (

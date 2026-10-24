@@ -203,7 +203,7 @@ class GeminiScriptDirector:
             "Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
             "bold crisp black ink outlines with variable brush stroke thickness, "
             "clean flat cel-shaded coloring with muted earthy watercolor tones, screentone-style halftone shading on warm vintage cream paper #F5EBD7. "
-            "{content}. Distinct 2D manga linework, clean flat coloring, strictly no 3D rendering, no CGI, absolutely no 3D models or plastic gloss, 1080p widescreen, no text, no watermark"
+            "{content}. Distinct 2D manga linework, clean flat coloring, strictly 2D flat art, strictly no 3D rendering, no CGI, absolutely no 3D models or plastic gloss, 1080p widescreen, no text, no watermark"
         )
         if not api_key:
             return base_style_template.format(content=scene_text)

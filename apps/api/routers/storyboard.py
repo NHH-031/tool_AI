@@ -39,30 +39,38 @@ class GenerateImageResponse(BaseModel):
 
 
 def _ensure_skill_md_prompt_gate(prompt_text: str, aspect_ratio: str = "16:9") -> str:
-    """Đảm bảo prompt tuân thủ nghiêm ngặt chuẩn SKILL.md và phong cách truyện tranh 2D (cấm 3D)."""
+    """Đảm bảo prompt tuân thủ nghiêm ngặt chuẩn 2D Japanese Manga và cấm triệt để 3D/CGI."""
     p_lower = prompt_text.lower()
     prefix_parts = []
     suffix_parts = []
 
-    # 1. Bắt buộc phong cách truyện tranh 2D / graphic novel
-    if not any(k in p_lower for k in ["comic", "graphic novel", "2d", "lianhuanhua", "manhua"]):
-        prefix_parts.append("Masterpiece 2D vintage comic book illustration, traditional graphic novel art")
+    # 1. Bắt buộc phong cách Manga Nhật Bản 2D vẽ tay truyền thống
+    if not any(k in p_lower for k in ["manga", "japanese comic", "cel-shaded", "screentone"]):
+        prefix_parts.append(
+            "Masterpiece 2D Japanese manga illustration, traditional hand-drawn manga panel art, "
+            "bold crisp black ink outlines with variable brush stroke thickness, "
+            "clean flat cel-shaded coloring with muted earthy watercolor tones, screentone-style halftone shading"
+        )
 
-    # 2. Quy chuẩn nền giấy kem ấm cổ #F5EBD7 theo SKILL.md
+    # 2. Quy chuẩn nền giấy kem ấm cổ #F5EBD7
     if "#f5ebd7" not in p_lower and "cream paper" not in p_lower:
         suffix_parts.append("on warm vintage cream paper #F5EBD7")
 
-    # 3. Nét viền mực và đánh bóng gạch nét bút sắt
-    if "ink" not in p_lower and "contour" not in p_lower:
-        suffix_parts.append("crisp expressive dark ink contour outlines with fine line cross-hatching")
+    # 3. Nét viền mực đen đanh chắc
+    if "ink" not in p_lower and "outline" not in p_lower:
+        suffix_parts.append("crisp expressive dark ink outlines with fine manga cross-hatching")
 
-    # 4. Màu phẳng mờ (flat matte wash), không bóng 3D
-    if "matte" not in p_lower and "watercolor" not in p_lower and "cel" not in p_lower:
-        suffix_parts.append("flat matte muted vintage watercolor wash")
+    # 4. Màu phẳng mộc mạc cel-shade, không đổ bóng 3D
+    if "cel" not in p_lower and "flat" not in p_lower:
+        suffix_parts.append("flat cel-shaded matte coloring")
 
-    # 5. Nghiêm cấm 3D, CGI và chữ
+    # 5. Nghiêm cấm 3D, CGI, khối nhựa và chữ
     if "no 3d" not in p_lower:
-        suffix_parts.append("strictly 2D flat art, NO 3D render, NO CGI, NO plastic gloss, NO 3D models")
+        suffix_parts.append(
+            "strictly 2D flat art, absolutely NO 3D render, NO CGI, NO 3D models, NO Octane render, "
+            "NO Unreal Engine, NO plastic sheen, NO volumetric lighting, NO smooth 3D gradient shading, "
+            "NO raytracing, NO photorealism, NO photographic textures, NO glossy surfaces, NO specular highlights"
+        )
     if "no text" not in p_lower:
         if aspect_ratio == "9:16":
             suffix_parts.append("vertical 9:16 portrait orientation, vertical composition, mobile display, no text, no speech bubbles, no watermark")

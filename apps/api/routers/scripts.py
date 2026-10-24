@@ -69,11 +69,8 @@ def _parse_srt_to_scenes(srt_text: str) -> List[SceneResponse]:
             dur = max(3.0, round(len(content.split()) / 2.6, 1))
 
         if content:
-            prompt = (
-                f"Whiteboard doodle illustration of {content[:60]}, "
-                f"crisp clean dark ink contour outlines on warm vintage cream paper #F5EBD7, "
-                f"high detail, masterpiece quality, 1080p widescreen, no text"
-            )
+            from core.artwork.translator import create_whiteboard_art_prompt
+            prompt = create_whiteboard_art_prompt(content, scene_index=idx)
             scenes.append(
                 SceneResponse(
                     id=f"scene-{idx}",

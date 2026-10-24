@@ -36,7 +36,8 @@ class PollinationsArtProvider(ImageGeneratorProvider):
         reraise=True,
     )
     async def _fetch_pollinations(self, refined_prompt: str, aspect_ratio: str = "16:9") -> bytes:
-        encoded_prompt = urllib.parse.quote(refined_prompt[:280])
+        # Giữ trọn vẹn ngữ cảnh nhân vật, đồ vật, quân lính và phong cách Manga 2D (tối đa 1200 ký tự)
+        encoded_prompt = urllib.parse.quote(refined_prompt[:1200])
         seed = random.randint(1000, 999999)
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
         if aspect_ratio == "9:16":

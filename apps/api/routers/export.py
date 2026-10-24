@@ -260,10 +260,18 @@ async def _run_export_pipeline(job_id: str, req: RenderExportRequest) -> None:
                 logger.info(f"[_run_export_pipeline] Sinh ảnh cho {scene_id}...")
                 art_generator = ArtworkGeneratorFactory.create()
                 target_img = output_dir / f"{scene_id}.png"
+                raw_p = sc.prompt or sc.text
+                from core.artwork.translator import create_whiteboard_art_prompt
+                from apps.api.routers.storyboard import _ensure_skill_md_prompt_gate
+                if any(ord(c) > 127 for c in raw_p):
+                    guaranteed_p = create_whiteboard_art_prompt(raw_p, scene_index=scene_idx, aspect_ratio=req.aspect_ratio)
+                else:
+                    guaranteed_p = _ensure_skill_md_prompt_gate(raw_p, aspect_ratio=req.aspect_ratio)
                 img_prompt = StructuredIllustrationPrompt(
                     subject=sc.text[:80],
-                    action=sc.prompt or sc.text,
-                    scene_context=sc.prompt or sc.text,
+                    action=guaranteed_p,
+                    full_prompt=guaranteed_p,
+                    scene_context=guaranteed_p,
                     has_color=req.has_color,
                     aspect_ratio=req.aspect_ratio,
                 )

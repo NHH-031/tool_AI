@@ -288,6 +288,19 @@ class SubtitleBurner:
             shutil.copyfile(str(video_path), str(output_path))
             return output_path
 
+        # Chuẩn hóa danh sách subtitle: hỗ trợ cả dict lẫn SubtitleSegment
+        from core.subtitles.models import SubtitleSegment
+        parsed_subtitles = []
+        for s in subtitles:
+            if isinstance(s, dict):
+                try:
+                    parsed_subtitles.append(SubtitleSegment(**s))
+                except Exception:
+                    pass
+            else:
+                parsed_subtitles.append(s)
+        subtitles = parsed_subtitles
+
         container_in = av.open(str(video_path))
         if not container_in.streams.video:
             container_in.close()
